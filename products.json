@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "name": "Abri Métallique Standard",
+    "type": "abri",
+    "price": 1500,
+    "image": "assets/abri1.jpg"
+  },
+  {
+    "id": 2,
+    "name": "Hangar sur mesure",
+    "type": "hangar",
+    "price": 2800,
+    "image": "assets/abri2.jpg"
+  },
+  {
+    "id": 3,
+    "name": "Garage Métallique",
+    "type": "garage",
+    "price": 1200,
+    "image": "assets/abri3.jpg"
+  }
+]
