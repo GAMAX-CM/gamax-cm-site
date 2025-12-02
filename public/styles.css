@@ -67,6 +67,8 @@ body {
 /* STYLE 5 : APPLE PRO — LOGO À GAUCHE, MENU À DROITE */
 /* HEADER NOIR – STYLE APPLE */
 .site-header.pro {
+  overflow: visible !important;
+}
   position: sticky;
   top: 0;
   z-index: 2000;
