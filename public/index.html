@@ -467,7 +467,7 @@
       </div>
     </section>
 
-    <script>
+     <script>
       // ---- DIMENSIONS AUTORISÉES ----
       const DIMENSIONS = {
         mono: {
@@ -488,7 +488,7 @@
         bi: 88, // €/m² structure + toiture bipente
       };
 
-      const BARDAGE_PRICE_PER_M2 = 50; // €/m² bardage
+      const BARDAGE_PRICE_PER_M2 = 50; // €/m² bardage (même prix pour toutes les façades)
       const OPTIONS_PRICES = {
         guttersPerM2: 10,
         finishingPerM2: 8,
@@ -546,11 +546,18 @@
         const width = parseFloat(document.getElementById("width").value);
         const length = parseFloat(document.getElementById("length").value);
         const height = parseFloat(document.getElementById("height").value);
-        const cladding = parseInt(
-          document.getElementById("cladding").value,
-          10
+
+        // Bardage : côtés cochés
+        const claddingChecked = document.querySelectorAll(
+          'input[name="claddingSide"]:checked'
         );
-        const zone = document.getElementById("zone").value;
+        const claddingCount = claddingChecked.length;
+
+        // Zone
+        const zoneInput = document.querySelector('input[name="zone"]:checked');
+        const zone = zoneInput ? zoneInput.value : "1";
+
+        // Couleur toiture
         const roofColor = document.querySelector(
           'input[name="roofColor"]:checked'
         ).value;
@@ -573,10 +580,18 @@
           structureBase *= increaseFactor;
         }
 
-        // Bardage (surface moyenne d’un côté * nb de côtés)
-        const averageSideArea =
-          ((2 * length * height + 2 * width * height) / 4) || 0;
-        const claddingArea = averageSideArea * cladding;
+        // --- BARDAGE PAR FAÇADE ---
+        // Long pan = longueur * hauteur
+        // Pignon   = largeur * hauteur
+        let claddingArea = 0;
+        claddingChecked.forEach((el) => {
+          const side = el.value; // "Long pan avant", "Pignon gauche", etc.
+          if (side.includes("Long pan")) {
+            claddingArea += length * height;
+          } else if (side.includes("Pignon")) {
+            claddingArea += width * height;
+          }
+        });
         const claddingPrice = claddingArea * BARDAGE_PRICE_PER_M2;
 
         // Options
@@ -587,7 +602,8 @@
         const optInstall = document.getElementById("optInstall").checked;
 
         if (optGutters) optionsPrice += area * OPTIONS_PRICES.guttersPerM2;
-        if (optFinishing) optionsPrice += area * OPTIONS_PRICES.finishingPerM2;
+        if (optFinishing)
+          optionsPrice += area * OPTIONS_PRICES.finishingPerM2;
         if (optDoor) optionsPrice += OPTIONS_PRICES.doorFixed;
         if (optInstall) optionsPrice += area * OPTIONS_PRICES.installPerM2;
 
@@ -603,10 +619,21 @@
 
         // Libellés
         const typeLabel = type === "bi" ? "Abris bipente" : "Abris monopente";
-        const claddingLabel =
-          cladding === 0
-            ? "Abris ouvert (sans bardage)"
-            : cladding + " côté(s) bardé(s)";
+
+        let claddingLabel;
+        if (claddingCount === 0) {
+          claddingLabel =
+            "Abris ouvert (sans bardage) – 0 m² de bardage calculé";
+        } else {
+          const sides = Array.from(claddingChecked).map((el) => el.value);
+          claddingLabel =
+            claddingCount +
+            " côté(s) bardé(s) : " +
+            sides.join(", ") +
+            " – env. " +
+            claddingArea.toFixed(1) +
+            " m² de bardage";
+        }
 
         const selectedOptions = [];
         if (optGutters) selectedOptions.push("Gouttières");
@@ -632,7 +659,8 @@
             ? selectedOptions.join(", ")
             : "Aucune option";
         document.getElementById("roofColorDisplay").textContent = roofColor;
-        document.getElementById("zoneDisplay").textContent = "x " + zoneCoef;
+        document.getElementById("zoneDisplay").textContent =
+          "x " + zoneCoef + " (zone " + zone + ")";
 
         document.getElementById("priceHT").textContent =
           formatCurrency(totalHT);
@@ -677,8 +705,6 @@
           "width",
           "length",
           "height",
-          "cladding",
-          "zone",
           "optGutters",
           "optFinishing",
           "optDoor",
@@ -695,12 +721,22 @@
           .forEach((el) => el.addEventListener("change", calculatePrice));
 
         document
+          .querySelectorAll('input[name="claddingSide"]')
+          .forEach((el) => el.addEventListener("change", calculatePrice));
+
+        document
+          .querySelectorAll('input[name="zone"]')
+          .forEach((el) => el.addEventListener("change", calculatePrice));
+
+        document
           .getElementById("btnCalculate")
           .addEventListener("click", calculatePrice);
 
         calculatePrice();
       });
     </script>
+
+
   </body>
 </html>
 
