@@ -351,6 +351,54 @@ body {
   font-weight: 600;
   text-align: center;
 }
+/* PALETTE DE COULEURS RAL (TOITURE) */
+.ral-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0,1fr));
+  gap: 0.75rem;
+  margin-top: 0.4rem;
+}
+
+.ral-choice {
+  cursor: pointer;
+}
+
+.ral-choice input {
+  display: none;
+}
+
+.ral-box {
+  padding: 0.9rem 0;
+  text-align: center;
+  font-weight: 600;
+  color: #fff;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  transition: 0.15s ease;
+}
+
+.ral-choice input:checked + .ral-box {
+  border-color: var(--noir);
+  box-shadow: 0 0 0 3px var(--noir);
+  transform: scale(1.04);
+}
+
+/* Couleurs claires : texte foncé */
+.ral-box[style*="f4f4f2"],
+.ral-box[style*="e8d9b5"],
+.ral-box[style*="dcdcd3"] {
+  color: #222;
+}
+
+/* RESPONSIVE */
+@media(max-width: 720px) {
+  .ral-grid {
+    grid-template-columns: repeat(3, minmax(0,1fr));
+  }
+}
+
+
 
 /* RÉSUMÉ */
 .config-summary {
