@@ -64,51 +64,61 @@ body {
 }
 
 /* HEADER */
-.site-header {
+/* STYLE 5 : APPLE PRO — LOGO À GAUCHE, MENU À DROITE */
+.site-header.pro {
   position: sticky;
   top: 0;
-  z-index: 10;
-  background: rgba(245, 240, 232, 0.98);
+  z-index: 20;
+  background: rgba(245, 240, 232, 0.95); /* beige GAMAX */
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
 }
+
 .header-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1.5rem;
+  padding: 0.9rem 0;
 }
+
+/* Logo */
 .logo-wrap {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.6rem;
-  text-decoration: none;
-  color: var(--noir);
 }
+
 .logo-img {
-  height: 89px;
+  height: 55px;                /* mets 60px si tu veux plus grand */
+  width: auto;
+  display: block;
 }
-.logo-text {
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  font-size: 0.9rem;
-  text-transform: uppercase;
-}
+
+/* Menu à droite */
 .main-nav {
   display: flex;
   align-items: center;
-  gap: 1.2rem;
+  gap: 2rem;                    /* espacements style Apple */
 }
+
 .main-nav a {
   text-decoration: none;
   color: var(--noir);
-  padding: 0.25rem 0.5rem;
-  border-radius: 999px;
-  transition: var(--transition);
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: 0.2s;
 }
+
 .main-nav a:hover {
-  background: rgba(0, 0, 0, 0.04);
+  color: #000;
+  transform: translateY(-1px);
 }
+
+/* Fine barre Apple en bas */
+.header-bottom-line {
+  height: 1px;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.12);
+}
+
 
 /* BUTTONS */
 .btn {
