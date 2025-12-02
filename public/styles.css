@@ -28,7 +28,12 @@ body {
 body {
   font-family: var(--font-sans);
   color: var(--noir);
-  background: radial-gradient(circle at top, #faf5ec 0, #f5f0e8 50%, #f1ece5 100%);
+  background: radial-gradient(
+    circle at top,
+    #faf5ec 0,
+    #f5f0e8 50%,
+    #f1ece5 100%
+  );
   -webkit-font-smoothing: antialiased;
 }
 
@@ -41,12 +46,6 @@ body {
 }
 .section {
   padding: 4rem 0;
-}
-.section-accent {
-  background: linear-gradient(135deg, #f2e5cf, #f9f3e7);
-}
-.section-light {
-  background: #fcfbf9;
 }
 .section-header {
   margin-bottom: 2rem;
@@ -144,9 +143,71 @@ body {
 .full-width {
   width: 100%;
 }
-.btn-small {
-  padding: 0.4rem 0.9rem;
+
+/* HERO */
+.hero {
+  padding: 4.5rem 0 3.5rem;
+}
+.hero-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 2.5rem;
+  align-items: center;
+}
+.hero-text h1 {
+  font-size: 2.4rem;
+  line-height: 1.1;
+  margin: 0 0 1rem;
+}
+.hero-subtitle {
+  margin: 0 0 1.4rem;
+  color: var(--gris-moyen);
+}
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-bottom: 0.9rem;
+}
+.hero-note {
   font-size: 0.85rem;
+  color: var(--gris-moyen);
+}
+.eyebrow {
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  color: var(--gris-moyen);
+}
+
+/* HERO CARD */
+.hero-card {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: var(--border-radius);
+  padding: 1.6rem 1.5rem;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+.hero-card h2 {
+  font-size: 1.25rem;
+  margin-top: 0.6rem;
+}
+.hero-tag {
+  display: inline-flex;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.hero-list {
+  margin: 1rem 0;
+  padding-left: 1.1rem;
+}
+.hero-mini {
+  font-size: 0.85rem;
+  color: var(--gris-moyen);
 }
 
 /* CONFIGURATEUR LAYOUT */
@@ -189,7 +250,7 @@ body {
   font-size: 0.9rem;
 }
 
-/* TYPE D’ABRI : MONOPENTE / BIPENTE (AVEC IMAGES) */
+/* TYPE D’ABRI : MONOPENTE / BIPENTE */
 .roof-type-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -238,7 +299,7 @@ body {
   text-align: center;
 }
 
-/* PALETTE DE COULEURS RAL (TOITURE) */
+/* PALETTE RAL */
 .ral-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -272,7 +333,40 @@ body {
   color: #222;
 }
 
-/* RÉSUMÉ */
+/* OPTIONS COMPLÉMENTAIRES */
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+.option-pill {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.option-pill input {
+  margin-top: 0.15rem;
+}
+.option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.option-title {
+  font-weight: 600;
+}
+.option-sub {
+  font-size: 0.78rem;
+  color: var(--gris-moyen);
+}
+
+/* RÉCAPITULATIF */
 .config-summary {
   background: var(--noir);
   color: #f6f0e6;
@@ -311,17 +405,11 @@ body {
   margin-bottom: 1rem;
 }
 
-/* FOOTER SIMPLE (si besoin plus tard)
-.site-footer {
-  background: #faf6ee;
-  padding: 1.5rem 0;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-  text-align: center;
-}
-*/
-
 /* RESPONSIVE */
 @media (max-width: 960px) {
+  .hero-inner {
+    grid-template-columns: 1fr;
+  }
   .configurator-layout {
     grid-template-columns: 1fr;
   }
@@ -343,5 +431,8 @@ body {
   }
   .ral-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .options-grid {
+    grid-template-columns: 1fr;
   }
 }
