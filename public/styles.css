@@ -301,15 +301,12 @@ body {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
 }
-
 .roof-card {
   cursor: pointer;
 }
-
 .roof-card input {
   display: none;
 }
-
 .roof-card-inner {
   display: flex;
   flex-direction: column;
@@ -321,36 +318,32 @@ body {
   background: #fff;
   transition: var(--transition);
   box-shadow: 0 12px 30px rgba(0,0,0,0.06);
-  max-width: 180px;      /* LIMITATION DE LARGEUR */
-  margin: 0 auto;        /* CENTRAGE */
+  max-width: 180px;
+  margin: 0 auto;
 }
-
 .roof-card-inner:hover {
   transform: translateY(-2px);
   box-shadow: 0 16px 36px rgba(0,0,0,0.08);
 }
-
 .roof-card input:checked + .roof-card-inner {
   border-color: var(--noir);
   box-shadow: 0 0 0 2px var(--noir);
   background: var(--noir);
   color: #fff;
 }
-
-/* Images compactes et centrées */
 .roof-img {
-  width: 90px;           /* Taille réduite */
+  width: 90px;
   height: auto;
   object-fit: contain;
   display: block;
   margin: 0 auto;
 }
-
 .roof-title {
   font-size: 0.95rem;
   font-weight: 600;
   text-align: center;
 }
+
 /* PALETTE DE COULEURS RAL (TOITURE) */
 .ral-grid {
   display: grid;
@@ -358,15 +351,12 @@ body {
   gap: 0.75rem;
   margin-top: 0.4rem;
 }
-
 .ral-choice {
   cursor: pointer;
 }
-
 .ral-choice input {
   display: none;
 }
-
 .ral-box {
   padding: 0.9rem 0;
   text-align: center;
@@ -377,28 +367,17 @@ body {
   box-shadow: 0 2px 4px rgba(0,0,0,0.15);
   transition: 0.15s ease;
 }
-
 .ral-choice input:checked + .ral-box {
   border-color: var(--noir);
   box-shadow: 0 0 0 3px var(--noir);
   transform: scale(1.04);
 }
-
 /* Couleurs claires : texte foncé */
 .ral-box[style*="f4f4f2"],
 .ral-box[style*="e8d9b5"],
 .ral-box[style*="dcdcd3"] {
   color: #222;
 }
-
-/* RESPONSIVE */
-@media(max-width: 720px) {
-  .ral-grid {
-    grid-template-columns: repeat(3, minmax(0,1fr));
-  }
-}
-
-
 
 /* RÉSUMÉ */
 .config-summary {
@@ -503,6 +482,9 @@ body {
   }
   .roof-type-grid {
     grid-template-columns: 1fr;
+  }
+  .ral-grid {
+    grid-template-columns: repeat(3, minmax(0,1fr));
   }
 }
 
