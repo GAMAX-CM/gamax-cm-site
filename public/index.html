@@ -273,18 +273,72 @@
               </div>
             </div>
 
-            <!-- 4. BARDAGE -->
-            <h3>4. Bardage</h3>
-            <div class="field">
-              <label for="cladding">Niveau de fermeture</label>
-              <select id="cladding" name="cladding">
-                <option value="0">Abris ouvert – sans bardage</option>
-                <option value="1">1 côté bardé</option>
-                <option value="2">2 côtés bardés</option>
-                <option value="3">3 côtés bardés</option>
-                <option value="4">4 côtés bardés (fermé)</option>
-              </select>
-            </div>
+          <!-- 4. BARDAGE -->
+<h3>4. Bardage</h3>
+<div class="field">
+  <label>Côtés bardés</label>
+  <p class="field-help">
+    Cliquez sur les côtés de l’abri que vous souhaitez fermer en bardage.
+  </p>
+  <div class="bardage-grid">
+    <label class="bardage-choice">
+      <input
+        type="checkbox"
+        name="claddingSide"
+        value="Long pan avant"
+      />
+      <div class="bardage-card">
+        <span class="bardage-label-main">Long pan avant</span>
+        <span class="bardage-label-sub">
+          Côté façade principale.
+        </span>
+      </div>
+    </label>
+
+    <label class="bardage-choice">
+      <input
+        type="checkbox"
+        name="claddingSide"
+        value="Pignon gauche"
+      />
+      <div class="bardage-card">
+        <span class="bardage-label-main">Pignon gauche</span>
+        <span class="bardage-label-sub">
+          Côté pignon gauche (vue depuis l’avant).
+        </span>
+      </div>
+    </label>
+
+    <label class="bardage-choice">
+      <input
+        type="checkbox"
+        name="claddingSide"
+        value="Long pan arrière"
+      />
+      <div class="bardage-card">
+        <span class="bardage-label-main">Long pan arrière</span>
+        <span class="bardage-label-sub">
+          Côté opposé à la façade principale.
+        </span>
+      </div>
+    </label>
+
+    <label class="bardage-choice">
+      <input
+        type="checkbox"
+        name="claddingSide"
+        value="Pignon droit"
+      />
+      <div class="bardage-card">
+        <span class="bardage-label-main">Pignon droit</span>
+        <span class="bardage-label-sub">
+          Côté pignon droit (vue depuis l’avant).
+        </span>
+      </div>
+    </label>
+  </div>
+</div>
+
 
             <!-- 5. OPTIONS -->
             <h3>5. Options complémentaires</h3>
