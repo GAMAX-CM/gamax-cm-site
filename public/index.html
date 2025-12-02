@@ -169,7 +169,7 @@
                 </label>
               </div>
 
-              <h3>1. Dimensions de l’abri</h3>
+              <h3>2. Dimensions de l’abri</h3>
               <div class="form-grid">
                 <div class="field">
                   <label for="width">Largeur (m)</label>
@@ -232,7 +232,7 @@
                 </div>
               </div>
 
-              <h3>2. Bardage</h3>
+              <h3>3. Bardage</h3>
               <div class="form-grid">
                 <div class="field">
                   <label for="claddingType">Nombre de côtés bardés</label>
@@ -259,7 +259,7 @@
                 </div>
               </div>
 
-              <h3>3. Options</h3>
+              <h3>4. Options</h3>
               <div class="options-grid">
                 <label class="checkbox">
                   <input
@@ -291,7 +291,7 @@
                 </label>
               </div>
 
-              <h3>4. Zone du projet</h3>
+              <h3>5. Zone du projet</h3>
               <div class="form-grid">
                 <div class="field">
                   <label for="zone">
@@ -309,7 +309,7 @@
                 </div>
               </div>
 
-              <h3>5. Vos coordonnées (facultatif pour l’instant)</h3>
+              <h3>6. Vos coordonnées (facultatif pour l’instant)</h3>
               <div class="form-grid">
                 <div class="field">
                   <label for="clientName">Nom / Société</label>
@@ -359,6 +359,9 @@
               <h4>Détail du calcul</h4>
               <ul>
                 <li>
+                  Type d’abri : <span id="slopeDisplay">–</span>
+                </li>
+                <li>
                   Surface : <span id="surfaceDisplay">–</span>
                 </li>
                 <li>
@@ -378,7 +381,7 @@
                   <span id="zoneDisplay">–</span>
                 </li>
               </ul>
-            </div>
+
 
             <div class="summary-sentence" id="summarySentence">
               Renseignez les dimensions et cliquez sur
@@ -458,6 +461,7 @@
     </footer>
 
     <script>
+        <script>
       // --- CONSTANTES TARIFAIRES (modifiable facilement) ---
       const UNIT_PRICE_STRUCTURE = {
         "bac-acier": 80, // €/m²
@@ -480,7 +484,7 @@
 
       const TVA_RATE = 0.2;
 
-      // --- FONCTIONS DE CALCUL ---
+      // --- UTILITAIRES ---
       function formatCurrency(value) {
         return new Intl.NumberFormat("fr-FR", {
           style: "currency",
@@ -489,20 +493,71 @@
         }).format(value);
       }
 
-      function calculateEstimate() {
+      // Vérifie que les valeurs rentrent dans les plages et renvoie un message si problème
+      function validateFields() {
         const width = parseFloat(document.getElementById("width").value);
         const length = parseFloat(document.getElementById("length").value);
         const height = parseFloat(document.getElementById("height").value);
+        const errorEl = document.getElementById("configError");
+
+        let messages = [];
+
+        if (!width || width < 3 || width > 15) {
+          messages.push("La largeur doit être comprise entre 3 m et 15 m.");
+        }
+        if (!length || length < 3 || length > 40) {
+          messages.push("La longueur doit être comprise entre 3 m et 40 m.");
+        }
+        if (!height || height < 2.5 || height > 6) {
+          messages.push(
+            "La hauteur avant doit être comprise entre 2,5 m et 6 m."
+          );
+        }
+
+        if (messages.length > 0) {
+          errorEl.textContent = messages.join(" ");
+          errorEl.style.display = "block";
+          return { ok: false, width, length, height };
+        } else {
+          errorEl.textContent = "";
+          errorEl.style.display = "none";
+          return { ok: true, width, length, height };
+        }
+      }
+
+      function calculateEstimate() {
+        const validation = validateFields();
+        const width = validation.width;
+        const length = validation.length;
+        const height = validation.height;
+
+        const slopeInput = document.querySelector(
+          'input[name="slopeType"]:checked'
+        );
+        const slopeType = slopeInput ? slopeInput.value : "mono";
+
+        if (!validation.ok) {
+          // On efface les montants si les valeurs sont invalides
+          document.getElementById("priceHT").textContent = "–";
+          document.getElementById("priceTTC").textContent = "–";
+          document.getElementById("pricePerM2").textContent = "–";
+          document.getElementById("surfaceDisplay").textContent = "–";
+          document.getElementById("structureDisplay").textContent = "–";
+          document.getElementById("claddingDisplay").textContent = "–";
+          document.getElementById("optionsDisplay").textContent = "–";
+          document.getElementById("zoneDisplay").textContent = "–";
+          document.getElementById("slopeDisplay").textContent = "–";
+          document.getElementById("summarySentence").textContent =
+            "Corrigez les dimensions pour obtenir une estimation.";
+          return;
+        }
+
         const roofType = document.getElementById("roofType").value;
         const claddingType = parseInt(
           document.getElementById("claddingType").value,
           10
         );
         const zone = document.getElementById("zone").value;
-
-        if (!width || !length || !height) {
-          return;
-        }
 
         const area = width * length;
 
@@ -517,6 +572,11 @@
           const increaseFactor = 1 + stepCount * 0.1;
           structureBase *= increaseFactor;
         }
+
+        // 👉 Ici on pourrait ajouter un coefficient selon mono/bipente si tu le souhaites.
+        // Pour l’instant, aucun impact sur le prix :
+        const slopeCoef = 1;
+        structureBase *= slopeCoef;
 
         // Bardage : surface moyenne d’un côté * nb de côtés
         const averageSideArea =
@@ -548,9 +608,16 @@
         const zoneCoef = ZONE_COEFFICIENT[zone] || 1;
 
         let totalHT = (structureBase + claddingPrice + optionsPrice) * zoneCoef;
-        const totalTTC = totalHT * (1 + TVA_RATE);
+
+        // On arrondit au 50 € le plus proche pour une estimation plus "commerciale"
+        totalHT = Math.round(totalHT / 50) * 50;
+        const totalTTC = Math.round((totalHT * (1 + TVA_RATE)) / 10) * 10; // arrondi à 10 € près
+
+        const pricePerM2 = totalHT / area;
 
         // --- MISE À JOUR DU RÉCAP ---
+        document.getElementById("slopeDisplay").textContent =
+          slopeType === "bi" ? "Bipente" : "Monopente";
         document.getElementById("surfaceDisplay").textContent =
           area.toFixed(1) + " m²";
         document.getElementById("structureDisplay").textContent =
@@ -565,6 +632,8 @@
           formatCurrency(totalHT);
         document.getElementById("priceTTC").textContent =
           formatCurrency(totalTTC);
+        document.getElementById("pricePerM2").textContent =
+          pricePerM2 ? formatCurrency(pricePerM2) : "–";
 
         // Phrase récap
         const roofLabel =
@@ -573,8 +642,12 @@
           claddingType === 0
             ? "sans bardage (abri ouvert)"
             : claddingType + " côté(s) bardé(s)";
+        const slopeLabel =
+          slopeType === "bi" ? "abri bipente" : "abri monopente";
+
         const sentence =
-          "Abri métallique de " +
+          slopeLabel +
+          " de " +
           width +
           " m x " +
           length +
@@ -586,7 +659,9 @@
           claddingLabel +
           ". Prix estimatif : " +
           formatCurrency(totalHT) +
-          " HT.";
+          " HT (environ " +
+          formatCurrency(pricePerM2) +
+          " / m²).";
 
         document.getElementById("summarySentence").textContent = sentence;
       }
@@ -619,6 +694,11 @@
         el.addEventListener("input", calculateEstimate);
       });
 
+      // Radio monopente/bipente
+      document
+        .querySelectorAll('input[name="slopeType"]')
+        .forEach((el) => el.addEventListener("change", calculateEstimate));
+
       // Année automatique dans le footer
       document.getElementById("year").textContent =
         new Date().getFullYear().toString();
@@ -626,7 +706,4 @@
       // Calcul initial
       calculateEstimate();
     </script>
-  </body>
-</html>
-
-
+  
