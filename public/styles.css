@@ -295,79 +295,61 @@ body {
   gap: 1rem;
 }
 
-/* TYPE D’ABRI : MONOPENTE / BIPENTE */
+/* TYPE D’ABRI : MONOPENTE / BIPENTE (AVEC IMAGES) */
 .roof-type-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
 }
+
 .roof-card {
   cursor: pointer;
 }
+
 .roof-card input {
   display: none;
 }
+
 .roof-card-inner {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.9rem;
-  border-radius: 14px;
-  border: 1px solid rgba(0, 0, 0, 0.14);
+  padding: 1rem;
+  gap: 0.6rem;
+  border-radius: 16px;
+  border: 1px solid rgba(0,0,0,0.14);
   background: #fff;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.04);
   transition: var(--transition);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+  max-width: 180px;      /* LIMITATION DE LARGEUR */
+  margin: 0 auto;        /* CENTRAGE */
 }
+
 .roof-card-inner:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px rgba(0,0,0,0.08);
 }
+
 .roof-card input:checked + .roof-card-inner {
   border-color: var(--noir);
   box-shadow: 0 0 0 2px var(--noir);
   background: var(--noir);
-  color: #f6f0e6;
+  color: #fff;
 }
-.roof-illustration {
-  width: 54px;
-  height: 40px;
-  position: relative;
+
+/* Images compactes et centrées */
+.roof-img {
+  width: 90px;           /* Taille réduite */
+  height: auto;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
 }
-.roof-illustration.mono::before {
-  content: "";
-  position: absolute;
-  top: 10px;
-  left: 4px;
-  right: 6px;
-  border-bottom: 8px solid #222;
-  border-left: 18px solid transparent;
-}
-.roof-illustration.mono::after {
-  content: "";
-  position: absolute;
-  left: 6px;
-  right: 6px;
-  bottom: 4px;
-  height: 14px;
-  background: #e0d3bf;
-  border-radius: 0 0 6px 6px;
-}
-.roof-illustration.bi::before {
-  content: "";
-  position: absolute;
-  top: 8px;
-  left: 6px;
-  right: 6px;
-  border-bottom: 8px solid #222;
-  border-left: 10px solid transparent;
-}
-.roof-illustration.bi::after {
-  content: "";
-  position: absolute;
-  top: 8px;
-  left: 6px;
-  right: 6px;
-  border-bottom: 8px solid #222;
-  border-right: 10px solid transparent;
+
+.roof-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: center;
 }
 
 /* RÉSUMÉ */
@@ -425,9 +407,6 @@ body {
   padding: 1.5rem;
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-soft);
-}
-.contact-highlight a {
-  color: inherit;
 }
 
 /* FOOTER */
