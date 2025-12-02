@@ -1,799 +1,256 @@
 <!DOCTYPE html>
 <html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
-    <title>GAMAX-CM – Abris métalliques configurables</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <header class="site-header">
-      <div class="container header-inner">
-        <a href="#top" class="logo-wrap">
-          <img src="../logo.png" alt="GAMAX-CM" class="logo-img" />
-          <span class="logo-text">GAMAX-CM</span>
-        </a>
-        <nav class="main-nav">
-          <a href="#abris">Abris métalliques</a>
-          <a href="#configurateur">Configurateur</a>
-          <a href="#infos">Infos pratiques</a>
-          <a href="#contact" class="btn btn-small">Contact</a>
-        </nav>
-      </div>
-    </header>
 
-    <main id="top">
-      <!-- HERO -->
-      <section class="hero">
-        <div class="container hero-inner">
-          <div class="hero-text">
-            <p class="eyebrow">Abris métalliques sur mesure</p>
-            <h1>Configurez votre abri en ligne &nbsp;–&nbsp; devis instantané</h1>
-            <p class="hero-subtitle">
-              Largeur, longueur, hauteur, bardage, couleur de toiture… Créez en
-              quelques clics l’abri qui correspond à votre projet agricole ou
-              industriel.
-            </p>
-            <div class="hero-actions">
-              <a href="#configurateur" class="btn">Lancer le configurateur</a>
-              <a href="#abris" class="btn ghost">Voir nos usages</a>
-            </div>
-            <p class="hero-note">
-              💡 Prix indicatifs ajustables dans l’outil – nous affinons ensuite
-              votre devis manuellement.
-            </p>
-          </div>
-          <div class="hero-card">
-            <div class="hero-tag">Nouvelle boutique GAMAX-CM</div>
-            <h2>Un seul outil pour tous vos abris</h2>
-            <ul class="hero-list">
-              <li>Abris agricoles</li>
-              <li>Stockage matériel & fourrage</li>
-              <li>Carports & garages</li>
-              <li>Extensions de bâtiments existants</li>
-            </ul>
-            <p class="hero-mini">
-              Fabrication et pose dans tout le Sud-Ouest, structures acier
-              galvanisé, tôle bac acier ou isolée.
-            </p>
-          </div>
-        </div>
-      </section>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GAMAX-CM – Configurateur d’abri métallique</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
 
-      <!-- ABRIS -->
-      <section id="abris" class="section">
-        <div class="container">
-          <header class="section-header">
-            <h2>Nos abris métalliques</h2>
-            <p>
-              Structures en acier galvanisé, sur mesure, adaptées aux charges
-              neige et vent de votre zone. Quelques exemples d’usages :
-            </p>
-          </header>
+<body>
 
-          <div class="cards-grid">
-            <article class="card">
-              <h3>Abris agricoles</h3>
-              <p>
-                Stockage de matériel, fourrage, engins agricoles. Grandes
-                portées et hauteurs libres.
-              </p>
-              <ul class="bullet-list">
-                <li>Portée jusqu’à 12 m</li>
-                <li>Hauteur libre jusqu’à 6 m</li>
-                <li>Toiture monopente ou double pente</li>
-              </ul>
-            </article>
-
-            <article class="card">
-              <h3>Garages & carports</h3>
-              <p>
-                Protection de véhicules légers, utilitaires, camping-cars ou
-                flottes professionnelles.
-              </p>
-              <ul class="bullet-list">
-                <li>Modèles simples ou double</li>
-                <li>Bardage partiel ou complet</li>
-                <li>Nombreuses couleurs disponibles</li>
-              </ul>
-            </article>
-
-            <article class="card">
-              <h3>Stockage & ateliers</h3>
-              <p>
-                Solutions fermées ou semi-ouvertes pour entrepôts, ateliers ou
-                annexes de bâtiments existants.
-              </p>
-              <ul class="bullet-list">
-                <li>Isolation possible</li>
-                <li>Intégration portes & portails</li>
-                <li>Conception par bureau d’études</li>
-              </ul>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <!-- CONFIGURATEUR -->
-      <section id="configurateur" class="section section-accent">
-        <div class="container configurator-layout">
-          <div class="config-left">
-            <header class="section-header left">
-              <h2>Configurez votre abri métallique</h2>
-              <p>
-                Renseignez les dimensions et les options pour obtenir
-                immédiatement une estimation de prix. Vous pourrez ensuite nous
-                envoyer votre demande de devis détaillé.
-              </p>
-            </header>
-
-            <form id="configForm" class="config-form">
-                            <h3>1. Type d’abri</h3>
-
-<div class="roof-type-grid">
-  
-  <!-- Abris monopente -->
-  <label class="roof-card">
-    <input type="radio" name="slopeType" value="mono" checked />
-    <div class="roof-card-inner">
-      <img src="assets/image monopente.png" alt="Abris monopente" class="roof-img" />
-      <span class="roof-title">Abris monopente</span>
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="header-inner container">
+      <a href="/" class="logo-wrap">
+        <img src="logo.png" alt="Logo GAMAX-CM" class="logo-img" />
+        <span class="logo-text">GAMAX-CM</span>
+      </a>
+      <nav class="main-nav">
+        <a href="/">Accueil</a>
+        <a href="#config">Configurateur</a>
+      </nav>
     </div>
-  </label>
+  </header>
 
-  <!-- Abris bipente -->
-  <label class="roof-card">
-    <input type="radio" name="slopeType" value="bi" />
-    <div class="roof-card-inner">
-      <img src="assets/image bipente.png" alt="Abris bipente" class="roof-img" />
-      <span class="roof-title">Abris bipente</span>
-    </div>
-  </label>
+  <!-- TITRE CONFIGURATEUR -->
+  <section class="section" id="config">
+    <div class="container">
+      <h1>Configurez votre abri métallique</h1>
+      <p>Renseignez les dimensions et les options pour obtenir immédiatement une estimation de prix.</p>
 
-</div>
+      <div class="configurator-layout">
 
+        <!-- FORMULAIRE -->
+        <div class="config-form">
 
-              <h3>2. Dimensions de l’abri</h3>
-              <div class="form-grid">
-                <div class="field">
-  <label for="width">Largeur (m)</label>
-  <input
-    type="number"
-    id="width"
-    name="width"
-    min="3"
-    max="15"
-    step="0.5"
-    value="8"
-    list="widthPresets"
-    required
-  />
-  <datalist id="widthPresets">
-    <option value="4"></option>
-    <option value="6"></option>
-    <option value="8"></option>
-    <option value="10"></option>
-    <option value="12"></option>
-  </datalist>
-</div>
+          <!-- 1. TYPE D’ABRI -->
+          <h3>1. Type d’abri</h3>
+          <div class="roof-type-grid">
 
-<div class="field">
-  <label for="length">Longueur (m)</label>
-  <input
-    type="number"
-    id="length"
-    name="length"
-    min="3"
-    max="40"
-    step="0.5"
-    value="15"
-    list="lengthPresets"
-    required
-  />
-  <datalist id="lengthPresets">
-    <option value="6"></option>
-    <option value="9"></option>
-    <option value="12"></option>
-    <option value="15"></option>
-    <option value="18"></option>
-    <option value="20"></option>
-    <option value="24"></option>
-    <option value="30"></option>
-  </datalist>
-</div>
-
-<div class="field">
-  <label for="height">Hauteur à l’avant (m)</label>
-  <input
-    type="number"
-    id="height"
-    name="height"
-    min="2.5"
-    max="6"
-    step="0.5"
-    value="4"
-    list="heightPresets"
-    required
-  />
-  <datalist id="heightPresets">
-    <option value="3"></option>
-    <option value="3.5"></option>
-    <option value="4"></option>
-    <option value="4.5"></option>
-    <option value="5"></option>
-    <option value="6"></option>
-  </datalist>
-</div>
-
-
-                <div class="field">
-                  <label for="roofType">Type de toiture</label>
-                  <select id="roofType" name="roofType">
-                    <option value="bac-acier">Tôle bac acier</option>
-                    <option value="isolee">Tôle isolée (sandwich)</option>
-                  </select>
-                </div>
-
-                <div class="field">
-  <label>Couleur toiture (RAL)</label>
-
-  <div class="ral-grid">
-
-    <label class="ral-choice">
-      <input type="radio" name="roofColor" value="RAL 5008" checked />
-      <div class="ral-box" style="background:#2f3b49">5008</div>
-    </label>
-
-    <label class="ral-choice">
-      <input type="radio" name="roofColor" value="RAL 8012" />
-      <div class="ral-box" style="background:#5a1f1b">8012</div>
-    </label>
-
-    <label class="ral-choice">
-      <input type="radio" name="roofColor" value="RAL 6011" />
-      <div class="ral-box" style="background:#6c7f46">6011</div>
-    </label>
-
-    <label class="ral-choice">
-      <input type="radio" name="roofColor" value="RAL 6021" />
-      <div class="ral-box" style="background:#8ba870">6021</div>
-    </label>
-
-    <label class="ral-choice">
-      <input type="radio" name="roofColor" value="RAL 6005" />
-      <div class="ral-box" style="background:#0c2d1f">6005</div>
-    </label>
-
-    <label class="ral-choice">
-      <input type="radio" name="roofColor" value="RAL 7022" />
-      <div class="ral-box" style="background:#4e4c48">7022</div>
-    </label>
-
-    <label class="ral-choice">
-      <input type="radio" name="roofColor" value="RAL 7006" />
-      <div class="ral-box" style="background:#756b60">7006</div>
-    </label>
-
-    <label class="ral-choice">
-      <input type="radio" name="roofColor" value="RAL 8024" />
-      <div class="ral-box" style="background:#6f3c2b">8024</div>
-    </label>
-
-    <label class="ral-choice">
-      <input type="radio" name="roofColor" value="RAL 1019" />
-      <div class="ral-box" style="background:#a1927b">1019</div>
-    </label>
-
-    <label class="ral-choice">
-      <input type="radio" name="roofColor" value="RAL 1015" />
-      <div class="ral-box" style="background:#e8d9b5">1015</div>
-    </label>
-
-    <label class="ral-choice">
-      <input type="radio" name="roofColor" value="RAL 9002" />
-      <div class="ral-box" style="background:#dcdcd3">9002</div>
-    </label>
-
-    <label class="ral-choice">
-      <input type="radio" name="roofColor" value="RAL 9010" />
-      <div class="ral-box" style="background:#f4f4f2; color:#333">9010</div>
-    </label>
-
-    <label class="ral-choice">
-      <input type="radio" name="roofColor" value="RAL 9006" />
-      <div class="ral-box" style="background:#a5a9ad">9006</div>
-    </label>
-
-    <label class="ral-choice">
-      <input type="radio" name="roofColor" value="RAL 7015" />
-      <div class="ral-box" style="background:#51565c">7015</div>
-    </label>
-
-    <label class="ral-choice">
-      <input type="radio" name="roofColor" value="RAL 7016" />
-      <div class="ral-box" style="background:#383e42">7016</div>
-    </label>
-
-  </div>
-</div>
-
+            <!-- Monopente -->
+            <label class="roof-card">
+              <input type="radio" name="slopeType" value="monopente" checked />
+              <div class="roof-card-inner">
+                <img src="assets/image monopente.png" class="roof-img" alt="Abris monopente">
+                <span class="roof-title">Abris monopente</span>
               </div>
+            </label>
 
-              <h3>3. Bardage</h3>
-              <div class="form-grid">
-                <div class="field">
-                  <label for="claddingType">Nombre de côtés bardés</label>
-                  <select id="claddingType" name="claddingType">
-                    <option value="0">Aucun bardage (abri ouvert)</option>
-                    <option value="1">1 côté bardé</option>
-                    <option value="2">2 côtés bardés</option>
-                    <option value="3">3 côtés bardés</option>
-                    <option value="4">4 côtés bardés (fermé)</option>
-                  </select>
-                </div>
-
-                <div class="field">
-                  <label for="claddingColor">Couleur bardage</label>
-                  <select id="claddingColor" name="claddingColor">
-                    <option value="ral7016">Gris anthracite (RAL 7016)</option>
-                    <option value="ral9002">Blanc/gris (RAL 9002)</option>
-                    <option value="ral8017">Brun chocolat (RAL 8017)</option>
-                    <option value="galva">Galvanisé</option>
-                  </select>
-                  <p class="field-help">
-                    Couleur sans effet sur le prix, personnalisable au devis.
-                  </p>
-                </div>
+            <!-- Bipente -->
+            <label class="roof-card">
+              <input type="radio" name="slopeType" value="bipente" />
+              <div class="roof-card-inner">
+                <img src="assets/image bipente.png" class="roof-img" alt="Abris bipente">
+                <span class="roof-title">Abris bipente</span>
               </div>
+            </label>
 
-              <h3>4. Options</h3>
-              <div class="options-grid">
-                <label class="checkbox">
-                  <input
-                    type="checkbox"
-                    id="optGutters"
-                    name="optGutters"
-                  />
-                  <span>Gouttières & descentes d’eau</span>
-                </label>
-                <label class="checkbox">
-                  <input
-                    type="checkbox"
-                    id="optFinishing"
-                    name="optFinishing"
-                  />
-                  <span>Habillages de rives & finitions</span>
-                </label>
-                <label class="checkbox">
-                  <input
-                    type="checkbox"
-                    id="optDoors"
-                    name="optDoors"
-                  />
-                  <span>Portes / fermetures (coulissantes ou battantes)</span>
-                </label>
-                <label class="checkbox">
-                  <input type="checkbox" id="optInstall" name="optInstall" />
-                  <span>Pose par GAMAX-CM</span>
-                </label>
-              </div>
-
-              <h3>5. Zone du projet</h3>
-              <div class="form-grid">
-                <div class="field">
-                  <label for="zone">
-                    Zone neige / vent (indicatif)
-                  </label>
-                  <select id="zone" name="zone">
-                    <option value="1">Zone standard</option>
-                    <option value="2">Zone renforcée</option>
-                    <option value="3">Zone exposée (bord de mer, montagne)</option>
-                  </select>
-                  <p class="field-help">
-                    Sert uniquement à ajuster un coefficient de sécurité sur le
-                    prix.
-                  </p>
-                </div>
-              </div>
-
-              <h3>6. Vos coordonnées (facultatif pour l’instant)</h3>
-              <div class="form-grid">
-                <div class="field">
-                  <label for="clientName">Nom / Société</label>
-                  <input type="text" id="clientName" name="clientName" />
-                </div>
-                <div class="field">
-                  <label for="clientEmail">Email</label>
-                  <input type="email" id="clientEmail" name="clientEmail" />
-                </div>
-                <div class="field">
-                  <label for="clientPhone">Téléphone</label>
-                  <input type="tel" id="clientPhone" name="clientPhone" />
-                </div>
-                <div class="field">
-                  <label for="clientCity">Commune du projet</label>
-                  <input type="text" id="clientCity" name="clientCity" />
-                </div>
-              </div>
-
-              <button type="button" class="btn full-width" id="btnCalculate">
-                Calculer le prix estimatif
-              </button>
-            </form>
           </div>
 
-          <!-- RÉSULTAT -->
-          <aside class="config-summary" aria-live="polite">
-            <h3>Estimation de votre abri</h3>
-            <p class="summary-note">
-              Les montants ci-dessous sont donnés à titre indicatif HT.
-              L’ingénierie, les fondations et certains accessoires peuvent faire
-              évoluer le prix.
-            </p>
+          <!-- 2. DIMENSIONS -->
+          <h3>2. Dimensions de l’abri</h3>
+          <div class="form-grid">
 
-            <div class="summary-box">
-              <p class="summary-label">Prix estimatif HT</p>
-              <p class="summary-main">
-                <span id="priceHT">–</span>
-              </p>
-              <p class="summary-sub">
-                Prix TTC (20&nbsp;%)
-                <strong id="priceTTC">–</strong>
-              </p>
+            <!-- Largeur -->
+            <div class="field">
+              <label>Largeur (m)</label>
+              <input type="number" id="width" name="width" min="3" max="15" step="0.5" value="8" list="presetWidth">
+              <datalist id="presetWidth">
+                <option value="4"></option>
+                <option value="6"></option>
+                <option value="8"></option>
+                <option value="10"></option>
+                <option value="12"></option>
+              </datalist>
             </div>
 
-            <div class="summary-details">
-              <h4>Détail du calcul</h4>
-              <ul>
-                <li>
-                  Type d’abri : <span id="slopeDisplay">–</span>
-                </li>
-                <li>
-                  Surface : <span id="surfaceDisplay">–</span>
-                </li>
-                <li>
-                  Structure & toiture :
-                  <span id="structureDisplay">–</span>
-                </li>
-                <li>
-                  Bardage :
-                  <span id="claddingDisplay">–</span>
-                </li>
-                <li>
-                  Options :
-                  <span id="optionsDisplay">–</span>
-                </li>
-                <li>
-                  Coefficient zone :
-                  <span id="zoneDisplay">–</span>
-                </li>
-              </ul>
-
-
-            <div class="summary-sentence" id="summarySentence">
-              Renseignez les dimensions et cliquez sur
-              <strong>« Calculer le prix estimatif »</strong>.
+            <!-- Longueur -->
+            <div class="field">
+              <label>Longueur (m)</label>
+              <input type="number" id="length" name="length" min="3" max="40" step="0.5" value="15" list="presetLength">
+              <datalist id="presetLength">
+                <option value="6"></option>
+                <option value="9"></option>
+                <option value="12"></option>
+                <option value="15"></option>
+                <option value="18"></option>
+                <option value="20"></option>
+                <option value="24"></option>
+                <option value="30"></option>
+              </datalist>
             </div>
 
-            <button
-              type="button"
-              class="btn ghost full-width"
-              id="btnFutureQuote"
-            >
-              Étape suivante : envoi automatique du devis (à venir)
-            </button>
-          </aside>
+            <!-- Hauteur -->
+            <div class="field">
+              <label>Hauteur à l’avant (m)</label>
+              <input type="number" id="height" name="height" min="2.5" max="6" step="0.5" value="4" list="presetHeight">
+              <datalist id="presetHeight">
+                <option value="3"></option>
+                <option value="3.5"></option>
+                <option value="4"></option>
+                <option value="4.5"></option>
+                <option value="5"></option>
+                <option value="6"></option>
+              </datalist>
+            </div>
+          </div>
+
+          <!-- 3. Couleur toiture -->
+          <h3>3. Couleur toiture (RAL)</h3>
+
+          <div class="field">
+            <div class="ral-grid">
+
+              <label class="ral-choice">
+                <input type="radio" name="roofColor" value="RAL 5008" checked />
+                <div class="ral-box" style="background:#2f3b49">5008</div>
+              </label>
+
+              <label class="ral-choice">
+                <input type="radio" name="roofColor" value="RAL 8012" />
+                <div class="ral-box" style="background:#5a1f1b">8012</div>
+              </label>
+
+              <label class="ral-choice">
+                <input type="radio" name="roofColor" value="RAL 6011" />
+                <div class="ral-box" style="background:#6c7f46">6011</div>
+              </label>
+
+              <label class="ral-choice">
+                <input type="radio" name="roofColor" value="RAL 6021" />
+                <div class="ral-box" style="background:#8ba870">6021</div>
+              </label>
+
+              <label class="ral-choice">
+                <input type="radio" name="roofColor" value="RAL 6005" />
+                <div class="ral-box" style="background:#0c2d1f">6005</div>
+              </label>
+
+              <label class="ral-choice">
+                <input type="radio" name="roofColor" value="RAL 7022" />
+                <div class="ral-box" style="background:#4e4c48">7022</div>
+              </label>
+
+              <label class="ral-choice">
+                <input type="radio" name="roofColor" value="RAL 7006" />
+                <div class="ral-box" style="background:#756b60">7006</div>
+              </label>
+
+              <label class="ral-choice">
+                <input type="radio" name="roofColor" value="RAL 8024" />
+                <div class="ral-box" style="background:#6f3c2b">8024</div>
+              </label>
+
+              <label class="ral-choice">
+                <input type="radio" name="roofColor" value="RAL 1019" />
+                <div class="ral-box" style="background:#a1927b">1019</div>
+              </label>
+
+              <label class="ral-choice">
+                <input type="radio" name="roofColor" value="RAL 1015" />
+                <div class="ral-box" style="background:#e8d9b5">1015</div>
+              </label>
+
+              <label class="ral-choice">
+                <input type="radio" name="roofColor" value="RAL 9002" />
+                <div class="ral-box" style="background:#dcdcd3">9002</div>
+              </label>
+
+              <label class="ral-choice">
+                <input type="radio" name="roofColor" value="RAL 9010" />
+                <div class="ral-box" style="background:#f4f4f2;color:#222">9010</div>
+              </label>
+
+              <label class="ral-choice">
+                <input type="radio" name="roofColor" value="RAL 9006" />
+                <div class="ral-box" style="background:#a5a9ad">9006</div>
+              </label>
+
+              <label class="ral-choice">
+                <input type="radio" name="roofColor" value="RAL 7015" />
+                <div class="ral-box" style="background:#51565c">7015</div>
+              </label>
+
+              <label class="ral-choice">
+                <input type="radio" name="roofColor" value="RAL 7016" />
+                <div class="ral-box" style="background:#383e42">7016</div>
+              </label>
+
+            </div>
+          </div>
+
+          <button class="btn full-width" onclick="calculatePrice()">Calculer le prix estimatif</button>
+
         </div>
-      </section>
 
-      <!-- INFOS PRATIQUES -->
-      <section id="infos" class="section">
-        <div class="container info-grid">
-          <div>
-            <h2>Informations pratiques</h2>
-            <p>
-              GAMAX-CM vous accompagne de la définition de votre besoin jusqu’à
-              la pose de l’abri sur site. Notre bureau d’études dimensionne la
-              structure selon l’Eurocode et les règles locales.
-            </p>
-            <ul class="bullet-list">
-              <li>Étude de charges et plans d’exécution</li>
-              <li>Fabrication en atelier</li>
-              <li>Livraison et montage sur site</li>
-              <li>Dossier pour permis ou déclaration préalable</li>
+        <!-- RÉCAP -->
+        <aside class="config-summary">
+          <div class="summary-box">
+            <div class="summary-label">Prix estimatif HT</div>
+            <div id="priceHT" class="summary-main">–</div>
+            <div id="priceTTC" class="summary-sub">Prix TTC (20 %) –</div>
+          </div>
+
+          <div class="summary-details">
+            <h4>Détail du calcul</h4>
+            <ul>
+              <li>Type d’abri : <span id="typeDisplay">–</span></li>
+              <li>Surface : <span id="surfaceDisplay">–</span></li>
+              <li>Hauteur : <span id="heightDisplay">–</span></li>
+              <li>Couleur toiture : <span id="roofColorDisplay">–</span></li>
             </ul>
           </div>
-          <div class="info-box">
-            <h3>Zone d’intervention</h3>
-            <p>
-              Sud-Ouest, principalement Lot-et-Garonne et départements
-              limitrophes. Pour des projets plus éloignés, nous consulter.
-            </p>
-            <p class="info-small">
-              Pour un prix définitif, un échange avec notre équipe est
-              indispensable (nature du sol, accès chantier, contraintes
-              spécifiques…).
-            </p>
-          </div>
-        </div>
-      </section>
+        </aside>
 
-      <!-- CONTACT -->
-      <section id="contact" class="section section-light">
-        <div class="container contact-layout">
-          <div>
-            <h2>Parlons de votre projet d’abri</h2>
-            <p>
-              Vous pouvez utiliser le configurateur ci-dessus pour préparer
-              votre demande, puis nous envoyer les informations par email ou
-              téléphone.
-            </p>
-            <p class="contact-highlight">
-              📧 Email : <a href="mailto:contact@gamax-cm.fr">contact@gamax-cm.fr</a><br />
-              📞 Téléphone : <a href="tel:+33633009464">06&nbsp;33&nbsp;00&nbsp;94&nbsp;64</a>
-            </p>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <footer class="site-footer">
-      <div class="container footer-inner">
-        <p>© <span id="year"></span> GAMAX-CM – Abris métalliques</p>
-        <p class="footer-mini">
-          Tarifs indicatifs, non contractuels. Le devis définitif est transmis
-          après étude de votre projet.
-        </p>
       </div>
-    </footer>
+    </div>
+  </section>
 
-    <script>
-        <script>
-      // --- CONSTANTES TARIFAIRES (modifiable facilement) ---
-      const UNIT_PRICE_STRUCTURE = {
-        "bac-acier": 80, // €/m²
-        isolee: 110, // €/m²
-      };
+  <!-- SCRIPT CALCUL -->
+  <script>
+    function calculatePrice() {
 
-      const BARDAGE_PRICE_PER_M2 = 50; // €/m² vertical
-      const OPTIONS_PRICES = {
-        guttersPerM2: 10, // €/m²
-        finishingPerM2: 8, // €/m²
-        doorsFixed: 900, // €
-        installPerM2: 35, // €/m²
-      };
+      const type = document.querySelector('input[name="slopeType"]:checked').value;
+      const width = parseFloat(document.getElementById("width").value);
+      const length = parseFloat(document.getElementById("length").value);
+      const height = parseFloat(document.getElementById("height").value);
+      const roofColor = document.querySelector('input[name="roofColor"]:checked').value;
 
-      const ZONE_COEFFICIENT = {
-        1: 1,
-        2: 1.08,
-        3: 1.15,
-      };
+      const surface = width * length;
 
-      const TVA_RATE = 0.2;
+      // Base pricing model (à ajuster plus tard)
+      let price = surface * 35;
+      if (type === "bipente") price += surface * 8;
 
-      // --- UTILITAIRES ---
-      function formatCurrency(value) {
-        return new Intl.NumberFormat("fr-FR", {
-          style: "currency",
-          currency: "EUR",
-          maximumFractionDigits: 0,
-        }).format(value);
-      }
+      price += height * 20;
 
-      // Vérifie que les valeurs rentrent dans les plages et renvoie un message si problème
-      function validateFields() {
-        const width = parseFloat(document.getElementById("width").value);
-        const length = parseFloat(document.getElementById("length").value);
-        const height = parseFloat(document.getElementById("height").value);
-        const errorEl = document.getElementById("configError");
+      const priceHT = Math.round(price);
+      const priceTTC = Math.round(priceHT * 1.2);
 
-        let messages = [];
+      // DISPLAY
+      document.getElementById("priceHT").innerText = priceHT + " € HT";
+      document.getElementById("priceTTC").innerText = "Prix TTC (20 %) " + priceTTC + " €";
 
-        if (!width || width < 3 || width > 15) {
-          messages.push("La largeur doit être comprise entre 3 m et 15 m.");
-        }
-        if (!length || length < 3 || length > 40) {
-          messages.push("La longueur doit être comprise entre 3 m et 40 m.");
-        }
-        if (!height || height < 2.5 || height > 6) {
-          messages.push(
-            "La hauteur avant doit être comprise entre 2,5 m et 6 m."
-          );
-        }
+      document.getElementById("typeDisplay").innerText = type;
+      document.getElementById("surfaceDisplay").innerText = surface + " m²";
+      document.getElementById("heightDisplay").innerText = height + " m";
+      document.getElementById("roofColorDisplay").innerText = roofColor;
+    }
+  </script>
 
-        if (messages.length > 0) {
-          errorEl.textContent = messages.join(" ");
-          errorEl.style.display = "block";
-          return { ok: false, width, length, height };
-        } else {
-          errorEl.textContent = "";
-          errorEl.style.display = "none";
-          return { ok: true, width, length, height };
-        }
-      }
+</body>
 
-      function calculateEstimate() {
-        const validation = validateFields();
-        const width = validation.width;
-        const length = validation.length;
-        const height = validation.height;
+</html>
 
-        const slopeInput = document.querySelector(
-          'input[name="slopeType"]:checked'
-        );
-        const slopeType = slopeInput ? slopeInput.value : "mono";
-
-        if (!validation.ok) {
-          // On efface les montants si les valeurs sont invalides
-          document.getElementById("priceHT").textContent = "–";
-          document.getElementById("priceTTC").textContent = "–";
-          document.getElementById("pricePerM2").textContent = "–";
-          document.getElementById("surfaceDisplay").textContent = "–";
-          document.getElementById("structureDisplay").textContent = "–";
-          document.getElementById("claddingDisplay").textContent = "–";
-          document.getElementById("optionsDisplay").textContent = "–";
-          document.getElementById("zoneDisplay").textContent = "–";
-          document.getElementById("slopeDisplay").textContent = "–";
-          document.getElementById("summarySentence").textContent =
-            "Corrigez les dimensions pour obtenir une estimation.";
-          return;
-        }
-
-        const roofType = document.getElementById("roofType").value;
-        const claddingType = parseInt(
-          document.getElementById("claddingType").value,
-          10
-        );
-        const zone = document.getElementById("zone").value;
-
-        const area = width * length;
-
-        // Structure + toiture
-        let structureBase =
-          area * (UNIT_PRICE_STRUCTURE[roofType] || UNIT_PRICE_STRUCTURE["bac-acier"]);
-
-        // Surcoût de hauteur au-dessus de 3 m (10 % par 0,5 m)
-        if (height > 3) {
-          const extra = height - 3;
-          const stepCount = extra / 0.5;
-          const increaseFactor = 1 + stepCount * 0.1;
-          structureBase *= increaseFactor;
-        }
-
-        // 👉 Ici on pourrait ajouter un coefficient selon mono/bipente si tu le souhaites.
-        // Pour l’instant, aucun impact sur le prix :
-        const slopeCoef = 1;
-        structureBase *= slopeCoef;
-
-        // Bardage : surface moyenne d’un côté * nb de côtés
-        const averageSideArea =
-          ((2 * length * height + 2 * width * height) / 4) || 0;
-        const claddingArea = averageSideArea * claddingType;
-        const claddingPrice = claddingArea * BARDAGE_PRICE_PER_M2;
-
-        // Options
-        let optionsPrice = 0;
-        const optGutters = document.getElementById("optGutters").checked;
-        const optFinishing = document.getElementById("optFinishing").checked;
-        const optDoors = document.getElementById("optDoors").checked;
-        const optInstall = document.getElementById("optInstall").checked;
-
-        if (optGutters) {
-          optionsPrice += area * OPTIONS_PRICES.guttersPerM2;
-        }
-        if (optFinishing) {
-          optionsPrice += area * OPTIONS_PRICES.finishingPerM2;
-        }
-        if (optDoors) {
-          optionsPrice += OPTIONS_PRICES.doorsFixed;
-        }
-        if (optInstall) {
-          optionsPrice += area * OPTIONS_PRICES.installPerM2;
-        }
-
-        // Coefficient zone
-        const zoneCoef = ZONE_COEFFICIENT[zone] || 1;
-
-        let totalHT = (structureBase + claddingPrice + optionsPrice) * zoneCoef;
-
-        // On arrondit au 50 € le plus proche pour une estimation plus "commerciale"
-        totalHT = Math.round(totalHT / 50) * 50;
-        const totalTTC = Math.round((totalHT * (1 + TVA_RATE)) / 10) * 10; // arrondi à 10 € près
-
-        const pricePerM2 = totalHT / area;
-
-        // --- MISE À JOUR DU RÉCAP ---
-        document.getElementById("slopeDisplay").textContent =
-          slopeType === "bi" ? "Bipente" : "Monopente";
-        document.getElementById("surfaceDisplay").textContent =
-          area.toFixed(1) + " m²";
-        document.getElementById("structureDisplay").textContent =
-          formatCurrency(structureBase);
-        document.getElementById("claddingDisplay").textContent =
-          claddingPrice > 0 ? formatCurrency(claddingPrice) : "0 €";
-        document.getElementById("optionsDisplay").textContent =
-          optionsPrice > 0 ? formatCurrency(optionsPrice) : "0 €";
-        document.getElementById("zoneDisplay").textContent = "x " + zoneCoef;
-
-        document.getElementById("priceHT").textContent =
-          formatCurrency(totalHT);
-        document.getElementById("priceTTC").textContent =
-          formatCurrency(totalTTC);
-        document.getElementById("pricePerM2").textContent =
-          pricePerM2 ? formatCurrency(pricePerM2) : "–";
-
-        // Phrase récap
-        const roofLabel =
-          roofType === "isolee" ? "toiture isolée" : "toiture bac acier";
-        const claddingLabel =
-          claddingType === 0
-            ? "sans bardage (abri ouvert)"
-            : claddingType + " côté(s) bardé(s)";
-        const slopeLabel =
-          slopeType === "bi" ? "abri bipente" : "abri monopente";
-
-        const sentence =
-          slopeLabel +
-          " de " +
-          width +
-          " m x " +
-          length +
-          " m, hauteur " +
-          height +
-          " m, " +
-          roofLabel +
-          ", " +
-          claddingLabel +
-          ". Prix estimatif : " +
-          formatCurrency(totalHT) +
-          " HT (environ " +
-          formatCurrency(pricePerM2) +
-          " / m²).";
-
-        document.getElementById("summarySentence").textContent = sentence;
-      }
-
-      // --- LISTENERS ---
-      document.getElementById("btnCalculate").addEventListener("click", () => {
-        calculateEstimate();
-        document
-          .getElementById("configurateur")
-          .scrollIntoView({ behavior: "smooth", block: "center" });
-      });
-
-      const liveFields = [
-        "width",
-        "length",
-        "height",
-        "roofType",
-        "claddingType",
-        "zone",
-        "optGutters",
-        "optFinishing",
-        "optDoors",
-        "optInstall",
-      ];
-
-      liveFields.forEach((id) => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.addEventListener("change", calculateEstimate);
-        el.addEventListener("input", calculateEstimate);
-      });
-
-      // Radio monopente/bipente
-      document
-        .querySelectorAll('input[name="slopeType"]')
-        .forEach((el) => el.addEventListener("change", calculateEstimate));
-
-      // Année automatique dans le footer
-      document.getElementById("year").textContent =
-        new Date().getFullYear().toString();
-
-      // Calcul initial
-      calculateEstimate();
-    </script>
-  
