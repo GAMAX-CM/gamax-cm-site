@@ -94,9 +94,12 @@ body {
 }
 
 .logo-img {
-  height: 55px;            /* Ajuste si tu veux plus grand */
+  height: 80px;     /* augmente ici : 70 / 80 / 90 px selon ton goût */
   width: auto;
   display: block;
+  margin-top: -12px; /* important : remonte le logo sans gonfler le header */
+}
+
 }
 
 /* Menu blanc à droite */
