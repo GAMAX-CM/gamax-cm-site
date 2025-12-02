@@ -177,4 +177,312 @@ main section h2 {
   font-size: 0.8rem;
   cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.12s ease,
+    background 0.12s ease, color 0.12s ease;
+}
+
+.product-add-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+  background: transparent;
+  color: var(--noir);
+}
+
+/* ==========================
+   CONFIGURATEUR
+========================== */
+
+.configurator {
+  background: #ffffff;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  border: 1px solid #ddd;
+}
+
+.config-grid {
+  display: grid;
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 900px) {
+  .config-grid {
+    grid-template-columns: 1.2fr 1fr;
+  }
+}
+
+.config-form label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.config-form select,
+.config-form input {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  margin-bottom: 0.75rem;
+  border-radius: 0.25rem;
+  border: 1px solid #ccc;
+  font-size: 0.9rem;
+  background: #ffffff;
+}
+
+.accessoires {
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.accessoires legend {
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0 0.25rem;
+}
+
+.accessoires label {
+  display: block;
+  font-size: 0.9rem;
+  margin-bottom: 0.35rem;
+}
+
+.accessoires input {
+  margin-right: 0.4rem;
+}
+
+/* Résumé configurateur */
+
+.config-resume {
+  border-left: 4px solid var(--noir);
+  padding-left: 1rem;
+  padding-top: 0.5rem;
+}
+
+.config-resume h3 {
+  margin-bottom: 0.5rem;
+}
+
+#configResumeTexte {
+  font-size: 0.9rem;
+  color: #444;
+  margin-bottom: 0.5rem;
+}
+
+#prix {
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.config-resume button {
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--noir);
+  background: var(--noir);
+  color: var(--beige);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+  transition: transform 0.12s ease, box-shadow 0.12s ease,
+    background 0.12s ease, color 0.12s ease;
+}
+
+.config-resume button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+  background: transparent;
+  color: var(--noir);
+}
+
+.config-note {
+  font-size: 0.85rem;
+  color: var(--gris-texte);
+  margin-top: 0.25rem;
+}
+
+/* ==========================
+   SERVICES & CONTACT
+========================== */
+
+#services p {
+  max-width: 600px;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+#contact form {
+  max-width: 600px;
+}
+
+#contact label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+}
+
+#contact input,
+#contact textarea {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.3rem;
+  border: 1px solid #ccc;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+#contact button[type="submit"] {
+  padding: 0.5rem 1.2rem;
+  border-radius: 999px;
+  border: 1px solid var(--noir);
+  background: var(--noir);
+  color: var(--beige);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease,
+    background 0.12s ease, color 0.12s ease;
+}
+
+#contact button[type="submit"]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+  background: transparent;
+  color: var(--noir);
+}
+
+/* ==========================
+   PANIER
+========================== */
+
+.cart {
+  position: fixed;
+  right: 0;
+  top: 70px;
+  width: 300px;
+  max-width: 80%;
+  background: #ffffff;
+  border-left: 1px solid #ddd;
+  border-top: 1px solid #ddd;
+  padding: 1rem;
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.08);
+  z-index: 15;
+}
+
+.cart h3 {
+  margin-bottom: 0.5rem;
+}
+
+#cartItems {
+  max-height: 260px;
+  overflow-y: auto;
+  margin-bottom: 0.5rem;
+}
+
+.cart-item {
+  border-bottom: 1px solid #eee;
+  padding: 0.4rem 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.cart-desc {
+  font-size: 0.8rem;
+  color: #555;
+  margin-top: 0.2rem;
+}
+
+.cart-line-right {
+  text-align: right;
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+}
+
+.cart-remove-btn {
+  border: none;
+  background: transparent;
+  color: #b00000;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+#cartTotal {
+  font-weight: 700;
+}
+
+#payBtn {
+  margin-top: 0.4rem;
+  width: 100%;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--noir);
+  background: var(--noir);
+  color: var(--beige);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease,
+    background 0.12s ease, color 0.12s ease;
+}
+
+#payBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+  background: transparent;
+  color: var(--noir);
+}
+
+/* Sur mobile : panier en bas de page plutôt que fixe à droite */
+
+@media (max-width: 768px) {
+  .header-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .site-header nav {
+    justify-content: flex-start;
+  }
+
+  .banner {
+    padding: 3rem 1.5rem;
+  }
+
+  .banner h1 {
+    font-size: 1.6rem;
+  }
+
+  .cart {
+    position: static;
+    width: 100%;
+    max-width: 100%;
+    margin-top: 1.5rem;
+    border-left: none;
+    border-radius: 0.75rem 0.75rem 0 0;
+  }
+}
+
+/* ==========================
+   FOOTER
+========================== */
+
+.site-footer {
+  margin-top: 3rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid #ccc;
+  font-size: 0.85rem;
+  color: var(--gris-texte);
+  background: var(--beige-fonce);
+}
+
+.site-footer .container {
+  text-align: center;
+}
 
