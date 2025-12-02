@@ -65,14 +65,16 @@ body {
 
 /* HEADER */
 /* STYLE 5 : APPLE PRO — LOGO À GAUCHE, MENU À DROITE */
+/* HEADER NOIR – STYLE APPLE */
 .site-header.pro {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(245, 240, 232, 0.95); /* beige GAMAX */
+  background: #000;  /* bandeau noir */
   backdrop-filter: blur(12px);
 }
 
+/* Structure interne */
 .header-inner {
   display: flex;
   align-items: center;
@@ -80,43 +82,43 @@ body {
   padding: 0.9rem 0;
 }
 
-/* Logo */
+/* Logo blanc */
 .logo-wrap {
   display: flex;
   align-items: center;
 }
 
 .logo-img {
-  height: 55px;                /* mets 60px si tu veux plus grand */
+  height: 55px;            /* Ajuste si tu veux plus grand */
   width: auto;
   display: block;
 }
 
-/* Menu à droite */
+/* Menu blanc à droite */
 .main-nav {
   display: flex;
   align-items: center;
-  gap: 2rem;                    /* espacements style Apple */
+  gap: 2rem;
 }
 
 .main-nav a {
   text-decoration: none;
-  color: var(--noir);
+  color: #ffffff;          /* texte menu en blanc */
   font-weight: 500;
   font-size: 0.95rem;
   transition: 0.2s;
 }
 
 .main-nav a:hover {
-  color: #000;
+  color: #cccccc;          /* léger gris clair au survol */
   transform: translateY(-1px);
 }
 
-/* Fine barre Apple en bas */
+/* Fine ligne en bas du header */
 .header-bottom-line {
   height: 1px;
   width: 100%;
-  background: rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.12); /* ligne en blanc léger */
 }
 
 
