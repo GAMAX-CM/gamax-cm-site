@@ -1,171 +1,373 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GAMAX-CM – Abris métalliques en kit</title>
-
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css" />
-  <script src="https://js.stripe.com/v3/"></script>
-</head>
-
-<body>
-
-  <!-- HEADER -->
-  <header class="site-header">
-    <div class="container header-inner">
-      <img src="./assets/logo-gamax-blanc.png" alt="GAMAX-CM" class="logo" />
-      <nav>
-        <a href="#accueil">Accueil</a>
-        <a href="#produits">Abris</a>
-        <a href="#configurateur">Configurateur</a>
-        <a href="#services">Services</a>
-        <a href="#contact">Contact</a>
-      </nav>
-    </div>
-  </header>
-
-  <!-- HERO -->
-  <section id="accueil" class="banner">
-    <h1>Construisez votre abri métallique idéal</h1>
-  </section>
-
-  <main class="container">
-
-    <!-- ===========================
-         SECTION ABRIS (Produits)
-    ============================ -->
-    <section id="produits">
-      <h2>Nos abris métalliques</h2>
-      <div id="productList" class="products"></div>
-    </section>
-
-    <!-- ===========================
-         CONFIGURATEUR AVANCÉ
-    ============================ -->
-    <section id="configurateur" class="configurator">
-      <h2>Configurez votre abri</h2>
-
-      <div class="config-grid">
-
-        <!-- FORMULAIRE -->
-        <div class="config-form">
-
-          <label for="type">Type d’abri :</label>
-          <select id="type">
-            <option value="abri">Abri monopente</option>
-            <option value="abri">Abri double pente</option>
-          </select>
-
-          <label for="largeur">Largeur (m) :</label>
-          <input type="number" id="largeur" value="8" min="3" step="0.5" />
-
-          <label for="longueur">Longueur (m) :</label>
-          <input type="number" id="longueur" value="12" min="3" step="0.5" />
-
-          <label for="hauteur">Hauteur (m) :</label>
-          <input type="number" id="hauteur" value="4.5" min="3" step="0.5" />
-
-          <label for="couleurToiture">Couleur de toiture :</label>
-          <select id="couleurToiture">
-            <option value="galva">Acier galvanisé</option>
-            <option value="gris">Gris anthracite</option>
-            <option value="rouge">Rouge tuile</option>
-            <option value="vert">Vert</option>
-          </select>
-
-          <label for="bardage">Bardage :</label>
-          <select id="bardage">
-            <option value="aucun">Sans bardage</option>
-            <option value="unMur">1 mur bardé</option>
-            <option value="deuxMurs">2 murs bardés</option>
-            <option value="complet">Bardage complet</option>
-          </select>
-
-          <fieldset class="accessoires">
-            <legend>Accessoires :</legend>
-
-            <label>
-              <input type="checkbox" id="accGouttieres">
-              Gouttières & descentes
-            </label>
-
-            <label>
-              <input type="checkbox" id="accHabillagePignons">
-              Habillage de pignons
-            </label>
-
-            <label>
-              <input type="checkbox" id="accFermetureAvant">
-              Fermeture en façade (portail / rideau)
-            </label>
-          </fieldset>
-        </div>
-
-        <!-- RÉSUMÉ -->
-        <div class="config-resume">
-          <h3>Résumé de votre configuration</h3>
-          <p id="configResumeTexte">
-            Abri 8 × 12 m – hauteur 4.5 m, toiture galvanisée, sans bardage.
-          </p>
-
-          <p id="prix">Prix estimé : 0 € HT</p>
-
-          <button id="configAdd">Ajouter au panier</button>
-          <button id="demandeDevisBtn">Demander un devis par e-mail</button>
-
-          <p class="config-note">
-            Le prix est une estimation automatique. Un devis détaillé sera envoyé après validation.
-          </p>
-        </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>GAMAX-CM – Abris métalliques configurables</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a href="#top" class="logo-wrap">
+          <img src="../logo.png" alt="GAMAX-CM" class="logo-img" />
+          <span class="logo-text">GAMAX-CM</span>
+        </a>
+        <nav class="main-nav">
+          <a href="#abris">Abris métalliques</a>
+          <a href="#configurateur">Configurateur</a>
+          <a href="#infos">Infos pratiques</a>
+          <a href="#contact" class="btn btn-small">Contact</a>
+        </nav>
       </div>
-    </section>
+    </header>
 
-    <!-- SERVICES -->
-    <section id="services">
-      <h2>Nos services</h2>
-      <p>Installation, livraison et conseils personnalisés pour tous vos abris métalliques.</p>
-    </section>
+    <main id="top">
+      <!-- HERO -->
+      <section class="hero">
+        <div class="container hero-inner">
+          <div class="hero-text">
+            <p class="eyebrow">Abris métalliques sur mesure</p>
+            <h1>Configurez votre abri en ligne &nbsp;–&nbsp; devis instantané</h1>
+            <p class="hero-subtitle">
+              Largeur, longueur, hauteur, bardage, couleur de toiture… Créez en
+              quelques clics l’abri qui correspond à votre projet agricole ou
+              industriel.
+            </p>
+            <div class="hero-actions">
+              <a href="#configurateur" class="btn">Lancer le configurateur</a>
+              <a href="#abris" class="btn ghost">Voir nos usages</a>
+            </div>
+            <p class="hero-note">
+              💡 Prix indicatifs ajustables dans l’outil – nous affinons ensuite
+              votre devis manuellement.
+            </p>
+          </div>
+          <div class="hero-card">
+            <div class="hero-tag">Nouvelle boutique GAMAX-CM</div>
+            <h2>Un seul outil pour tous vos abris</h2>
+            <ul class="hero-list">
+              <li>Abris agricoles</li>
+              <li>Stockage matériel & fourrage</li>
+              <li>Carports & garages</li>
+              <li>Extensions de bâtiments existants</li>
+            </ul>
+            <p class="hero-mini">
+              Fabrication et pose dans tout le Sud-Ouest, structures acier
+              galvanisé, tôle bac acier ou isolée.
+            </p>
+          </div>
+        </div>
+      </section>
 
-    <!-- CONTACT -->
-    <section id="contact">
-      <h2>Contactez-nous</h2>
+      <!-- ABRIS -->
+      <section id="abris" class="section">
+        <div class="container">
+          <header class="section-header">
+            <h2>Nos abris métalliques</h2>
+            <p>
+              Structures en acier galvanisé, sur mesure, adaptées aux charges
+              neige et vent de votre zone. Quelques exemples d’usages :
+            </p>
+          </header>
 
-      <form onsubmit="event.preventDefault(); alert('Message envoyé !');">
-        <label for="nom">Nom :</label>
-        <input type="text" id="nom" required />
+          <div class="cards-grid">
+            <article class="card">
+              <h3>Abris agricoles</h3>
+              <p>
+                Stockage de matériel, fourrage, engins agricoles. Grandes
+                portées et hauteurs libres.
+              </p>
+              <ul class="bullet-list">
+                <li>Portée jusqu’à 12 m</li>
+                <li>Hauteur libre jusqu’à 6 m</li>
+                <li>Toiture monopente ou double pente</li>
+              </ul>
+            </article>
 
-        <label for="email">Email :</label>
-        <input type="email" id="email" required />
+            <article class="card">
+              <h3>Garages & carports</h3>
+              <p>
+                Protection de véhicules légers, utilitaires, camping-cars ou
+                flottes professionnelles.
+              </p>
+              <ul class="bullet-list">
+                <li>Modèles simples ou double</li>
+                <li>Bardage partiel ou complet</li>
+                <li>Nombreuses couleurs disponibles</li>
+              </ul>
+            </article>
 
-        <label for="message">Message :</label>
-        <textarea id="message" rows="5"></textarea>
+            <article class="card">
+              <h3>Stockage & ateliers</h3>
+              <p>
+                Solutions fermées ou semi-ouvertes pour entrepôts, ateliers ou
+                annexes de bâtiments existants.
+              </p>
+              <ul class="bullet-list">
+                <li>Isolation possible</li>
+                <li>Intégration portes & portails</li>
+                <li>Conception par bureau d’études</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
 
-        <button type="submit">Envoyer</button>
-      </form>
-    </section>
+      <!-- CONFIGURATEUR -->
+      <section id="configurateur" class="section section-accent">
+        <div class="container configurator-layout">
+          <div class="config-left">
+            <header class="section-header left">
+              <h2>Configurez votre abri métallique</h2>
+              <p>
+                Renseignez les dimensions et les options pour obtenir
+                immédiatement une estimation de prix. Vous pourrez ensuite nous
+                envoyer votre demande de devis détaillé.
+              </p>
+            </header>
 
-  </main>
+            <form id="configForm" class="config-form">
+              <h3>1. Dimensions de l’abri</h3>
+              <div class="form-grid">
+                <div class="field">
+                  <label for="width">Largeur (m)</label>
+                  <input
+                    type="number"
+                    id="width"
+                    name="width"
+                    min="3"
+                    max="15"
+                    step="0.5"
+                    value="8"
+                    required
+                  />
+                </div>
 
-  <!-- PANIER -->
-  <aside class="cart" id="cart">
-    <h3>Panier</h3>
-    <div id="cartItems"></div>
-    <p>Total : <span id="cartTotal">0</span> €</p>
-    <button id="payBtn">Payer</button>
-  </aside>
+                <div class="field">
+                  <label for="length">Longueur (m)</label>
+                  <input
+                    type="number"
+                    id="length"
+                    name="length"
+                    min="3"
+                    max="40"
+                    step="0.5"
+                    value="15"
+                    required
+                  />
+                </div>
 
-  <!-- FOOTER -->
-  <footer class="site-footer">
-    <div class="container">
-      <p>© 2025 GAMAX-CM – Tous droits réservés.</p>
-    </div>
-  </footer>
+                <div class="field">
+                  <label for="height">Hauteur à l’avant (m)</label>
+                  <input
+                    type="number"
+                    id="height"
+                    name="height"
+                    min="2.5"
+                    max="6"
+                    step="0.5"
+                    value="4"
+                    required
+                  />
+                </div>
 
-  <!-- JAVASCRIPT -->
-  <script src="./app.js"></script>
+                <div class="field">
+                  <label for="roofType">Type de toiture</label>
+                  <select id="roofType" name="roofType">
+                    <option value="bac-acier">Tôle bac acier</option>
+                    <option value="isolee">Tôle isolée (sandwich)</option>
+                  </select>
+                </div>
 
-</body>
-</html>
+                <div class="field">
+                  <label for="roofColor">Couleur toiture</label>
+                  <select id="roofColor" name="roofColor">
+                    <option value="ral7016">Gris anthracite (RAL 7016)</option>
+                    <option value="ral9006">Gris métal (RAL 9006)</option>
+                    <option value="ral3009">Rouge tuile (RAL 3009)</option>
+                    <option value="galva">Galvanisé</option>
+                  </select>
+                </div>
+              </div>
+
+              <h3>2. Bardage</h3>
+              <div class="form-grid">
+                <div class="field">
+                  <label for="claddingType">Nombre de côtés bardés</label>
+                  <select id="claddingType" name="claddingType">
+                    <option value="0">Aucun bardage (abri ouvert)</option>
+                    <option value="1">1 côté bardé</option>
+                    <option value="2">2 côtés bardés</option>
+                    <option value="3">3 côtés bardés</option>
+                    <option value="4">4 côtés bardés (fermé)</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="claddingColor">Couleur bardage</label>
+                  <select id="claddingColor" name="claddingColor">
+                    <option value="ral7016">Gris anthracite (RAL 7016)</option>
+                    <option value="ral9002">Blanc/gris (RAL 9002)</option>
+                    <option value="ral8017">Brun chocolat (RAL 8017)</option>
+                    <option value="galva">Galvanisé</option>
+                  </select>
+                  <p class="field-help">
+                    Couleur sans effet sur le prix, personnalisable au devis.
+                  </p>
+                </div>
+              </div>
+
+              <h3>3. Options</h3>
+              <div class="options-grid">
+                <label class="checkbox">
+                  <input
+                    type="checkbox"
+                    id="optGutters"
+                    name="optGutters"
+                  />
+                  <span>Gouttières & descentes d’eau</span>
+                </label>
+                <label class="checkbox">
+                  <input
+                    type="checkbox"
+                    id="optFinishing"
+                    name="optFinishing"
+                  />
+                  <span>Habillages de rives & finitions</span>
+                </label>
+                <label class="checkbox">
+                  <input
+                    type="checkbox"
+                    id="optDoors"
+                    name="optDoors"
+                  />
+                  <span>Portes / fermetures (coulissantes ou battantes)</span>
+                </label>
+                <label class="checkbox">
+                  <input type="checkbox" id="optInstall" name="optInstall" />
+                  <span>Pose par GAMAX-CM</span>
+                </label>
+              </div>
+
+              <h3>4. Zone du projet</h3>
+              <div class="form-grid">
+                <div class="field">
+                  <label for="zone">
+                    Zone neige / vent (indicatif)
+                  </label>
+                  <select id="zone" name="zone">
+                    <option value="1">Zone standard</option>
+                    <option value="2">Zone renforcée</option>
+                    <option value="3">Zone exposée (bord de mer, montagne)</option>
+                  </select>
+                  <p class="field-help">
+                    Sert uniquement à ajuster un coefficient de sécurité sur le
+                    prix.
+                  </p>
+                </div>
+              </div>
+
+              <h3>5. Vos coordonnées (facultatif pour l’instant)</h3>
+              <div class="form-grid">
+                <div class="field">
+                  <label for="clientName">Nom / Société</label>
+                  <input type="text" id="clientName" name="clientName" />
+                </div>
+                <div class="field">
+                  <label for="clientEmail">Email</label>
+                  <input type="email" id="clientEmail" name="clientEmail" />
+                </div>
+                <div class="field">
+                  <label for="clientPhone">Téléphone</label>
+                  <input type="tel" id="clientPhone" name="clientPhone" />
+                </div>
+                <div class="field">
+                  <label for="clientCity">Commune du projet</label>
+                  <input type="text" id="clientCity" name="clientCity" />
+                </div>
+              </div>
+
+              <button type="button" class="btn full-width" id="btnCalculate">
+                Calculer le prix estimatif
+              </button>
+            </form>
+          </div>
+
+          <!-- RÉSULTAT -->
+          <aside class="config-summary" aria-live="polite">
+            <h3>Estimation de votre abri</h3>
+            <p class="summary-note">
+              Les montants ci-dessous sont donnés à titre indicatif HT.
+              L’ingénierie, les fondations et certains accessoires peuvent faire
+              évoluer le prix.
+            </p>
+
+            <div class="summary-box">
+              <p class="summary-label">Prix estimatif HT</p>
+              <p class="summary-main">
+                <span id="priceHT">–</span>
+              </p>
+              <p class="summary-sub">
+                Prix TTC (20&nbsp;%)
+                <strong id="priceTTC">–</strong>
+              </p>
+            </div>
+
+            <div class="summary-details">
+              <h4>Détail du calcul</h4>
+              <ul>
+                <li>
+                  Surface : <span id="surfaceDisplay">–</span>
+                </li>
+                <li>
+                  Structure & toiture :
+                  <span id="structureDisplay">–</span>
+                </li>
+                <li>
+                  Bardage :
+                  <span id="claddingDisplay">–</span>
+                </li>
+                <li>
+                  Options :
+                  <span id="optionsDisplay">–</span>
+                </li>
+                <li>
+                  Coefficient zone :
+                  <span id="zoneDisplay">–</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="summary-sentence" id="summarySentence">
+              Renseignez les dimensions et cliquez sur
+              <strong>« Calculer le prix estimatif »</strong>.
+            </div>
+
+            <button
+              type="button"
+              class="btn ghost full-width"
+              id="btnFutureQuote"
+            >
+              Étape suivante : envoi automatique du devis (à venir)
+            </button>
+          </aside>
+        </div>
+      </section>
+
+      <!-- INFOS PRATIQUES -->
+      <section id="infos" class="section">
+        <div class="container info-grid">
+          <div>
+            <h2>Informations pratiques</h2>
+            <p>
+              GAMAX-CM vous accompagne de la définition de votre besoin jusqu’à
+              la pose de l’abri sur site. Notre bureau d’études dimensionne la
+              structure selon l’Eurocode et les règles locales.
+            </p>
+            <ul class="bullet-list">
+
 
