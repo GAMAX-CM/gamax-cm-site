@@ -12,7 +12,11 @@
     <header class="site-header pro">
       <div class="header-inner container">
         <a href="/" class="logo-wrap">
-          <img src="assets/logo-transparent.png" alt="GAMAX-CM" class="logo-img" />
+          <img
+            src="assets/logo-transparent.png"
+            alt="GAMAX-CM"
+            class="logo-img"
+          />
         </a>
 
         <nav class="main-nav">
@@ -32,10 +36,10 @@
           <p class="eyebrow">Abris métalliques sur-mesure</p>
           <h1>Protégez votre matériel avec un abri métallique GAMAX-CM</h1>
           <p class="hero-subtitle">
-            Conception, fourniture et montage d’abris métalliques adaptés à votre
-            activité agricole, artisanale ou industrielle. Configurez votre
-            projet en quelques clics, obtenez un prix indicatif et envoyez-nous
-            votre demande de devis détaillé.
+            Conception, fourniture et montage d’abris métalliques adaptés à
+            votre activité agricole, artisanale ou industrielle. Configurez
+            votre projet en quelques clics, obtenez un prix indicatif et
+            envoyez-nous votre demande de devis détaillé.
           </p>
 
           <div class="hero-actions">
@@ -234,14 +238,13 @@
               <label>Côtés bardés</label>
 
               <!-- Schéma vue 3D / façade A-B-C-D -->
-              <div class="facade-diagram-inner">
+              <div class="facade-diagram">
                 <div class="facade-diagram-inner">
-  <div class="facade-label facade-a" data-facade="A">A</div>
-  <div class="facade-label facade-b" data-facade="B">B</div>
-  <div class="facade-label facade-c" data-facade="C">C</div>
-  <div class="facade-label facade-d" data-facade="D">D</div>
-</div>
-
+                  <div class="facade-label facade-a" data-facade="A">A</div>
+                  <div class="facade-label facade-b" data-facade="B">B</div>
+                  <div class="facade-label facade-c" data-facade="C">C</div>
+                  <div class="facade-label facade-d" data-facade="D">D</div>
+                </div>
                 <div class="facade-caption">
                   Vue schématique de l’abri – façades A, B, C, D.
                 </div>
@@ -522,20 +525,22 @@
         populateSelect(lengthSelect, config.lengths);
         populateSelect(heightSelect, config.heights);
       }
-function syncFacadeBubbles() {
-  const bubbles = document.querySelectorAll(".facade-label");
-  bubbles.forEach((bubble) => {
-    const code = bubble.dataset.facade;
-    const checkbox = document.querySelector(
-      'input[name="claddingSide"][value="' + code + '"]'
-    );
-    if (checkbox && checkbox.checked) {
-      bubble.classList.add("active");
-    } else {
-      bubble.classList.remove("active");
-    }
-  });
-}
+
+      // Met à jour la couleur des pastilles A/B/C/D en fonction des cases cochées
+      function syncFacadeBubbles() {
+        const bubbles = document.querySelectorAll(".facade-label");
+        bubbles.forEach((bubble) => {
+          const code = bubble.dataset.facade;
+          const checkbox = document.querySelector(
+            'input[name="claddingSide"][value="' + code + '"]'
+          );
+          if (checkbox && checkbox.checked) {
+            bubble.classList.add("active");
+          } else {
+            bubble.classList.remove("active");
+          }
+        });
+      }
 
       function calculatePrice() {
         const type = getSelectedType();
@@ -560,8 +565,6 @@ function syncFacadeBubbles() {
 
         if (!width || !length || !height) {
           return;
-                  // Met à jour la couleur des pastilles A/B/C/D
-        syncFacadeBubbles();
         }
 
         const area = width * length;
@@ -688,6 +691,9 @@ function syncFacadeBubbles() {
           " HT (environ " +
           formatCurrency(pricePerM2) +
           " / m²).";
+
+        // Met à jour la couleur des pastilles A/B/C/D
+        syncFacadeBubbles();
       }
 
       document.addEventListener("DOMContentLoaded", () => {
@@ -729,11 +735,22 @@ function syncFacadeBubbles() {
           .querySelectorAll('input[name="zone"]')
           .forEach((el) => el.addEventListener("change", calculatePrice));
 
-        document
-          .getElementById("btnCalculate")
-          .addEventListener("click", calculatePrice);
+        // Clic sur les pastilles A/B/C/D -> coche/décoche la façade
+        document.querySelectorAll(".facade-label").forEach((bubble) => {
+          bubble.addEventListener("click", () => {
+            const code = bubble.dataset.facade;
+            const checkbox = document.querySelector(
+              'input[name="claddingSide"][value="' + code + '"]'
+            );
+            if (checkbox) {
+              checkbox.checked = !checkbox.checked;
+              calculatePrice(); // recalcul + sync couleurs
+            }
+          });
+        });
 
         calculatePrice();
+        syncFacadeBubbles();
       });
     </script>
   </body>
