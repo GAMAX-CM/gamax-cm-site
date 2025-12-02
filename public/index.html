@@ -369,5 +369,226 @@
               structure selon l’Eurocode et les règles locales.
             </p>
             <ul class="bullet-list">
+              <li>Étude de charges et plans d’exécution</li>
+              <li>Fabrication en atelier</li>
+              <li>Livraison et montage sur site</li>
+              <li>Dossier pour permis ou déclaration préalable</li>
+            </ul>
+          </div>
+          <div class="info-box">
+            <h3>Zone d’intervention</h3>
+            <p>
+              Sud-Ouest, principalement Lot-et-Garonne et départements
+              limitrophes. Pour des projets plus éloignés, nous consulter.
+            </p>
+            <p class="info-small">
+              Pour un prix définitif, un échange avec notre équipe est
+              indispensable (nature du sol, accès chantier, contraintes
+              spécifiques…).
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- CONTACT -->
+      <section id="contact" class="section section-light">
+        <div class="container contact-layout">
+          <div>
+            <h2>Parlons de votre projet d’abri</h2>
+            <p>
+              Vous pouvez utiliser le configurateur ci-dessus pour préparer
+              votre demande, puis nous envoyer les informations par email ou
+              téléphone.
+            </p>
+            <p class="contact-highlight">
+              📧 Email : <a href="mailto:contact@gamax-cm.fr">contact@gamax-cm.fr</a><br />
+              📞 Téléphone : <a href="tel:+33633009464">06&nbsp;33&nbsp;00&nbsp;94&nbsp;64</a>
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p>© <span id="year"></span> GAMAX-CM – Abris métalliques</p>
+        <p class="footer-mini">
+          Tarifs indicatifs, non contractuels. Le devis définitif est transmis
+          après étude de votre projet.
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      // --- CONSTANTES TARIFAIRES (modifiable facilement) ---
+      const UNIT_PRICE_STRUCTURE = {
+        "bac-acier": 80, // €/m²
+        isolee: 110, // €/m²
+      };
+
+      const BARDAGE_PRICE_PER_M2 = 50; // €/m² vertical
+      const OPTIONS_PRICES = {
+        guttersPerM2: 10, // €/m²
+        finishingPerM2: 8, // €/m²
+        doorsFixed: 900, // €
+        installPerM2: 35, // €/m²
+      };
+
+      const ZONE_COEFFICIENT = {
+        1: 1,
+        2: 1.08,
+        3: 1.15,
+      };
+
+      const TVA_RATE = 0.2;
+
+      // --- FONCTIONS DE CALCUL ---
+      function formatCurrency(value) {
+        return new Intl.NumberFormat("fr-FR", {
+          style: "currency",
+          currency: "EUR",
+          maximumFractionDigits: 0,
+        }).format(value);
+      }
+
+      function calculateEstimate() {
+        const width = parseFloat(document.getElementById("width").value);
+        const length = parseFloat(document.getElementById("length").value);
+        const height = parseFloat(document.getElementById("height").value);
+        const roofType = document.getElementById("roofType").value;
+        const claddingType = parseInt(
+          document.getElementById("claddingType").value,
+          10
+        );
+        const zone = document.getElementById("zone").value;
+
+        if (!width || !length || !height) {
+          return;
+        }
+
+        const area = width * length;
+
+        // Structure + toiture
+        let structureBase =
+          area * (UNIT_PRICE_STRUCTURE[roofType] || UNIT_PRICE_STRUCTURE["bac-acier"]);
+
+        // Surcoût de hauteur au-dessus de 3 m (10 % par 0,5 m)
+        if (height > 3) {
+          const extra = height - 3;
+          const stepCount = extra / 0.5;
+          const increaseFactor = 1 + stepCount * 0.1;
+          structureBase *= increaseFactor;
+        }
+
+        // Bardage : surface moyenne d’un côté * nb de côtés
+        const averageSideArea =
+          ((2 * length * height + 2 * width * height) / 4) || 0;
+        const claddingArea = averageSideArea * claddingType;
+        const claddingPrice = claddingArea * BARDAGE_PRICE_PER_M2;
+
+        // Options
+        let optionsPrice = 0;
+        const optGutters = document.getElementById("optGutters").checked;
+        const optFinishing = document.getElementById("optFinishing").checked;
+        const optDoors = document.getElementById("optDoors").checked;
+        const optInstall = document.getElementById("optInstall").checked;
+
+        if (optGutters) {
+          optionsPrice += area * OPTIONS_PRICES.guttersPerM2;
+        }
+        if (optFinishing) {
+          optionsPrice += area * OPTIONS_PRICES.finishingPerM2;
+        }
+        if (optDoors) {
+          optionsPrice += OPTIONS_PRICES.doorsFixed;
+        }
+        if (optInstall) {
+          optionsPrice += area * OPTIONS_PRICES.installPerM2;
+        }
+
+        // Coefficient zone
+        const zoneCoef = ZONE_COEFFICIENT[zone] || 1;
+
+        let totalHT = (structureBase + claddingPrice + optionsPrice) * zoneCoef;
+        const totalTTC = totalHT * (1 + TVA_RATE);
+
+        // --- MISE À JOUR DU RÉCAP ---
+        document.getElementById("surfaceDisplay").textContent =
+          area.toFixed(1) + " m²";
+        document.getElementById("structureDisplay").textContent =
+          formatCurrency(structureBase);
+        document.getElementById("claddingDisplay").textContent =
+          claddingPrice > 0 ? formatCurrency(claddingPrice) : "0 €";
+        document.getElementById("optionsDisplay").textContent =
+          optionsPrice > 0 ? formatCurrency(optionsPrice) : "0 €";
+        document.getElementById("zoneDisplay").textContent = "x " + zoneCoef;
+
+        document.getElementById("priceHT").textContent =
+          formatCurrency(totalHT);
+        document.getElementById("priceTTC").textContent =
+          formatCurrency(totalTTC);
+
+        // Phrase récap
+        const roofLabel =
+          roofType === "isolee" ? "toiture isolée" : "toiture bac acier";
+        const claddingLabel =
+          claddingType === 0
+            ? "sans bardage (abri ouvert)"
+            : claddingType + " côté(s) bardé(s)";
+        const sentence =
+          "Abri métallique de " +
+          width +
+          " m x " +
+          length +
+          " m, hauteur " +
+          height +
+          " m, " +
+          roofLabel +
+          ", " +
+          claddingLabel +
+          ". Prix estimatif : " +
+          formatCurrency(totalHT) +
+          " HT.";
+
+        document.getElementById("summarySentence").textContent = sentence;
+      }
+
+      // --- LISTENERS ---
+      document.getElementById("btnCalculate").addEventListener("click", () => {
+        calculateEstimate();
+        document
+          .getElementById("configurateur")
+          .scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+
+      const liveFields = [
+        "width",
+        "length",
+        "height",
+        "roofType",
+        "claddingType",
+        "zone",
+        "optGutters",
+        "optFinishing",
+        "optDoors",
+        "optInstall",
+      ];
+
+      liveFields.forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener("change", calculateEstimate);
+        el.addEventListener("input", calculateEstimate);
+      });
+
+      // Année automatique dans le footer
+      document.getElementById("year").textContent =
+        new Date().getFullYear().toString();
+
+      // Calcul initial
+      calculateEstimate();
+    </script>
+  </body>
+</html>
 
 
