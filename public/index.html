@@ -522,6 +522,20 @@
         populateSelect(lengthSelect, config.lengths);
         populateSelect(heightSelect, config.heights);
       }
+function syncFacadeBubbles() {
+  const bubbles = document.querySelectorAll(".facade-label");
+  bubbles.forEach((bubble) => {
+    const code = bubble.dataset.facade;
+    const checkbox = document.querySelector(
+      'input[name="claddingSide"][value="' + code + '"]'
+    );
+    if (checkbox && checkbox.checked) {
+      bubble.classList.add("active");
+    } else {
+      bubble.classList.remove("active");
+    }
+  });
+}
 
       function calculatePrice() {
         const type = getSelectedType();
