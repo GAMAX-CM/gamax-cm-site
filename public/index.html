@@ -3,18 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GAMAX-CM – Bâtiments métalliques</title>
+  <title>GAMAX-CM – Abris métalliques en kit</title>
+
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css" />
   <script src="https://js.stripe.com/v3/"></script>
 </head>
+
 <body>
+
+  <!-- HEADER -->
   <header class="site-header">
     <div class="container header-inner">
       <img src="./assets/logo-gamax-blanc.png" alt="GAMAX-CM" class="logo" />
       <nav>
         <a href="#accueil">Accueil</a>
-        <a href="#produits">Produits</a>
+        <a href="#produits">Abris</a>
         <a href="#configurateur">Configurateur</a>
         <a href="#services">Services</a>
         <a href="#contact">Contact</a>
@@ -22,38 +26,36 @@
     </div>
   </header>
 
+  <!-- HERO -->
   <section id="accueil" class="banner">
-    <h1>Construisez votre bâtiment idéal</h1>
+    <h1>Construisez votre abri métallique idéal</h1>
   </section>
 
   <main class="container">
-    <!-- SECTION PRODUITS -->
+
+    <!-- ===========================
+         SECTION ABRIS (Produits)
+    ============================ -->
     <section id="produits">
-      <h2>Nos produits phares</h2>
-      <div class="filter">
-        <label for="typeFilter">Filtrer par type : </label>
-        <select id="typeFilter">
-          <option value="all">Tous</option>
-          <option value="abri">Abri</option>
-          <option value="hangar">Hangar</option>
-          <option value="garage">Garage</option>
-        </select>
-        <!-- tu pourras ajouter ici "container" si besoin -->
-      </div>
+      <h2>Nos abris métalliques</h2>
       <div id="productList" class="products"></div>
     </section>
 
-    <!-- SECTION CONFIGURATEUR AVANCÉ -->
+    <!-- ===========================
+         CONFIGURATEUR AVANCÉ
+    ============================ -->
     <section id="configurateur" class="configurator">
-      <h2>Configurez votre bâtiment</h2>
+      <h2>Configurez votre abri</h2>
 
       <div class="config-grid">
+
+        <!-- FORMULAIRE -->
         <div class="config-form">
-          <label for="type">Type de bâtiment :</label>
+
+          <label for="type">Type d’abri :</label>
           <select id="type">
-            <option value="abri">Abri</option>
-            <option value="hangar">Hangar</option>
-            <option value="garage">Garage / Carport</option>
+            <option value="abri">Abri monopente</option>
+            <option value="abri">Abri double pente</option>
           </select>
 
           <label for="largeur">Largeur (m) :</label>
@@ -68,88 +70,102 @@
           <label for="couleurToiture">Couleur de toiture :</label>
           <select id="couleurToiture">
             <option value="galva">Acier galvanisé</option>
-            <option value="rouge">Rouge tuile</option>
             <option value="gris">Gris anthracite</option>
+            <option value="rouge">Rouge tuile</option>
             <option value="vert">Vert</option>
           </select>
 
           <label for="bardage">Bardage :</label>
           <select id="bardage">
-            <option value="aucun">Sans bardage (structure ouverte)</option>
-            <option value="unMur">Un mur latéral bardé</option>
-            <option value="deuxMurs">Deux murs latéraux bardés</option>
-            <option value="complet">Bardage complet (3 ou 4 côtés)</option>
+            <option value="aucun">Sans bardage</option>
+            <option value="unMur">1 mur bardé</option>
+            <option value="deuxMurs">2 murs bardés</option>
+            <option value="complet">Bardage complet</option>
           </select>
 
           <fieldset class="accessoires">
-            <legend>Accessoires de finition :</legend>
+            <legend>Accessoires :</legend>
+
             <label>
-              <input type="checkbox" id="accGouttieres" />
+              <input type="checkbox" id="accGouttieres">
               Gouttières & descentes
             </label>
+
             <label>
-              <input type="checkbox" id="accHabillagePignons" />
+              <input type="checkbox" id="accHabillagePignons">
               Habillage de pignons
             </label>
+
             <label>
-              <input type="checkbox" id="accFermetureAvant" />
+              <input type="checkbox" id="accFermetureAvant">
               Fermeture en façade (portail / rideau)
             </label>
           </fieldset>
         </div>
 
+        <!-- RÉSUMÉ -->
         <div class="config-resume">
           <h3>Résumé de votre configuration</h3>
           <p id="configResumeTexte">
-            Abri 8 × 12 m – hauteur 4.5 m, toiture acier galvanisé, sans bardage.
+            Abri 8 × 12 m – hauteur 4.5 m, toiture galvanisée, sans bardage.
           </p>
+
           <p id="prix">Prix estimé : 0 € HT</p>
 
           <button id="configAdd">Ajouter au panier</button>
           <button id="demandeDevisBtn">Demander un devis par e-mail</button>
+
           <p class="config-note">
-            Le prix indiqué est une estimation. Un devis détaillé vous sera envoyé après validation.
+            Le prix est une estimation automatique. Un devis détaillé sera envoyé après validation.
           </p>
         </div>
       </div>
     </section>
 
-    <!-- SECTION SERVICES -->
+    <!-- SERVICES -->
     <section id="services">
       <h2>Nos services</h2>
-      <p>Installation, livraison et conseils personnalisés pour tous vos bâtiments métalliques.</p>
+      <p>Installation, livraison et conseils personnalisés pour tous vos abris métalliques.</p>
     </section>
 
-    <!-- SECTION CONTACT -->
+    <!-- CONTACT -->
     <section id="contact">
       <h2>Contactez-nous</h2>
+
       <form onsubmit="event.preventDefault(); alert('Message envoyé !');">
         <label for="nom">Nom :</label>
         <input type="text" id="nom" required />
+
         <label for="email">Email :</label>
         <input type="email" id="email" required />
+
         <label for="message">Message :</label>
         <textarea id="message" rows="5"></textarea>
+
         <button type="submit">Envoyer</button>
       </form>
     </section>
+
   </main>
 
   <!-- PANIER -->
   <aside class="cart" id="cart">
     <h3>Panier</h3>
     <div id="cartItems"></div>
-    <p>Total : <span id="cartTotal">0</span>€</p>
+    <p>Total : <span id="cartTotal">0</span> €</p>
     <button id="payBtn">Payer</button>
   </aside>
 
+  <!-- FOOTER -->
   <footer class="site-footer">
     <div class="container">
       <p>© 2025 GAMAX-CM – Tous droits réservés.</p>
     </div>
   </footer>
 
+  <!-- JAVASCRIPT -->
   <script src="./app.js"></script>
+
 </body>
 </html>
 
