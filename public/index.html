@@ -1,256 +1,459 @@
 <!DOCTYPE html>
 <html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>GAMAX-CM – Configurateur d’abri métallique</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GAMAX-CM – Configurateur d’abri métallique</title>
-  <link rel="stylesheet" href="styles.css" />
-</head>
+  <body>
+    <!-- HEADER -->
+    <header class="site-header">
+      <div class="header-inner container">
+        <a href="/" class="logo-wrap">
+          <img src="../logo.png" alt="GAMAX-CM" class="logo-img" />
+          <span class="logo-text">GAMAX-CM</span>
+        </a>
+        <nav class="main-nav">
+          <a href="/">Accueil</a>
+          <a href="#config">Configurateur</a>
+        </nav>
+      </div>
+    </header>
 
-<body>
-
-  <!-- HEADER -->
-  <header class="site-header">
-    <div class="header-inner container">
-      <a href="/" class="logo-wrap">
-        <img src="logo.png" alt="Logo GAMAX-CM" class="logo-img" />
-        <span class="logo-text">GAMAX-CM</span>
-      </a>
-      <nav class="main-nav">
-        <a href="/">Accueil</a>
-        <a href="#config">Configurateur</a>
-      </nav>
-    </div>
-  </header>
-
-  <!-- TITRE CONFIGURATEUR -->
-  <section class="section" id="config">
-    <div class="container">
-      <h1>Configurez votre abri métallique</h1>
-      <p>Renseignez les dimensions et les options pour obtenir immédiatement une estimation de prix.</p>
-
-      <div class="configurator-layout">
-
-        <!-- FORMULAIRE -->
-        <div class="config-form">
-
-          <!-- 1. TYPE D’ABRI -->
-          <h3>1. Type d’abri</h3>
-          <div class="roof-type-grid">
-
-            <!-- Monopente -->
-            <label class="roof-card">
-              <input type="radio" name="slopeType" value="monopente" checked />
-              <div class="roof-card-inner">
-                <img src="assets/image monopente.png" class="roof-img" alt="Abris monopente">
-                <span class="roof-title">Abris monopente</span>
-              </div>
-            </label>
-
-            <!-- Bipente -->
-            <label class="roof-card">
-              <input type="radio" name="slopeType" value="bipente" />
-              <div class="roof-card-inner">
-                <img src="assets/image bipente.png" class="roof-img" alt="Abris bipente">
-                <span class="roof-title">Abris bipente</span>
-              </div>
-            </label>
-
-          </div>
-
-          <!-- 2. DIMENSIONS -->
-          <h3>2. Dimensions de l’abri</h3>
-          <div class="form-grid">
-
-            <!-- Largeur -->
-            <div class="field">
-              <label>Largeur (m)</label>
-              <input type="number" id="width" name="width" min="3" max="6" step="1" value="3" list="presetWidth">
-              <datalist id="presetWidth">
-                <option value="3"></option>
-                <option value="4"></option>
-                <option value="5"></option>
-                <option value="6"></option>
-              </datalist>
-            </div>
-
-            <!-- Longueur -->
-            <div class="field">
-              <label>Longueur (m)</label>
-              <input type="number" id="length" name="length" min="3" max="30" step="1" value="3" list="presetLength">
-              <datalist id="presetLength">
-                <option value="3"></option>
-                <option value="4"></option>
-                <option value="5"></option>
-                <option value="6"></option>
-                <option value="8"></option>
-                <option value="10"></option>
-                <option value="12"></option>
-                <option value="15"></option>
-                <option value="18"></option>
-                <option value="20"></option>
-                <option value="24"></option>
-                <option value="25"></option>
-                <option value="30"></option>
-              </datalist>
-            </div>
-
-            <!-- Hauteur -->
-            <div class="field">
-              <label>Hauteur à l’avant (m)</label>
-              <input type="number" id="height" name="height" min="2.15" max="3.5"step="1.35" value="2.15" list="presetHeight">
-              <datalist id="presetHeight">
-                <option value="2.15"></option>
-                <option value="3.5"></option>
-              </datalist>
-            </div>
-          </div>
-
-          <!-- 3. Couleur toiture -->
-          <h3>3. Couleur toiture (RAL)</h3>
-
-          <div class="field">
-            <div class="ral-grid">
-
-              <label class="ral-choice">
-                <input type="radio" name="roofColor" value="RAL 5008" checked />
-                <div class="ral-box" style="background:#2f3b49">5008</div>
-              </label>
-
-              <label class="ral-choice">
-                <input type="radio" name="roofColor" value="RAL 8012" />
-                <div class="ral-box" style="background:#5a1f1b">8012</div>
-              </label>
-
-              <label class="ral-choice">
-                <input type="radio" name="roofColor" value="RAL 6011" />
-                <div class="ral-box" style="background:#6c7f46">6011</div>
-              </label>
-
-              <label class="ral-choice">
-                <input type="radio" name="roofColor" value="RAL 6021" />
-                <div class="ral-box" style="background:#8ba870">6021</div>
-              </label>
-
-              <label class="ral-choice">
-                <input type="radio" name="roofColor" value="RAL 6005" />
-                <div class="ral-box" style="background:#0c2d1f">6005</div>
-              </label>
-
-              <label class="ral-choice">
-                <input type="radio" name="roofColor" value="RAL 7022" />
-                <div class="ral-box" style="background:#4e4c48">7022</div>
-              </label>
-
-              <label class="ral-choice">
-                <input type="radio" name="roofColor" value="RAL 7006" />
-                <div class="ral-box" style="background:#756b60">7006</div>
-              </label>
-
-              <label class="ral-choice">
-                <input type="radio" name="roofColor" value="RAL 8024" />
-                <div class="ral-box" style="background:#6f3c2b">8024</div>
-              </label>
-
-              <label class="ral-choice">
-                <input type="radio" name="roofColor" value="RAL 1019" />
-                <div class="ral-box" style="background:#a1927b">1019</div>
-              </label>
-
-              <label class="ral-choice">
-                <input type="radio" name="roofColor" value="RAL 1015" />
-                <div class="ral-box" style="background:#e8d9b5">1015</div>
-              </label>
-
-              <label class="ral-choice">
-                <input type="radio" name="roofColor" value="RAL 9002" />
-                <div class="ral-box" style="background:#dcdcd3">9002</div>
-              </label>
-
-              <label class="ral-choice">
-                <input type="radio" name="roofColor" value="RAL 9010" />
-                <div class="ral-box" style="background:#f4f4f2;color:#222">9010</div>
-              </label>
-
-              <label class="ral-choice">
-                <input type="radio" name="roofColor" value="RAL 9006" />
-                <div class="ral-box" style="background:#a5a9ad">9006</div>
-              </label>
-
-              <label class="ral-choice">
-                <input type="radio" name="roofColor" value="RAL 7015" />
-                <div class="ral-box" style="background:#51565c">7015</div>
-              </label>
-
-              <label class="ral-choice">
-                <input type="radio" name="roofColor" value="RAL 7016" />
-                <div class="ral-box" style="background:#383e42">7016</div>
-              </label>
-
-            </div>
-          </div>
-
-          <button class="btn full-width" onclick="calculatePrice()">Calculer le prix estimatif</button>
-
+    <!-- CONFIGURATEUR -->
+    <section class="section" id="config">
+      <div class="container">
+        <div class="section-header left">
+          <h2>Configurez votre abri métallique</h2>
+          <p>
+            Choisissez le type d’abri, les dimensions et la couleur de toiture pour obtenir une estimation de prix.
+          </p>
         </div>
 
-        <!-- RÉCAP -->
-        <aside class="config-summary">
-          <div class="summary-box">
-            <div class="summary-label">Prix estimatif HT</div>
-            <div id="priceHT" class="summary-main">–</div>
-            <div id="priceTTC" class="summary-sub">Prix TTC (20 %) –</div>
+        <div class="configurator-layout">
+          <!-- FORMULAIRE -->
+          <div class="config-form">
+            <!-- 1. TYPE D’ABRI -->
+            <h3>1. Type d’abri</h3>
+            <div class="roof-type-grid">
+              <!-- Monopente -->
+              <label class="roof-card">
+                <input
+                  type="radio"
+                  name="slopeType"
+                  value="mono"
+                  checked
+                />
+                <div class="roof-card-inner">
+                  <img
+                    src="assets/image monopente.png"
+                    class="roof-img"
+                    alt="Abris monopente"
+                  />
+                  <span class="roof-title">Abris monopente</span>
+                </div>
+              </label>
+
+              <!-- Bipente -->
+              <label class="roof-card">
+                <input
+                  type="radio"
+                  name="slopeType"
+                  value="bi"
+                />
+                <div class="roof-card-inner">
+                  <img
+                    src="assets/image bipente.png"
+                    class="roof-img"
+                    alt="Abris bipente"
+                  />
+                  <span class="roof-title">Abris bipente</span>
+                </div>
+              </label>
+            </div>
+
+            <!-- 2. DIMENSIONS -->
+            <h3>2. Dimensions de l’abri</h3>
+            <div class="form-grid">
+              <div class="field">
+                <label for="width">Largeur (m)</label>
+                <select id="width" name="width"></select>
+              </div>
+
+              <div class="field">
+                <label for="length">Longueur (m)</label>
+                <select id="length" name="length"></select>
+              </div>
+
+              <div class="field">
+                <label for="height">Hauteur à l’avant (m)</label>
+                <select id="height" name="height"></select>
+              </div>
+            </div>
+
+            <!-- 3. COULEUR TOITURE -->
+            <h3>3. Couleur toiture (RAL)</h3>
+            <div class="field">
+              <div class="ral-grid">
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="roofColor"
+                    value="RAL 5008"
+                    checked
+                  />
+                  <div class="ral-box" style="background:#2f3b49">
+                    5008
+                  </div>
+                </label>
+
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="roofColor"
+                    value="RAL 8012"
+                  />
+                  <div class="ral-box" style="background:#5a1f1b">
+                    8012
+                  </div>
+                </label>
+
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="roofColor"
+                    value="RAL 6011"
+                  />
+                  <div class="ral-box" style="background:#6c7f46">
+                    6011
+                  </div>
+                </label>
+
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="roofColor"
+                    value="RAL 6021"
+                  />
+                  <div class="ral-box" style="background:#8ba870">
+                    6021
+                  </div>
+                </label>
+
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="roofColor"
+                    value="RAL 6005"
+                  />
+                  <div class="ral-box" style="background:#0c2d1f">
+                    6005
+                  </div>
+                </label>
+
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="roofColor"
+                    value="RAL 7022"
+                  />
+                  <div class="ral-box" style="background:#4e4c48">
+                    7022
+                  </div>
+                </label>
+
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="roofColor"
+                    value="RAL 7006"
+                  />
+                  <div class="ral-box" style="background:#756b60">
+                    7006
+                  </div>
+                </label>
+
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="roofColor"
+                    value="RAL 8024"
+                  />
+                  <div class="ral-box" style="background:#6f3c2b">
+                    8024
+                  </div>
+                </label>
+
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="roofColor"
+                    value="RAL 1019"
+                  />
+                  <div class="ral-box" style="background:#a1927b">
+                    1019
+                  </div>
+                </label>
+
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="roofColor"
+                    value="RAL 1015"
+                  />
+                  <div class="ral-box" style="background:#e8d9b5">
+                    1015
+                  </div>
+                </label>
+
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="roofColor"
+                    value="RAL 9002"
+                  />
+                  <div class="ral-box" style="background:#dcdcd3">
+                    9002
+                  </div>
+                </label>
+
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="roofColor"
+                    value="RAL 9010"
+                  />
+                  <div
+                    class="ral-box"
+                    style="background:#f4f4f2;color:#222"
+                  >
+                    9010
+                  </div>
+                </label>
+
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="roofColor"
+                    value="RAL 9006"
+                  />
+                  <div class="ral-box" style="background:#a5a9ad">
+                    9006
+                  </div>
+                </label>
+
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="roofColor"
+                    value="RAL 7015"
+                  />
+                  <div class="ral-box" style="background:#51565c">
+                    7015
+                  </div>
+                </label>
+
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="roofColor"
+                    value="RAL 7016"
+                  />
+                  <div class="ral-box" style="background:#383e42">
+                    7016
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <button
+              class="btn full-width"
+              type="button"
+              onclick="calculatePrice()"
+            >
+              Calculer le prix estimatif
+            </button>
           </div>
 
-          <div class="summary-details">
-            <h4>Détail du calcul</h4>
-            <ul>
-              <li>Type d’abri : <span id="typeDisplay">–</span></li>
-              <li>Surface : <span id="surfaceDisplay">–</span></li>
-              <li>Hauteur : <span id="heightDisplay">–</span></li>
-              <li>Couleur toiture : <span id="roofColorDisplay">–</span></li>
-            </ul>
-          </div>
-        </aside>
+          <!-- RÉCAPITULATIF -->
+          <aside class="config-summary">
+            <div class="summary-box">
+              <p class="summary-label">Prix estimatif HT</p>
+              <p id="priceHT" class="summary-main">–</p>
+              <p id="priceTTC" class="summary-sub">
+                Prix TTC (20 %) : –
+              </p>
+            </div>
 
+            <div class="summary-details">
+              <h4>Détail du calcul</h4>
+              <ul>
+                <li>
+                  Type d’abri :
+                  <span id="typeDisplay">–</span>
+                </li>
+                <li>
+                  Dimensions :
+                  <span id="dimensionsDisplay">–</span>
+                </li>
+                <li>
+                  Surface :
+                  <span id="surfaceDisplay">–</span>
+                </li>
+                <li>
+                  Couleur toiture :
+                  <span id="roofColorDisplay">–</span>
+                </li>
+              </ul>
+            </div>
+
+            <p class="summary-sentence" id="summarySentence">
+              Renseignez les paramètres puis cliquez sur
+              « Calculer le prix estimatif ».
+            </p>
+          </aside>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- SCRIPT CALCUL -->
-  <script>
-    function calculatePrice() {
+    <script>
+      // Dimensions possibles selon le type d’abri
+      const DIMENSIONS = {
+        mono: {
+          widths: [3, 4, 5, 6],
+          lengths: [3, 4, 5, 6, 8, 10, 12, 15, 18, 20, 24, 25, 30],
+          heights: [2.15, 3.5],
+        },
+        bi: {
+          widths: [4, 5, 6, 7, 8, 10, 12],
+          lengths: [3, 4, 5, 6, 8, 10, 12, 15, 18, 20, 24, 25, 30],
+          heights: [3],
+        },
+      };
 
-      const type = document.querySelector('input[name="slopeType"]:checked').value;
-      const width = parseFloat(document.getElementById("width").value);
-      const length = parseFloat(document.getElementById("length").value);
-      const height = parseFloat(document.getElementById("height").value);
-      const roofColor = document.querySelector('input[name="roofColor"]:checked').value;
+      function getSelectedType() {
+        const input = document.querySelector(
+          'input[name="slopeType"]:checked'
+        );
+        return input ? input.value : "mono";
+      }
 
-      const surface = width * length;
+      function populateSelect(selectEl, values) {
+        selectEl.innerHTML = "";
+        values.forEach((val, index) => {
+          const opt = document.createElement("option");
+          opt.value = val;
+          opt.textContent = val.toString().replace(".", ",") + " m";
+          if (index === 0) opt.selected = true;
+          selectEl.appendChild(opt);
+        });
+      }
 
-      // Base pricing model (à ajuster plus tard)
-      let price = surface * 35;
-      if (type === "bipente") price += surface * 8;
+      function populateDimensions() {
+        const type = getSelectedType();
+        const config = DIMENSIONS[type];
 
-      price += height * 20;
+        const widthSelect = document.getElementById("width");
+        const lengthSelect = document.getElementById("length");
+        const heightSelect = document.getElementById("height");
 
-      const priceHT = Math.round(price);
-      const priceTTC = Math.round(priceHT * 1.2);
+        populateSelect(widthSelect, config.widths);
+        populateSelect(lengthSelect, config.lengths);
+        populateSelect(heightSelect, config.heights);
+      }
 
-      // DISPLAY
-      document.getElementById("priceHT").innerText = priceHT + " € HT";
-      document.getElementById("priceTTC").innerText = "Prix TTC (20 %) " + priceTTC + " €";
+      function calculatePrice() {
+        const type = getSelectedType();
+        const width = parseFloat(
+          document.getElementById("width").value
+        );
+        const length = parseFloat(
+          document.getElementById("length").value
+        );
+        const height = parseFloat(
+          document.getElementById("height").value
+        );
+        const roofColor = document.querySelector(
+          'input[name="roofColor"]:checked'
+        ).value;
 
-      document.getElementById("typeDisplay").innerText = type;
-      document.getElementById("surfaceDisplay").innerText = surface + " m²";
-      document.getElementById("heightDisplay").innerText = height + " m";
-      document.getElementById("roofColorDisplay").innerText = roofColor;
-    }
-  </script>
+        if (!width || !length || !height) {
+          return;
+        }
 
-</body>
+        const surface = width * length;
 
+        // Modèle de prix simple (à ajuster plus tard)
+        let price = surface * 35; // base
+        if (type === "bi") {
+          price += surface * 8; // léger surcoût bipente
+        }
+        price += height * 20;
+
+        const priceHT = Math.round(price / 50) * 50; // arrondi au 50 €
+        const priceTTC = Math.round(priceHT * 1.2);
+
+        const formatter = new Intl.NumberFormat("fr-FR", {
+          style: "currency",
+          currency: "EUR",
+          maximumFractionDigits: 0,
+        });
+
+        const typeLabel =
+          type === "bi" ? "Abris bipente" : "Abris monopente";
+
+        document.getElementById("priceHT").textContent =
+          formatter.format(priceHT);
+        document.getElementById("priceTTC").textContent =
+          formatter.format(priceTTC);
+
+        document.getElementById("typeDisplay").textContent = typeLabel;
+        document.getElementById("dimensionsDisplay").textContent =
+          width.toString().replace(".", ",") +
+          " m x " +
+          length.toString().replace(".", ",") +
+          " m, hauteur " +
+          height.toString().replace(".", ",") +
+          " m";
+        document.getElementById("surfaceDisplay").textContent =
+          surface.toFixed(1) + " m²";
+        document.getElementById("roofColorDisplay").textContent =
+          roofColor;
+
+        document.getElementById("summarySentence").textContent =
+          typeLabel +
+          " de " +
+          width.toString().replace(".", ",") +
+          " m x " +
+          length.toString().replace(".", ",") +
+          " m, hauteur " +
+          height.toString().replace(".", ",") +
+          " m, toiture " +
+          roofColor +
+          ". Prix estimatif : " +
+          formatter.format(priceHT) +
+          " HT.";
+      }
+
+      // Initialisation
+      document.addEventListener("DOMContentLoaded", () => {
+        populateDimensions();
+        document
+          .querySelectorAll('input[name="slopeType"]')
+          .forEach((el) =>
+            el.addEventListener("change", () => {
+              populateDimensions();
+              calculatePrice();
+            })
+          );
+      });
+    </script>
+  </body>
 </html>
+
 
