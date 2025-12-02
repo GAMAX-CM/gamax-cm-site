@@ -400,6 +400,12 @@ body {
   justify-content: center;
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
 }
+.facade-label.active {
+  background: var(--accent);
+  color: #111;
+  box-shadow: 0 0 0 2px #111, 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+
 .facade-a {
   top: -13px;
   left: 50%;
