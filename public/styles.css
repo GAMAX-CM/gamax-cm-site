@@ -69,8 +69,13 @@ body {
 .site-header.pro {
   position: sticky;
   top: 0;
-  z-index: 20;
-  background: #000;  /* bandeau noir */
+  z-index: 2000;
+  background: #000 !important;
+  body {
+  margin: 0;
+}
+
+}
   backdrop-filter: blur(12px);
 }
 
