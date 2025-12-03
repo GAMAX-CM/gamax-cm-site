@@ -546,6 +546,28 @@ body {
   font-size: 0.78rem;
   color: var(--gris-moyen);
 }
+/* Images dans les options complémentaires */
+.option-pill {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+/* Redimensionner les images d'options */
+.option-pill img {
+  width: 48px;          /* largeur fixe */
+  height: 48px;         /* hauteur fixe */
+  object-fit: contain;  /* garde les proportions */
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: #f5f5f5;  /* petit fond neutre si image pas pleine */
+}
 
 /* Effet sélection */
 .option-card input:checked ~ .option-illustration img {
