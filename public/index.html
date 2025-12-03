@@ -297,32 +297,112 @@
               </div>
             </div>
 
-            <!-- 5. OPTIONS -->
+            <!-- 5. OPTIONS COMPLÉMENTAIRES -->
             <h3>5. Options complémentaires</h3>
             <div class="options-grid">
-              <label class="option-pill">
-                <input type="checkbox" id="optGutters" />
+              <!-- Habillages -->
+              <label class="option-card">
+                <input type="checkbox" id="optFaitiereSolin" />
+                <div class="option-illustration">
+                  <img
+                    src="assets/faitiere-solin.jpg"
+                    alt="Faitière en solin"
+                  />
+                </div>
                 <div class="option-text">
-                  <span class="option-title">Gouttières &amp; descentes</span>
+                  <span class="option-title">Faitière en solin</span>
                   <span class="option-sub">
-                    Collecte des eaux de pluie sur la longueur.
+                    Raccord de toiture étanche contre un mur ou bâtiment.
                   </span>
                 </div>
               </label>
 
-              <label class="option-pill">
-                <input type="checkbox" id="optFinishing" />
+              <label class="option-card">
+                <input type="checkbox" id="optRiveSolin" />
+                <div class="option-illustration">
+                  <img src="assets/rive-solin.jpg" alt="Rive en solin" />
+                </div>
                 <div class="option-text">
-                  <span class="option-title">
-                    Habillages de rives / pignons
-                  </span>
+                  <span class="option-title">Rive en solin</span>
                   <span class="option-sub">
-                    Finitions tôle pliée pour une esthétique soignée.
+                    Finition latérale de toiture avec solin.
                   </span>
                 </div>
               </label>
 
-              <label class="option-pill">
+              <label class="option-card">
+                <input type="checkbox" id="optGrandeRive" />
+                <div class="option-illustration">
+                  <img src="assets/grande-rive.jpg" alt="Grande rive" />
+                </div>
+                <div class="option-text">
+                  <span class="option-title">Grande rive</span>
+                  <span class="option-sub">
+                    Habillage large des rives pour une meilleure protection.
+                  </span>
+                </div>
+              </label>
+
+              <label class="option-card">
+                <input type="checkbox" id="optAngles" />
+                <div class="option-illustration">
+                  <img src="assets/angles-bardage.jpg" alt="Angles" />
+                </div>
+                <div class="option-text">
+                  <span class="option-title">Angles</span>
+                  <span class="option-sub">
+                    Habillages d’angles verticaux pour les angles du bâtiment.
+                  </span>
+                </div>
+              </label>
+
+              <label class="option-card">
+                <input type="checkbox" id="optRejetEau" />
+                <div class="option-illustration">
+                  <img src="assets/rejet-eau.jpg" alt="Rejet d'eau" />
+                </div>
+                <div class="option-text">
+                  <span class="option-title">Rejet d'eau</span>
+                  <span class="option-sub">
+                    Profil pour évacuer l’eau sur les bas de bardage.
+                  </span>
+                </div>
+              </label>
+
+              <label class="option-card">
+                <input type="checkbox" id="optFaitiereDouble" />
+                <div class="option-illustration">
+                  <img
+                    src="assets/faitiere-double.jpg"
+                    alt="Faitière double"
+                  />
+                </div>
+                <div class="option-text">
+                  <span class="option-title">Faitière double</span>
+                  <span class="option-sub">
+                    Faitière pour toiture bi-pente.
+                  </span>
+                </div>
+              </label>
+
+              <label class="option-card">
+                <input type="checkbox" id="optFaitiereSimple" />
+                <div class="option-illustration">
+                  <img
+                    src="assets/faitiere-simple.jpg"
+                    alt="Faitière simple"
+                  />
+                </div>
+                <div class="option-text">
+                  <span class="option-title">Faitière simple</span>
+                  <span class="option-sub">
+                    Faitière pour toiture monopente.
+                  </span>
+                </div>
+              </label>
+
+              <!-- Porte -->
+              <label class="option-card">
                 <input type="checkbox" id="optDoor" />
                 <div class="option-text">
                   <span class="option-title">
@@ -334,7 +414,8 @@
                 </div>
               </label>
 
-              <label class="option-pill">
+              <!-- Pose -->
+              <label class="option-card">
                 <input type="checkbox" id="optInstall" />
                 <div class="option-text">
                   <span class="option-title">Pose par nos équipes</span>
@@ -345,40 +426,31 @@
               </label>
             </div>
 
-            <!-- 6. ZONE -->
-            <h3>6. Zone du projet</h3>
-            <div class="field">
-              <label>Exposition au vent / neige</label>
-              <div class="zone-grid">
-                <label class="zone-choice">
-                  <input type="radio" name="zone" value="1" checked />
-                  <div class="zone-card">
-                    <div class="zone-title">Zone 1</div>
-                    <div class="zone-sub">
-                      Plaine, peu exposé, climat modéré.
-                    </div>
-                  </div>
-                </label>
+            <!-- 6. ADRESSE DU PROJET & LIVRAISON -->
+            <h3>6. Adresse du projet & livraison</h3>
+            <div class="form-grid address-grid">
+              <div class="field">
+                <label for="postalCode">Code postal</label>
+                <input
+                  type="text"
+                  id="postalCode"
+                  name="postalCode"
+                  inputmode="numeric"
+                  maxlength="5"
+                />
+                <p class="field-help">
+                  Saisissez les 5 chiffres du code postal du chantier.
+                </p>
+              </div>
 
-                <label class="zone-choice">
-                  <input type="radio" name="zone" value="2" />
-                  <div class="zone-card">
-                    <div class="zone-title">Zone 2</div>
-                    <div class="zone-sub">
-                      Zone intermédiaire, vent modéré / plateau.
-                    </div>
-                  </div>
-                </label>
-
-                <label class="zone-choice">
-                  <input type="radio" name="zone" value="3" />
-                  <div class="zone-card">
-                    <div class="zone-title">Zone 3</div>
-                    <div class="zone-sub">
-                      Zone ventée, altitude ou bord de mer.
-                    </div>
-                  </div>
-                </label>
+              <div class="field">
+                <label for="city">Ville</label>
+                <input list="cityList" id="city" name="city" />
+                <datalist id="cityList"></datalist>
+                <p class="field-help">
+                  Choisissez votre ville dans la liste proposée (à ajuster si
+                  besoin).
+                </p>
               </div>
             </div>
 
@@ -390,7 +462,7 @@
           <!-- RÉCAPITULATIF -->
           <aside class="config-summary">
             <div class="summary-box">
-              <p class="summary-label">Prix estimatif HT</p>
+              <p class="summary-label">Prix estimatif HT (structure + options + livraison)</p>
               <p id="priceHT" class="summary-main">–</p>
               <p id="priceTTC" class="summary-sub">
                 Prix TTC (20 %) : –
@@ -429,8 +501,12 @@
                   <span id="roofColorDisplay">–</span>
                 </li>
                 <li>
-                  Coefficient zone :
-                  <span id="zoneDisplay">–</span>
+                  Adresse du projet :
+                  <span id="addressDisplay">–</span>
+                </li>
+                <li>
+                  Livraison :
+                  <span id="deliveryDisplay">–</span>
                 </li>
               </ul>
             </div>
@@ -475,19 +551,24 @@
 
       const BARDAGE_PRICE_PER_M2 = 50; // €/m² bardage
       const OPTIONS_PRICES = {
-        guttersPerM2: 10,
         finishingPerM2: 8,
         doorFixed: 900,
         installPerM2: 35,
       };
 
-      const ZONE_COEFFICIENT = {
-        1: 1,
-        2: 1.08,
-        3: 1.15,
-      };
-
       const TVA_RATE = 0.2;
+
+      // Villes proposées en fonction du code postal (exemples – à compléter)
+      const POSTAL_CITIES = {
+        "47400": ["Tonneins"],
+        "47320": ["Clairac"],
+        "47200": ["Marmande"],
+        "47110": ["Sainte-Livrade-sur-Lot"],
+        "40000": ["Mont-de-Marsan"],
+        "33000": ["Bordeaux"],
+        "24000": ["Périgueux"],
+        "46000": ["Cahors"],
+      };
 
       function formatCurrency(value) {
         return new Intl.NumberFormat("fr-FR", {
@@ -542,6 +623,37 @@
         });
       }
 
+      // Calcul des frais de livraison Option B (par département)
+      function getDeliveryPrice(postalCode) {
+        if (!postalCode || postalCode.length !== 5) return 0;
+        const dep = parseInt(postalCode.slice(0, 2), 10);
+        if (isNaN(dep)) return 0;
+
+        if (dep === 47) return 150; // Lot-et-Garonne
+        if ([40, 33, 24, 46].includes(dep)) return 250; // départements limitrophes
+        return 350; // reste de la France
+      }
+
+      // Met à jour les suggestions de ville en fonction du CP
+      function updateCitySuggestions() {
+        const postalInput = document.getElementById("postalCode");
+        const cityInput = document.getElementById("city");
+        const list = document.getElementById("cityList");
+        const cp = postalInput.value.trim();
+        list.innerHTML = "";
+
+        const cities = POSTAL_CITIES[cp] || [];
+        cities.forEach((name) => {
+          const opt = document.createElement("option");
+          opt.value = name;
+          list.appendChild(opt);
+        });
+
+        if (cities.length === 1 && !cityInput.value) {
+          cityInput.value = cities[0];
+        }
+      }
+
       function calculatePrice() {
         const type = getSelectedType();
         const width = parseFloat(document.getElementById("width").value);
@@ -554,14 +666,16 @@
         );
         const claddingCount = claddingChecked.length;
 
-        // Zone
-        const zoneInput = document.querySelector('input[name="zone"]:checked');
-        const zone = zoneInput ? zoneInput.value : "1";
-
         // Couleur toiture
         const roofColor = document.querySelector(
           'input[name="roofColor"]:checked'
         ).value;
+
+        // Adresse
+        const postalCode = document
+          .getElementById("postalCode")
+          .value.trim();
+        const city = document.getElementById("city").value.trim();
 
         if (!width || !length || !height) {
           return;
@@ -582,8 +696,6 @@
         }
 
         // --- BARDAGE PAR FAÇADE ---
-        // Façades longues (A, C) : longueur x hauteur
-        // Façades pignon (B, D)  : largeur x hauteur
         let claddingArea = 0;
         claddingChecked.forEach((el) => {
           const code = el.value; // A, B, C ou D
@@ -597,24 +709,45 @@
 
         // Options
         let optionsPrice = 0;
-        const optGutters = document.getElementById("optGutters").checked;
-        const optFinishing = document.getElementById("optFinishing").checked;
+
+        const optFaitiereSolin =
+          document.getElementById("optFaitiereSolin").checked;
+        const optRiveSolin = document.getElementById("optRiveSolin").checked;
+        const optGrandeRive =
+          document.getElementById("optGrandeRive").checked;
+        const optAngles = document.getElementById("optAngles").checked;
+        const optRejetEau = document.getElementById("optRejetEau").checked;
+        const optFaitiereDouble =
+          document.getElementById("optFaitiereDouble").checked;
+        const optFaitiereSimple =
+          document.getElementById("optFaitiereSimple").checked;
+
         const optDoor = document.getElementById("optDoor").checked;
         const optInstall = document.getElementById("optInstall").checked;
 
-        if (optGutters) optionsPrice += area * OPTIONS_PRICES.guttersPerM2;
-        if (optFinishing)
+        const habillageSelected =
+          optFaitiereSolin ||
+          optRiveSolin ||
+          optGrandeRive ||
+          optAngles ||
+          optRejetEau ||
+          optFaitiereDouble ||
+          optFaitiereSimple;
+
+        // Si au moins un habillage est choisi -> forfait habillages au m²
+        if (habillageSelected) {
           optionsPrice += area * OPTIONS_PRICES.finishingPerM2;
+        }
         if (optDoor) optionsPrice += OPTIONS_PRICES.doorFixed;
         if (optInstall) optionsPrice += area * OPTIONS_PRICES.installPerM2;
 
-        // Coefficient zone
-        const zoneCoef = ZONE_COEFFICIENT[zone] || 1;
+        // Frais de livraison
+        const deliveryHT = getDeliveryPrice(postalCode);
 
-        let totalHT =
-          (structureBase + claddingPrice + optionsPrice) * zoneCoef;
-
+        // TOTAL
+        let totalHT = structureBase + claddingPrice + optionsPrice + deliveryHT;
         totalHT = Math.round(totalHT / 50) * 50;
+
         const totalTTC = Math.round((totalHT * (1 + TVA_RATE)) / 10) * 10;
         const pricePerM2 = totalHT / area;
 
@@ -640,10 +773,23 @@
         }
 
         const selectedOptions = [];
-        if (optGutters) selectedOptions.push("Gouttières");
-        if (optFinishing) selectedOptions.push("Habillages");
-        if (optDoor) selectedOptions.push("1 porte");
-        if (optInstall) selectedOptions.push("Pose");
+        if (habillageSelected) selectedOptions.push("Habillages et finitions");
+
+        if (optFaitiereSolin) selectedOptions.push("Faitière en solin");
+        if (optRiveSolin) selectedOptions.push("Rive en solin");
+        if (optGrandeRive) selectedOptions.push("Grande rive");
+        if (optAngles) selectedOptions.push("Angles");
+        if (optRejetEau) selectedOptions.push("Rejet d'eau");
+        if (optFaitiereDouble) selectedOptions.push("Faitière double");
+        if (optFaitiereSimple) selectedOptions.push("Faitière simple");
+
+        if (optDoor)
+          selectedOptions.push("Porte coulissante / sectionnelle");
+        if (optInstall) selectedOptions.push("Pose par nos équipes");
+
+        const addressText = postalCode
+          ? postalCode + (city ? " " + city : "")
+          : "Non renseignée";
 
         // Mise à jour du récap
         document.getElementById("typeDisplay").textContent = typeLabel;
@@ -663,8 +809,10 @@
             ? selectedOptions.join(", ")
             : "Aucune option";
         document.getElementById("roofColorDisplay").textContent = roofColor;
-        document.getElementById("zoneDisplay").textContent =
-          "x " + zoneCoef + " (zone " + zone + ")";
+        document.getElementById("addressDisplay").textContent = addressText;
+        document.getElementById("deliveryDisplay").textContent = deliveryHT
+          ? formatCurrency(deliveryHT) + " HT"
+          : "À définir";
 
         document.getElementById("priceHT").textContent =
           formatCurrency(totalHT);
@@ -688,9 +836,9 @@
           roofColor +
           ". Prix estimatif : " +
           formatCurrency(totalHT) +
-          " HT (environ " +
-          formatCurrency(pricePerM2) +
-          " / m²).";
+          " HT (dont livraison env. " +
+          formatCurrency(deliveryHT) +
+          ").";
 
         // Met à jour la couleur des pastilles A/B/C/D
         syncFacadeBubbles();
@@ -712,15 +860,28 @@
           "width",
           "length",
           "height",
-          "optGutters",
-          "optFinishing",
+          "optFaitiereSolin",
+          "optRiveSolin",
+          "optGrandeRive",
+          "optAngles",
+          "optRejetEau",
+          "optFaitiereDouble",
+          "optFaitiereSimple",
           "optDoor",
           "optInstall",
+          "postalCode",
+          "city",
         ];
         idsToWatch.forEach((id) => {
           const el = document.getElementById(id);
           if (!el) return;
           el.addEventListener("change", calculatePrice);
+          if (id === "postalCode") {
+            el.addEventListener("input", () => {
+              updateCitySuggestions();
+              calculatePrice();
+            });
+          }
         });
 
         document
@@ -729,10 +890,6 @@
 
         document
           .querySelectorAll('input[name="claddingSide"]')
-          .forEach((el) => el.addEventListener("change", calculatePrice));
-
-        document
-          .querySelectorAll('input[name="zone"]')
           .forEach((el) => el.addEventListener("change", calculatePrice));
 
         // Clic sur les pastilles A/B/C/D -> coche/décoche la façade
