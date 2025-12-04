@@ -1091,199 +1091,204 @@
         });
       }
 
-      function calculatePrice() {
-        const type = getSelectedType();
-        const width = parseFloat(document.getElementById("width").value);
-        const length = parseFloat(document.getElementById("length").value);
-        const height = parseFloat(document.getElementById("height").value);
-        if (!width || !length || !height) return;
+<script>
+  function calculatePrice() {
+    const type = getSelectedType();
+    const width = parseFloat(document.getElementById("width").value);
+    const length = parseFloat(document.getElementById("length").value);
+    const height = parseFloat(document.getElementById("height").value);
+    if (!width || !length || !height) return;
 
-        const area = width * length;
+    const area = width * length;
 
-        const sizeKey = width + "x" + length;
-        let structureBase =
-          STRUCTURE_PRICE_TABLE[type]?.[sizeKey] ?? 0;
+    const sizeKey = width + "x" + length;
+    let structureBase = STRUCTURE_PRICE_TABLE[type]?.[sizeKey] ?? 0;
 
-        if (height > 3) {
-          const extra = height - 3;
-          const steps = extra / 0.5;
-          structureBase *= 1 + steps * 0.1;
-        }
+    if (height > 3) {
+      const extra = height - 3;
+      const steps = extra / 0.5;
+      structureBase *= 1 + steps * 0.1;
+    }
 
-        const roofType =
-          document.querySelector('input[name="roofType"]:checked')?.value;
-        const roofUnit = ROOF_PRICE_PER_M2[roofType] ?? 0;
-        const roofCost = area * roofUnit;
+    const roofType =
+      document.querySelector('input[name="roofType"]:checked')?.value;
+    const roofUnit = ROOF_PRICE_PER_M2[roofType] ?? 0;
+    const roofCost = area * roofUnit;
 
-        let claddingArea = 0;
-        const claddings = document.querySelectorAll(
-          'input[name="claddingSide"]:checked'
-        );
-        claddings.forEach((el) => {
-          if (el.value === "A" || el.value === "C")
-            claddingArea += length * height;
-          else claddingArea += width * height;
-        });
+    let claddingArea = 0;
+    const claddings = document.querySelectorAll(
+      'input[name="claddingSide"]:checked'
+    );
+    claddings.forEach((el) => {
+      if (el.value === "A" || el.value === "C")
+        claddingArea += length * height;
+      else claddingArea += width * height;
+    });
 
-        const claddingType =
-          document.querySelector('input[name="claddingType"]:checked')?.value;
-        const cladUnit = CLADDING_PRICE_PER_M2[claddingType] ?? 0;
-        const claddingCost = claddingArea * cladUnit;
+    const claddingType =
+      document.querySelector('input[name="claddingType"]:checked')?.value;
+    const cladUnit = CLADDING_PRICE_PER_M2[claddingType] ?? 0;
+    const claddingCost = claddingArea * cladUnit;
 
-        const optFaitiereSolin = document.getElementById("optFaitiereSolin");
-        const optRiveSolin = document.getElementById("optRiveSolin");
-        const optGrandeRive = document.getElementById("optGrandeRive");
-        const optAngles = document.getElementById("optAngles");
-        const optRejetEau = document.getElementById("optRejetEau");
-        const optFaitiereDouble = document.getElementById("optFaitiereDouble");
-        const optFaitiereSimple = document.getElementById("optFaitiereSimple");
-        const optInstall = document.getElementById("optInstall");
+    const optFaitiereSolin = document.getElementById("optFaitiereSolin");
+    const optRiveSolin = document.getElementById("optRiveSolin");
+    const optGrandeRive = document.getElementById("optGrandeRive");
+    const optAngles = document.getElementById("optAngles");
+    const optRejetEau = document.getElementById("optRejetEau");
+    const optFaitiereDouble = document.getElementById("optFaitiereDouble");
+    const optFaitiereSimple = document.getElementById("optFaitiereSimple");
+    const optInstall = document.getElementById("optInstall");
 
-        let optionsPrice = 0;
-        const finishingSelected =
-          optFaitiereSolin.checked ||
-          optRiveSolin.checked ||
-          optGrandeRive.checked ||
-          optAngles.checked ||
-          optRejetEau.checked ||
-          optFaitiereDouble.checked ||
-          optFaitiereSimple.checked;
+    let optionsPrice = 0;
+    const finishingSelected =
+      optFaitiereSolin.checked ||
+      optRiveSolin.checked ||
+      optGrandeRive.checked ||
+      optAngles.checked ||
+      optRejetEau.checked ||
+      optFaitiereDouble.checked ||
+      optFaitiereSimple.checked;
 
-        if (finishingSelected)
-          optionsPrice += area * OPTIONS_PRICES.finishingPerM2;
-        if (optInstall.checked)
-          optionsPrice += area * OPTIONS_PRICES.installPerM2;
+    if (finishingSelected)
+      optionsPrice += area * OPTIONS_PRICES.finishingPerM2;
+    if (optInstall.checked)
+      optionsPrice += area * OPTIONS_PRICES.installPerM2;
 
-        const postalCode = document.getElementById("postalCode").value.trim();
-        const delivery = getDeliveryPrice(postalCode);
+    const postalCode = document.getElementById("postalCode").value.trim();
+    const delivery = getDeliveryPrice(postalCode);
 
-        let totalHT =
-          structureBase + roofCost + claddingCost + optionsPrice + delivery;
+    let totalHT =
+      structureBase + roofCost + claddingCost + optionsPrice + delivery;
 
-        totalHT = Math.round(totalHT / 50) * 50;
-        const totalTTC = Math.round((totalHT * (1 + TVA_RATE)) / 10) * 10;
-        const pricePerM2 = totalHT / area;
+    totalHT = Math.round(totalHT / 50) * 50;
+    const totalTTC = Math.round((totalHT * (1 + TVA_RATE)) / 10) * 10;
+    const pricePerM2 = totalHT / area;
 
-        // Récap
-        const typeLabel = type === "bi" ? "Abris bipente" : "Abris monopente";
+    const typeLabel = type === "bi" ? "Abris bipente" : "Abris monopente";
 
-        const claddingChecked = Array.from(claddings);
-        const claddingCount = claddingChecked.length;
+    const claddingChecked = Array.from(claddings);
+    const claddingCount = claddingChecked.length;
 
-        let claddingAreaText = "";
-        if (claddingCount === 0) {
-          claddingAreaText =
-            "Abris ouvert (sans bardage) – 0 m² de bardage calculé";
-        } else {
-          const codes = claddingChecked.map((c) => c.value);
-          const sides = codes.map(
-            (code) => FACADE_LABELS[code] || "Façade " + code
-          );
-          claddingAreaText =
-            claddingCount +
-            " façade(s) bardée(s) : " +
-            sides.join(", ") +
-            " – env. " +
-            claddingArea.toFixed(1) +
-            " m² de bardage";
-        }
+    let claddingAreaText = "";
+    if (claddingCount === 0) {
+      claddingAreaText =
+        "Abris ouvert (sans bardage) – 0 m² de bardage calculé";
+    } else {
+      const codes = claddingChecked.map((c) => c.value);
+      const sides = codes.map(
+        (code) => FACADE_LABELS[code] || "Façade " + code
+      );
+      claddingAreaText =
+        claddingCount +
+        " façade(s) bardée(s) : " +
+        sides.join(", ") +
+        " – env. " +
+        claddingArea.toFixed(1) +
+        " m² de bardage";
+    }
 
-        const roofColor = document.querySelector(
-          'input[name="roofColor"]:checked'
-        )?.value;
+    const roofColor = document.querySelector(
+      'input[name="roofColor"]:checked'
+    )?.value;
 
-        const claddingColorInput = document.querySelector(
-          'input[name="claddingColor"]:checked'
-        );
-        const claddingColor = claddingColorInput
-          ? claddingColorInput.value
-          : "Non précisé";
+    const claddingColorInput = document.querySelector(
+      'input[name="claddingColor"]:checked'
+    );
+    const claddingColor = claddingColorInput
+      ? claddingColorInput.value
+      : "Non précisé";
 
-        const selectedOptions = [];
-        if (finishingSelected) selectedOptions.push("Habillages et finitions");
-        if (optFaitiereSolin.checked) selectedOptions.push("Faitière en solin");
-        if (optRiveSolin.checked) selectedOptions.push("Rive en solin");
-        if (optGrandeRive.checked) selectedOptions.push("Grande rive");
-        if (optAngles.checked) selectedOptions.push("Angles");
-        if (optRejetEau.checked) selectedOptions.push("Rejet d'eau");
-        if (optFaitiereDouble.checked)
-          selectedOptions.push("Faitière double");
-        if (optFaitiereSimple.checked)
-          selectedOptions.push("Faitière simple");
-        if (optInstall.checked) selectedOptions.push("Pose par nos équipes");
+    const selectedOptions = [];
+    if (finishingSelected) selectedOptions.push("Habillages et finitions");
+    if (optFaitiereSolin.checked) selectedOptions.push("Faitière en solin");
+    if (optRiveSolin.checked) selectedOptions.push("Rive en solin");
+    if (optGrandeRive.checked) selectedOptions.push("Grande rive");
+    if (optAngles.checked) selectedOptions.push("Angles");
+    if (optRejetEau.checked) selectedOptions.push("Rejet d'eau");
+    if (optFaitiereDouble.checked) selectedOptions.push("Faitière double");
+    if (optFaitiereSimple.checked) selectedOptions.push("Faitière simple");
+    if (optInstall.checked) selectedOptions.push("Pose par nos équipes");
 
-        const addressText = postalCode
-          ? postalCode +
-            (document.getElementById("city").value
-              ? " " + document.getElementById("city").value
-              : "")
-          : "Non renseignée";
+    const addressText = postalCode
+      ? postalCode +
+        (document.getElementById("city").value
+          ? " " + document.getElementById("city").value
+          : "")
+      : "Non renseignée";
 
-        document.getElementById("typeDisplay").textContent = typeLabel;
-        document.getElementById("dimensionsDisplay").textContent =
-          width.toString().replace(".", ",") +
-          " m x " +
-          length.toString().replace(".", ",") +
-          " m, hauteur " +
-          height.toString().replace(".", ",") +
-          " m";
-        document.getElementById("surfaceDisplay").textContent =
-          area.toFixed(1) + " m²";
+    document.getElementById("typeDisplay").textContent = typeLabel;
+    document.getElementById("dimensionsDisplay").textContent =
+      width.toString().replace(".", ",") +
+      " m x " +
+      length.toString().replace(".", ",") +
+      " m, hauteur " +
+      height.toString().replace(".", ",") +
+      " m";
+    document.getElementById("surfaceDisplay").textContent =
+      area.toFixed(1) + " m²";
 
-        document.getElementById("roofTypeDisplay").textContent =
-          ROOF_TYPE_LABELS[roofType] || "Non précisé";
-        document.getElementById("roofColorDisplay").textContent =
-          roofColor || "Non précisée";
+    document.getElementById("roofTypeDisplay").textContent =
+      ROOF_TYPE_LABELS[roofType] || "Non précisé";
+    document.getElementById("roofColorDisplay").textContent =
+      roofColor || "Non précisée";
 
-        document.getElementById("claddingTypeDisplay").textContent =
-          CLADDING_TYPE_LABELS[claddingType] || "Non précisé";
-        document.getElementById("claddingDisplay").textContent =
-          claddingAreaText;
-        document.getElementById("claddingColorDisplay").textContent =
-          claddingColor;
+    document.getElementById("claddingTypeDisplay").textContent =
+      CLADDING_TYPE_LABELS[claddingType] || "Non précisé";
+    document.getElementById("claddingDisplay").textContent =
+      claddingAreaText;
+    document.getElementById("claddingColorDisplay").textContent =
+      claddingColor;
 
-        document.getElementById("optionsDisplay").textContent =
-          selectedOptions.length > 0
-            ? selectedOptions.join(", ")
-            : "Aucune option";
+    document.getElementById("optionsDisplay").textContent =
+      selectedOptions.length > 0
+        ? selectedOptions.join(", ")
+        : "Aucune option";
 
-        document.getElementById("addressDisplay").textContent = addressText;
-        document.getElementById("deliveryDisplay").textContent = delivery
-          ? formatCurrency(delivery) + " HT"
-          : "À définir";
+    document.getElementById("addressDisplay").textContent = addressText;
+    document.getElementById("deliveryDisplay").textContent = delivery
+      ? formatCurrency(delivery) + " HT"
+      : "À définir";
 
-        document.getElementById("priceHT").textContent =
-          formatCurrency(totalHT);
-        document.getElementById("priceTTC").textContent =
-          formatCurrency(totalTTC);
-        document.getElementById("pricePerM2").textContent =
-          formatCurrency(pricePerM2);
+    document.getElementById("priceHT").textContent =
+      formatCurrency(totalHT);
+    document.getElementById("priceTTC").textContent =
+      formatCurrency(totalTTC);
+    document.getElementById("pricePerM2").textContent =
+      formatCurrency(pricePerM2);
 
-        document.getElementById("summarySentence").textContent =
-          typeLabel +
-          " de " +
-          width.toString().replace(".", ",") +
-          " m x " +
-          length.toString().replace(".", ",") +
-          " m, hauteur " +
-          height.toString().replace(".", ",") +
-          " m, " +
-          claddingAreaText.toLowerCase() +
-          ", toiture " +
-          (ROOF_TYPE_LABELS[roofType] || "") +
-          " " +
-          (roofColor || "") +
-          ", bardage " +
-          (CLADDING_TYPE_LABELS[claddingType] || "") +
-          " " +
-          claddingColor +
-          ". Prix estimatif : " +
-          formatCurrency(totalHT) +
-          " HT (dont livraison env. " +
-          formatCurrency(delivery) +
-          ").";
+    document.getElementById("summarySentence").textContent =
+      typeLabel +
+      " de " +
+      width.toString().replace(".", ",") +
+      " m x " +
+      length.toString().replace(".", ",") +
+      " m, hauteur " +
+      height.toString().replace(".", ",") +
+      " m, " +
+      claddingAreaText.toLowerCase() +
+      ", toiture " +
+      (ROOF_TYPE_LABELS[roofType] || "") +
+      " " +
+      (roofColor || "") +
+      ", bardage " +
+      (CLADDING_TYPE_LABELS[claddingType] || "") +
+      " " +
+      claddingColor +
+      ". Prix estimatif : " +
+      formatCurrency(totalHT) +
+      " HT (dont livraison env. " +
+      formatCurrency(delivery) +
+      ").";
 
-        updateBardage3DView();
+    updateBardage3DView();
+
+    // 👉 NOUVEAU : on met à jour la 3D quand le prix est recalculé
+    if (typeof updateModelScaleFromForm === "function") {
+      updateModelScaleFromForm();
+    }
+  }
+</script>
+
       }
 
       document.addEventListener("DOMContentLoaded", () => {
