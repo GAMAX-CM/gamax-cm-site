@@ -379,8 +379,8 @@ body {
 }
 .facade-diagram-inner {
   position: relative;
-  width: 180px;
-  height: 120px;
+  width: 220px;
+  height: 140px;
   border-radius: 14px;
   border: 2px solid rgba(0, 0, 0, 0.2);
   background: radial-gradient(
@@ -390,7 +390,39 @@ body {
     #e6d7c0 100%
   );
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+  padding: 8px;
 }
+.facade-caption {
+  font-size: 0.8rem;
+  color: var(--gris-moyen);
+}
+
+/* SVG pseudo 3D */
+.shed-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.shed-roof {
+  fill: #d0d0d0; /* sera modifié par JS */
+  stroke: rgba(0, 0, 0, 0.4);
+  stroke-width: 1.5;
+}
+
+.shed-face {
+  fill: #f3eee5; /* façade non bardée */
+  stroke: rgba(0, 0, 0, 0.35);
+  stroke-width: 1.5;
+  transition: 0.15s ease;
+  cursor: pointer;
+}
+
+.shed-face.bardee {
+  /* couleur modifiée par JS en fonction du RAL bardage */
+}
+
+/* Pastilles A/B/C/D */
 .facade-label {
   position: absolute;
   width: 26px;
@@ -406,6 +438,7 @@ body {
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   transition: 0.15s ease;
+  z-index: 2;
 }
 .facade-label.active {
   background: var(--accent);
@@ -434,46 +467,6 @@ body {
   top: 50%;
   transform: translateY(-50%);
 }
-.facade-caption {
-  font-size: 0.8rem;
-  color: var(--gris-moyen);
-}
-/* ----- Schéma pseudo 3D de l'abri ----- */
-
-.shed-svg {
-  width: 100%;
-  max-width: 240px;
-  display: block;
-  margin: 0 auto;
-}
-
-.shed-roof {
-  fill: #d0d0d0; /* sera recoloré par le JS selon le RAL */
-  stroke: rgba(0, 0, 0, 0.4);
-  stroke-width: 1.5;
-}
-
-.shed-face {
-  fill: #f3eee5; /* façade non bardée */
-  stroke: rgba(0, 0, 0, 0.35);
-  stroke-width: 1.5;
-  transition: 0.15s ease;
-}
-
-.shed-face.bardee {
-  fill: #d9c3a0; /* façade bardée (tu pourras ajuster la couleur) */
-}
-
-/* on s'assure que les pastilles sont cliquables + au-dessus du SVG */
-.facade-label {
-  cursor: pointer;
-  z-index: 2;
-}
-
-.shed-face {
-  cursor: pointer;
-}
-
 
 /* Légende façades */
 .facade-legend-list {
@@ -531,58 +524,12 @@ body {
   color: #f3e9d9;
 }
 
-/* OPTIONS COMPLÉMENTAIRES AVEC IMAGES */
+/* OPTIONS COMPLÉMENTAIRES */
 .options-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.9rem;
 }
-
-.option-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.7rem;
-  padding: 0.7rem 0.9rem;
-  border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.16);
-  background: #fff;
-  cursor: pointer;
-  font-size: 0.85rem;
-  transition: var(--transition);
-}
-
-.option-card input {
-  margin-top: 0.35rem;
-  flex-shrink: 0;
-}
-
-.option-illustration {
-  flex-shrink: 0;
-}
-
-.option-illustration img {
-  width: 64px;
-  height: 48px;
-  object-fit: cover;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-}
-
-.option-text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-}
-
-.option-title {
-  font-weight: 600;
-}
-
-.option-sub {
-  font-size: 0.78rem;
-  color: var(--gris-moyen);
-}
-/* Images dans les options complémentaires */
 .option-pill {
   display: flex;
   align-items: flex-start;
@@ -593,26 +540,38 @@ body {
   background: #fff;
   cursor: pointer;
   font-size: 0.85rem;
+  transition: var(--transition);
 }
-
-/* Redimensionner les images d'options */
-.option-pill img {
-  width: 48px;          /* largeur fixe */
-  height: 48px;         /* hauteur fixe */
-  object-fit: contain;  /* garde les proportions */
+.option-pill input {
+  margin-top: 0.35rem;
   flex-shrink: 0;
-  border-radius: 8px;
-  background: #f5f5f5;  /* petit fond neutre si image pas pleine */
 }
 
-/* Effet sélection */
-.option-card input:checked ~ .option-illustration img {
-  box-shadow: 0 0 0 2px var(--noir), 0 4px 10px rgba(0, 0, 0, 0.3);
+/* Images dans les options */
+.option-pill img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: #f5f5f5;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
-.option-card input:checked ~ .option-text .option-title {
-  color: var(--noir);
+
+.option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
 }
-.option-card:hover {
+.option-title {
+  font-weight: 600;
+}
+.option-sub {
+  font-size: 0.78rem;
+  color: var(--gris-moyen);
+}
+
+.option-pill:hover {
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
   transform: translateY(-1px);
 }
