@@ -1468,10 +1468,15 @@
           structureRoot.add(seg);
         }
 
-        // Adapter le sol
+         // Adapter le sol (on garde les dimensions du formulaire)
         if (groundMesh) {
           groundMesh.scale.set(length / 10, width / 10, 1);
           groundMesh.position.set(length / 2, width / 2, 0);
+        }
+
+        // Met à jour toiture + bardage avec la structure reconstruite
+        updateCoverAndCladding();
+
         }
       // Retourne la bounding box de la structure (toutes les travées)
       function getStructureBounds() {
