@@ -438,6 +438,42 @@ body {
   font-size: 0.8rem;
   color: var(--gris-moyen);
 }
+/* ----- Schéma pseudo 3D de l'abri ----- */
+
+.shed-svg {
+  width: 100%;
+  max-width: 240px;
+  display: block;
+  margin: 0 auto;
+}
+
+.shed-roof {
+  fill: #d0d0d0; /* sera recoloré par le JS selon le RAL */
+  stroke: rgba(0, 0, 0, 0.4);
+  stroke-width: 1.5;
+}
+
+.shed-face {
+  fill: #f3eee5; /* façade non bardée */
+  stroke: rgba(0, 0, 0, 0.35);
+  stroke-width: 1.5;
+  transition: 0.15s ease;
+}
+
+.shed-face.bardee {
+  fill: #d9c3a0; /* façade bardée (tu pourras ajuster la couleur) */
+}
+
+/* on s'assure que les pastilles sont cliquables + au-dessus du SVG */
+.facade-label {
+  cursor: pointer;
+  z-index: 2;
+}
+
+.shed-face {
+  cursor: pointer;
+}
+
 
 /* Légende façades */
 .facade-legend-list {
