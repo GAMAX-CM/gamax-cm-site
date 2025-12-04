@@ -1245,30 +1245,32 @@
 <!-- THREE.JS (version compatible OrbitControls) -->
 <script src="https://unpkg.com/three@0.146.0/build/three.min.js"></script>
 <script src="https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://unpkg.com/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
+  
 
 <script>
-  // ----- 3D INTERACTIF (Three.js) -----
+  // ----- 3D INTERACTIF AVEC MODELE GLB -----
   let threeScene, threeCamera, threeRenderer, threeControls;
-  let threeBuildingGroup, threeRoofMesh;
-  let threeWallMeshes = [];
-  let threePosts = [];
+  let threeBuildingGroup;
+  let abriModel = null;
+  let baseSize = { width: 3, length: 5, height: 2.7 }; // dimensions du modèle de base (3x5m)
 
   function initThreeDScene() {
     const container = document.getElementById("viewer3d-container");
     const canvas = document.getElementById("viewer3d");
-
     if (!container || !canvas) return;
     if (typeof THREE === "undefined") return;
 
-    const width = container.clientWidth || 400;
+    const width  = container.clientWidth || 400;
     const height = container.clientHeight || (width * 3 / 4);
 
-    // Scène & caméra
+    // Scène
     threeScene = new THREE.Scene();
     threeScene.background = new THREE.Color(0xf5f5f5);
 
+    // Caméra
     threeCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    threeCamera.position.set(6, 5, 8);
+    threeCamera.position.set(8, 5, 10);
 
     // Renderer
     threeRenderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -1284,7 +1286,7 @@
     threeScene.add(dirLight);
 
     // Sol
-    const groundGeo = new THREE.PlaneGeometry(20, 20);
+    const groundGeo = new THREE.PlaneGeometry(30, 30);
     const groundMat = new THREE.MeshPhongMaterial({
       color: 0xe0e0e0,
       side: THREE.DoubleSide,
@@ -1294,68 +1296,61 @@
     ground.position.y = 0;
     threeScene.add(ground);
 
-    // Groupe bâtiment
+    // Groupe pour le bâtiment
     threeBuildingGroup = new THREE.Group();
     threeScene.add(threeBuildingGroup);
-
-    // Poteaux (4 coins)
-    const postGeo = new THREE.BoxGeometry(0.15, 1, 0.15);
-    const postMat = new THREE.MeshPhongMaterial({ color: 0x555555 });
-    const postPositions = [
-      [-1, 0.5, -1],
-      [ 1, 0.5, -1],
-      [-1, 0.5,  1],
-      [ 1, 0.5,  1],
-    ];
-    postPositions.forEach((p) => {
-      const post = new THREE.Mesh(postGeo, postMat);
-      post.position.set(p[0], p[1], p[2]);
-      threeBuildingGroup.add(post);
-      threePosts.push(post);
-    });
-
-    // Toiture
-    const roofGeo = new THREE.BoxGeometry(2.2, 0.05, 2.2);
-    const roofMat = new THREE.MeshPhongMaterial({ color: 0x999999 });
-    threeRoofMesh = new THREE.Mesh(roofGeo, roofMat);
-    threeRoofMesh.position.y = 1.6;
-    threeRoofMesh.rotation.x = -Math.PI * 5 / 180;
-    threeBuildingGroup.add(threeRoofMesh);
-
-    // Panneaux de bardage (A, C = longs pans ; B, D = pignons)
-    const wallMat = new THREE.MeshPhongMaterial({
-      color: 0xbbbbbb,
-      transparent: true,
-      opacity: 0.9,
-    });
-
-    const frontBackGeo = new THREE.BoxGeometry(2.0, 1.4, 0.04);  // A, C
-    const sideGeo      = new THREE.BoxGeometry(0.04, 1.4, 2.0);  // B, D
-
-    const wallA = new THREE.Mesh(frontBackGeo, wallMat.clone());
-    threeBuildingGroup.add(wallA);
-    threeWallMeshes.push(wallA);
-
-    const wallC = new THREE.Mesh(frontBackGeo, wallMat.clone());
-    threeBuildingGroup.add(wallC);
-    threeWallMeshes.push(wallC);
-
-    const wallB = new THREE.Mesh(sideGeo, wallMat.clone());
-    threeBuildingGroup.add(wallB);
-    threeWallMeshes.push(wallB);
-
-    const wallD = new THREE.Mesh(sideGeo, wallMat.clone());
-    threeBuildingGroup.add(wallD);
-    threeWallMeshes.push(wallD);
 
     // Contrôles caméra
     threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
     threeControls.enableDamping = true;
     threeControls.dampingFactor = 0.1;
-    threeControls.target.set(0, 1.2, 0);
+    threeControls.target.set(0, 1.5, 0);
+
+    // Charger le modèle GLB
+    const loader = new THREE.GLTFLoader();
+    loader.load(
+      "assets/abri-monopente-3x5m.glb",
+      (gltf) => {
+        abriModel = gltf.scene;
+
+        // Nettoyage matériaux / ombres
+        abriModel.traverse((obj) => {
+          if (obj.isMesh) {
+            obj.castShadow = true;
+            obj.receiveShadow = true;
+          }
+        });
+
+        // Centrer le modèle à l'origine
+        const box = new THREE.Box3().setFromObject(abriModel);
+        const size = new THREE.Vector3();
+        const center = new THREE.Vector3();
+        box.getSize(size);
+        box.getCenter(center);
+        abriModel.position.sub(center); // centre du modèle à (0,0,0)
+
+        // Sauvegarder la taille réelle du modèle
+        baseSize.width  = size.x;
+        baseSize.length = size.z;
+        baseSize.height = size.y;
+
+        threeBuildingGroup.add(abriModel);
+
+        // Ajuster la caméra sur le modèle
+        threeControls.target.set(0, size.y * 0.5, 0);
+        threeCamera.position.set(size.x * 1.8, size.y * 1.4, size.z * 2.2);
+        threeCamera.lookAt(threeControls.target);
+
+        // Mettre à jour l'échelle en fonction du formulaire
+        updateThreeDFromForm();
+      },
+      undefined,
+      (err) => {
+        console.error("Erreur chargement GLB", err);
+      }
+    );
 
     window.addEventListener("resize", onWindowResize3D);
-
     animate3D();
   }
 
@@ -1363,7 +1358,7 @@
     const container = document.getElementById("viewer3d-container");
     if (!container || !threeRenderer || !threeCamera) return;
 
-    const width = container.clientWidth || 400;
+    const width  = container.clientWidth || 400;
     const height = container.clientHeight || (width * 3 / 4);
 
     threeCamera.aspect = width / height;
@@ -1387,107 +1382,29 @@
     const heightEl = document.getElementById("height");
 
     const width  = widthEl  ? parseFloat(widthEl.value)  || 3   : 3;
-    const length = lengthEl ? parseFloat(lengthEl.value) || 3   : 3;
+    const length = lengthEl ? parseFloat(lengthEl.value) || 5   : 5;
     const height = heightEl ? parseFloat(heightEl.value) || 2.7 : 2.7;
 
-    // Couleur toiture
-    let roofColorCss = "#999999";
-    const roofRadio = document.querySelector('input[name="roofColor"]:checked');
-    if (roofRadio) {
-      const box = roofRadio.closest(".ral-choice")?.querySelector(".ral-box");
-      if (box) roofColorCss = window.getComputedStyle(box).backgroundColor;
-    }
-
-    // Couleur bardage
-    let claddingColorCss = "#bbbbbb";
-    const cladRadio = document.querySelector(
-      'input[name="claddingColor"]:checked'
-    );
-    if (cladRadio) {
-      const box = cladRadio.closest(".ral-choice")?.querySelector(".ral-box");
-      if (box) claddingColorCss = window.getComputedStyle(box).backgroundColor;
-    }
-
-    const claddingSides = [];
-    document
-      .querySelectorAll('input[name="claddingSide"]:checked')
-      .forEach((el) => claddingSides.push(el.value));
-
-    return { type, width, length, height, roofColorCss, claddingColorCss, claddingSides };
+    return { type, width, length, height };
   }
 
   function updateThreeDFromForm() {
-    if (!threeBuildingGroup || !threeRoofMesh) return;
+    if (!abriModel) return; // modèle pas encore chargé
 
-    const {
-      type,
-      width,
-      length,
-      height,
-      roofColorCss,
-      claddingColorCss,
-      claddingSides,
-    } = getFormConfig3D();
+    const { width, length, height } = getFormConfig3D();
 
-    // Normalisation : l’abri garde une taille visuelle cohérente
+    // On garde l'abri visible quelle que soit la dimension :
     const maxDim = Math.max(width, length);
-    const scale = 4 / maxDim; // l’abri fait ~4 unités max dans la scène
+    const displayScale = 4 / maxDim; // l'abri tient dans ~4 unités
 
-    const w = width * scale;
-    const l = length * scale;
-    const h = height * scale;
+    const sx = (width  / 3) * displayScale;  // base = 3 m
+    const sz = (length / 5) * displayScale;  // base = 5 m
+    const sy = (height / 2.7) * displayScale;
 
-    // Poteaux
-    threePosts.forEach((post, idx) => {
-      const isRight = idx === 1 || idx === 3;
-      const isFront = idx === 2 || idx === 3;
+    abriModel.scale.set(sx, sy, sz);
 
-      post.scale.set(1, h / 1, 1);
-      post.position.y = h / 2;
-      post.position.x = isRight ? w / 2 : -w / 2;
-      post.position.z = isFront ? l / 2 : -l / 2;
-    });
-
-    // Toiture
-    threeRoofMesh.scale.set(w / 2.2, 1, l / 2.2);
-    threeRoofMesh.position.y = h + 0.05;
-    threeRoofMesh.rotation.x = type === "mono" ? -Math.PI * 5 / 180 : 0;
-    threeRoofMesh.material.color = new THREE.Color(roofColorCss);
-
-    // Bardage (ordre : A, C, B, D)
-    const hWalls = h * 0.9;
-
-    const hasA = claddingSides.includes("A");
-    const wallA = threeWallMeshes[0];
-    wallA.visible = hasA;
-    wallA.scale.set(w / 2.0, hWalls / 1.4, 1);
-    wallA.position.set(0, hWalls / 2, l / 2 + 0.02);
-
-    const hasC = claddingSides.includes("C");
-    const wallC = threeWallMeshes[1];
-    wallC.visible = hasC;
-    wallC.scale.set(w / 2.0, hWalls / 1.4, 1);
-    wallC.position.set(0, hWalls / 2, -l / 2 - 0.02);
-
-    const hasB = claddingSides.includes("B");
-    const wallB = threeWallMeshes[2];
-    wallB.visible = hasB;
-    wallB.scale.set(1, hWalls / 1.4, l / 2.0);
-    wallB.position.set(-w / 2 - 0.02, hWalls / 2, 0);
-
-    const hasD = claddingSides.includes("D");
-    const wallD = threeWallMeshes[3];
-    wallD.visible = hasD;
-    wallD.scale.set(1, hWalls / 1.4, l / 2.0);
-    wallD.position.set(w / 2 + 0.02, hWalls / 2, 0);
-
-    threeWallMeshes.forEach((mesh) => {
-      mesh.material.color = new THREE.Color(claddingColorCss);
-    });
-
-    // Recentrer la caméra sur l’abri
     if (threeControls) {
-      threeControls.target.set(0, h * 0.6, 0);
+      threeControls.target.set(0, (baseSize.height * sy) * 0.5, 0);
       threeControls.update();
     }
   }
@@ -1502,22 +1419,15 @@
 
     document
       .querySelectorAll('input[name="slopeType"]')
-      .forEach((el) => el.addEventListener("change", updateThreeDFromForm));
-
-    document
-      .querySelectorAll('input[name="roofColor"], input[name="claddingColor"]')
-      .forEach((el) => el.addEventListener("change", updateThreeDFromForm));
-
-    document
-      .querySelectorAll('input[name="claddingSide"]')
-      .forEach((el) => el.addEventListener("change", updateThreeDFromForm));
+      .forEach((el) =>
+        el.addEventListener("change", updateThreeDFromForm)
+      );
   }
 
   function initThreeD() {
     if (!document.getElementById("viewer3d-container")) return;
     initThreeDScene();
     bindThreeDFormEvents();
-    updateThreeDFromForm();
   }
 
   if (document.readyState === "loading") {
