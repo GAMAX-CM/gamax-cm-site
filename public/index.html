@@ -84,8 +84,8 @@
         <div class="section-header left">
           <h2>Configurez votre abri métallique</h2>
           <p>
-            Choisissez le type d’abri, les dimensions, la couleur de toiture et
-            les options pour obtenir une estimation de prix.
+            Choisissez le type d’abri, les dimensions, les couleurs et les
+            options pour obtenir une estimation de prix.
           </p>
         </div>
 
@@ -232,175 +232,229 @@
               </div>
             </div>
 
-           <!-- 4. BARDAGE -->
-<h3>4. Bardage</h3>
-<div class="field">
-  <p class="field-help">
-    Choisissez les côtés à fermer en bardage. Vous pouvez cliquer sur le dessin
-    ou cocher les façades A, B, C, D.
-  </p>
-
-  <!-- Schéma 3D + pastilles A/B/C/D -->
-  <div class="facade-diagram">
-    <div class="facade-diagram-inner">
-      <!-- SVG pseudo 3D -->
-      <svg viewBox="0 0 200 130" class="shed-svg">
-        <!-- Toiture -->
-        <polygon
-          id="shedRoof"
-          class="shed-roof"
-          points="55,35 115,20 170,30 110,45"
-        ></polygon>
-
-        <!-- Façade A (avant) -->
-        <polygon
-          class="shed-face shed-face-a"
-          data-side="A"
-          points="55,35 110,45 110,100 55,85"
-        ></polygon>
-
-        <!-- Façade D (pignon droit) -->
-        <polygon
-          class="shed-face shed-face-d"
-          data-side="D"
-          points="110,45 170,30 170,85 110,100"
-        ></polygon>
-
-        <!-- Façade C suggérée (arrière, bande en haut) -->
-        <polygon
-          class="shed-face shed-face-c"
-          data-side="C"
-          points="55,35 115,20 170,30 110,45"
-          opacity="0"
-        ></polygon>
-      </svg>
-
-      <!-- Pastilles A / B / C / D (légende interactive) -->
-      <span class="facade-label facade-a" data-side="A">A</span>
-      <span class="facade-label facade-b" data-side="B">B</span>
-      <span class="facade-label facade-c" data-side="C">C</span>
-      <span class="facade-label facade-d" data-side="D">D</span>
-    </div>
-
-    <p class="facade-caption">
-      Cliquez sur les pastilles A / B / C / D ou cochez les cartes de bardage
-      ci-dessous.
-    </p>
-  </div>
-
-  <!-- Légende façades -->
-  <ul class="facade-legend-list">
-    <li><strong>Façade A</strong> : Long pan avant</li>
-    <li><strong>Façade B</strong> : Pignon gauche</li>
-    <li><strong>Façade C</strong> : Long pan arrière</li>
-    <li><strong>Façade D</strong> : Pignon droit</li>
-  </ul>
-
-  <!-- Cartes de sélection des côtés bardés -->
-  <p class="field-help">Sélectionnez les côtés à barder :</p>
-
-  <div class="bardage-grid">
-    <label class="bardage-choice">
-      <input
-        type="checkbox"
-        class="bardage-side"
-        data-side="A"
-        id="bardageA"
-      />
-      <div class="bardage-card">
-        <span class="bardage-label-main">Façade A – Long pan avant</span>
-        <span class="bardage-label-sub">
-          Bardage sur toute la longueur avant de l’abri.
-        </span>
-      </div>
-    </label>
-
-    <label class="bardage-choice">
-      <input
-        type="checkbox"
-        class="bardage-side"
-        data-side="B"
-        id="bardageB"
-      />
-      <div class="bardage-card">
-        <span class="bardage-label-main">Façade B – Pignon gauche</span>
-        <span class="bardage-label-sub">
-          Bardage sur le pignon gauche (côté A-B).
-        </span>
-      </div>
-    </label>
-
-    <label class="bardage-choice">
-      <input
-        type="checkbox"
-        class="bardage-side"
-        data-side="C"
-        id="bardageC"
-      />
-      <div class="bardage-card">
-        <span class="bardage-label-main">Façade C – Long pan arrière</span>
-        <span class="bardage-label-sub">
-          Bardage sur toute la longueur arrière de l’abri.
-        </span>
-      </div>
-    </label>
-
-    <label class="bardage-choice">
-      <input
-        type="checkbox"
-        class="bardage-side"
-        data-side="D"
-        id="bardageD"
-      />
-      <div class="bardage-card">
-        <span class="bardage-label-main">Façade D – Pignon droit</span>
-        <span class="bardage-label-sub">
-          Bardage sur le pignon droit (côté C-D).
-        </span>
-      </div>
-    </label>
-  </div>
-</div>
-
-
-            <!-- 5. OPTIONS COMPLÉMENTAIRES -->
-            <h3>5. Options complémentaires</h3>
-            <div class="options-grid">
-              <!-- Habillages -->
-              <label class="option-card">
-                <input type="checkbox" id="optFaitiereSolin" />
-                <div class="option-illustration">
-                  <img
-                    src="assets/faitiere-solin.jpg"
-                    alt="Faitière en solin"
+            <!-- 4. COULEUR BARDAGE -->
+            <h3>4. Couleur bardage (RAL)</h3>
+            <div class="field">
+              <div class="ral-grid">
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="claddingColor"
+                    value="RAL 7016"
+                    checked
                   />
+                  <div class="ral-box" style="background:#383e42">7016</div>
+                </label>
+
+                <label class="ral-choice">
+                  <input type="radio" name="claddingColor" value="RAL 8012" />
+                  <div class="ral-box" style="background:#5a1f1b">8012</div>
+                </label>
+
+                <label class="ral-choice">
+                  <input type="radio" name="claddingColor" value="RAL 9002" />
+                  <div class="ral-box" style="background:#dcdcd3">9002</div>
+                </label>
+
+                <label class="ral-choice">
+                  <input type="radio" name="claddingColor" value="RAL 9006" />
+                  <div class="ral-box" style="background:#a5a9ad">9006</div>
+                </label>
+
+                <label class="ral-choice">
+                  <input type="radio" name="claddingColor" value="RAL 7015" />
+                  <div class="ral-box" style="background:#51565c">7015</div>
+                </label>
+
+                <label class="ral-choice">
+                  <input type="radio" name="claddingColor" value="RAL 1015" />
+                  <div class="ral-box" style="background:#e8d9b5">1015</div>
+                </label>
+              </div>
+            </div>
+
+            <!-- 5. BARDAGE -->
+            <h3>5. Bardage</h3>
+            <div class="field">
+              <p class="field-help">
+                Choisissez les côtés à fermer en bardage. Vous pouvez cliquer
+                sur le dessin ou cocher les façades A, B, C, D.
+              </p>
+
+              <!-- Schéma 3D + pastilles A/B/C/D -->
+              <div class="facade-diagram">
+                <div class="facade-diagram-inner">
+                  <!-- SVG pseudo 3D -->
+                  <svg viewBox="0 0 200 130" class="shed-svg">
+                    <!-- Toiture -->
+                    <polygon
+                      id="shedRoof"
+                      class="shed-roof"
+                      points="55,35 115,20 170,30 110,45"
+                    ></polygon>
+
+                    <!-- Façade A (avant) -->
+                    <polygon
+                      class="shed-face shed-face-a"
+                      data-side="A"
+                      points="55,35 110,45 110,100 55,85"
+                    ></polygon>
+
+                    <!-- Façade D (pignon droit) -->
+                    <polygon
+                      class="shed-face shed-face-d"
+                      data-side="D"
+                      points="110,45 170,30 170,85 110,100"
+                    ></polygon>
+
+                    <!-- Façade C (arrière) – suggérée -->
+                    <polygon
+                      class="shed-face shed-face-c"
+                      data-side="C"
+                      points="55,35 115,20 170,30 110,45"
+                      opacity="0"
+                    ></polygon>
+                  </svg>
+
+                  <!-- Pastilles A / B / C / D -->
+                  <span class="facade-label facade-a" data-side="A">A</span>
+                  <span class="facade-label facade-b" data-side="B">B</span>
+                  <span class="facade-label facade-c" data-side="C">C</span>
+                  <span class="facade-label facade-d" data-side="D">D</span>
                 </div>
+
+                <p class="facade-caption">
+                  Cliquez sur les pastilles A / B / C / D ou cochez les cartes
+                  de bardage ci-dessous.
+                </p>
+              </div>
+
+              <!-- Légende façades -->
+              <ul class="facade-legend-list">
+                <li><strong>Façade A</strong> : Long pan avant</li>
+                <li><strong>Façade B</strong> : Pignon gauche</li>
+                <li><strong>Façade C</strong> : Long pan arrière</li>
+                <li><strong>Façade D</strong> : Pignon droit</li>
+              </ul>
+
+              <!-- Cartes de sélection des côtés bardés -->
+              <p class="field-help">Sélectionnez les côtés à barder :</p>
+
+              <div class="bardage-grid">
+                <label class="bardage-choice">
+                  <input
+                    type="checkbox"
+                    name="claddingSide"
+                    class="bardage-side"
+                    data-side="A"
+                    value="A"
+                    id="bardageA"
+                  />
+                  <div class="bardage-card">
+                    <span class="bardage-label-main">
+                      Façade A – Long pan avant
+                    </span>
+                    <span class="bardage-label-sub">
+                      Bardage sur toute la longueur avant de l’abri.
+                    </span>
+                  </div>
+                </label>
+
+                <label class="bardage-choice">
+                  <input
+                    type="checkbox"
+                    name="claddingSide"
+                    class="bardage-side"
+                    data-side="B"
+                    value="B"
+                    id="bardageB"
+                  />
+                  <div class="bardage-card">
+                    <span class="bardage-label-main">
+                      Façade B – Pignon gauche
+                    </span>
+                    <span class="bardage-label-sub">
+                      Bardage sur le pignon gauche (côté A-B).
+                    </span>
+                  </div>
+                </label>
+
+                <label class="bardage-choice">
+                  <input
+                    type="checkbox"
+                    name="claddingSide"
+                    class="bardage-side"
+                    data-side="C"
+                    value="C"
+                    id="bardageC"
+                  />
+                  <div class="bardage-card">
+                    <span class="bardage-label-main">
+                      Façade C – Long pan arrière
+                    </span>
+                    <span class="bardage-label-sub">
+                      Bardage sur toute la longueur arrière de l’abri.
+                    </span>
+                  </div>
+                </label>
+
+                <label class="bardage-choice">
+                  <input
+                    type="checkbox"
+                    name="claddingSide"
+                    class="bardage-side"
+                    data-side="D"
+                    value="D"
+                    id="bardageD"
+                  />
+                  <div class="bardage-card">
+                    <span class="bardage-label-main">
+                      Façade D – Pignon droit
+                    </span>
+                    <span class="bardage-label-sub">
+                      Bardage sur le pignon droit (côté C-D).
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- 6. OPTIONS COMPLÉMENTAIRES -->
+            <h3>6. Options complémentaires</h3>
+            <p class="field-help">
+              Les bavettes et habillages de finition seront fournis dans la
+              même couleur que le bardage sélectionné.
+            </p>
+            <div class="options-grid">
+              <label class="option-pill">
+                <input type="checkbox" id="optFaitiereSolin" />
+                <img
+                  src="assets/faitiere-solin.jpg"
+                  alt="Faitière en solin"
+                />
                 <div class="option-text">
                   <span class="option-title">Faitière en solin</span>
                   <span class="option-sub">
-                    Raccord de toiture étanche contre un mur ou bâtiment.
+                    Raccord de toiture étanche contre un mur ou un bâtiment
+                    existant.
                   </span>
                 </div>
               </label>
 
-              <label class="option-card">
+              <label class="option-pill">
                 <input type="checkbox" id="optRiveSolin" />
-                <div class="option-illustration">
-                  <img src="assets/rive-solin.jpg" alt="Rive en solin" />
-                </div>
+                <img src="assets/rive-solin.jpg" alt="Rive en solin" />
                 <div class="option-text">
                   <span class="option-title">Rive en solin</span>
                   <span class="option-sub">
-                    Finition latérale de toiture avec solin.
+                    Finition latérale de toiture avec solin de protection.
                   </span>
                 </div>
               </label>
 
-              <label class="option-card">
+              <label class="option-pill">
                 <input type="checkbox" id="optGrandeRive" />
-                <div class="option-illustration">
-                  <img src="assets/grande-rive.jpg" alt="Grande rive" />
-                </div>
+                <img src="assets/grande-rive.jpg" alt="Grande rive" />
                 <div class="option-text">
                   <span class="option-title">Grande rive</span>
                   <span class="option-sub">
@@ -409,79 +463,59 @@
                 </div>
               </label>
 
-              <label class="option-card">
+              <label class="option-pill">
                 <input type="checkbox" id="optAngles" />
-                <div class="option-illustration">
-                  <img src="assets/angles-bardage.jpg" alt="Angles" />
-                </div>
+                <img src="assets/angles-bardage.jpg" alt="Angles" />
                 <div class="option-text">
                   <span class="option-title">Angles</span>
                   <span class="option-sub">
-                    Habillages d’angles verticaux pour les angles du bâtiment.
+                    Habillages verticaux des angles du bâtiment.
                   </span>
                 </div>
               </label>
 
-              <label class="option-card">
+              <label class="option-pill">
                 <input type="checkbox" id="optRejetEau" />
-                <div class="option-illustration">
-                  <img src="assets/rejet-eau.jpg" alt="Rejet d'eau" />
-                </div>
+                <img src="assets/rejet-eau.jpg" alt="Rejet d'eau" />
                 <div class="option-text">
                   <span class="option-title">Rejet d'eau</span>
                   <span class="option-sub">
-                    Profil pour évacuer l’eau sur les bas de bardage.
+                    Profil pour évacuer l’eau en pied de bardage.
                   </span>
                 </div>
               </label>
 
-              <label class="option-card">
+              <label class="option-pill">
                 <input type="checkbox" id="optFaitiereDouble" />
-                <div class="option-illustration">
-                  <img
-                    src="assets/faitiere-double.jpg"
-                    alt="Faitière double"
-                  />
-                </div>
+                <img
+                  src="assets/faitiere-double.jpg"
+                  alt="Faitière double"
+                />
                 <div class="option-text">
                   <span class="option-title">Faitière double</span>
                   <span class="option-sub">
-                    Faitière pour toiture bi-pente.
+                    Faitière pour toiture bi-pente, avec finitions assorties.
                   </span>
                 </div>
               </label>
 
-              <label class="option-card">
+              <label class="option-pill">
                 <input type="checkbox" id="optFaitiereSimple" />
-                <div class="option-illustration">
-                  <img
-                    src="assets/faitiere-simple.jpg"
-                    alt="Faitière simple"
-                  />
-                </div>
+                <img
+                  src="assets/faitiere-simple.jpg"
+                  alt="Faitière simple"
+                />
                 <div class="option-text">
                   <span class="option-title">Faitière simple</span>
                   <span class="option-sub">
-                    Faitière pour toiture monopente.
-                  </span>
-                </div>
-              </label>
-
-              <!-- Porte -->
-              <label class="option-card">
-                <input type="checkbox" id="optDoor" />
-                <div class="option-text">
-                  <span class="option-title">
-                    Une porte coulissante / sectionnelle
-                  </span>
-                  <span class="option-sub">
-                    Largeur standard, autres dimensions sur devis.
+                    Faitière pour toiture monopente, même couleur que le
+                    bardage.
                   </span>
                 </div>
               </label>
 
               <!-- Pose -->
-              <label class="option-card">
+              <label class="option-pill">
                 <input type="checkbox" id="optInstall" />
                 <div class="option-text">
                   <span class="option-title">Pose par nos équipes</span>
@@ -492,8 +526,8 @@
               </label>
             </div>
 
-            <!-- 6. ADRESSE DU PROJET & LIVRAISON -->
-            <h3>6. Adresse du projet & livraison</h3>
+            <!-- 7. ADRESSE DU PROJET & LIVRAISON -->
+            <h3>7. Adresse du projet & livraison</h3>
             <div class="form-grid address-grid">
               <div class="field">
                 <label for="postalCode">Code postal</label>
@@ -511,11 +545,13 @@
 
               <div class="field">
                 <label for="city">Ville</label>
-                <input list="cityList" id="city" name="city" />
-                <datalist id="cityList"></datalist>
+                <select id="city" name="city">
+                  <option value="">
+                    Sélectionnez votre ville après saisie du code postal
+                  </option>
+                </select>
                 <p class="field-help">
-                  Choisissez votre ville dans la liste proposée (à ajuster si
-                  besoin).
+                  La liste se met à jour automatiquement selon le code postal.
                 </p>
               </div>
             </div>
@@ -528,7 +564,9 @@
           <!-- RÉCAPITULATIF -->
           <aside class="config-summary">
             <div class="summary-box">
-              <p class="summary-label">Prix estimatif HT (structure + options + livraison)</p>
+              <p class="summary-label">
+                Prix estimatif HT (structure + options + livraison)
+              </p>
               <p id="priceHT" class="summary-main">–</p>
               <p id="priceTTC" class="summary-sub">
                 Prix TTC (20 %) : –
@@ -559,12 +597,16 @@
                   <span id="claddingDisplay">–</span>
                 </li>
                 <li>
-                  Options :
-                  <span id="optionsDisplay">–</span>
-                </li>
-                <li>
                   Couleur toiture :
                   <span id="roofColorDisplay">–</span>
+                </li>
+                <li>
+                  Couleur bardage :
+                  <span id="claddingColorDisplay">–</span>
+                </li>
+                <li>
+                  Options :
+                  <span id="optionsDisplay">–</span>
                 </li>
                 <li>
                   Adresse du projet :
@@ -601,7 +643,6 @@
         },
       };
 
-      // Libellés façades (pour affichage)
       const FACADE_LABELS = {
         A: "Façade A (long pan avant)",
         B: "Façade B (pignon gauche)",
@@ -617,9 +658,8 @@
 
       const BARDAGE_PRICE_PER_M2 = 50; // €/m² bardage
       const OPTIONS_PRICES = {
-        finishingPerM2: 8,
-        doorFixed: 900,
-        installPerM2: 35,
+        finishingPerM2: 8, // habillages au m²
+        installPerM2: 35, // pose
       };
 
       const TVA_RATE = 0.2;
@@ -673,23 +713,7 @@
         populateSelect(heightSelect, config.heights);
       }
 
-      // Met à jour la couleur des pastilles A/B/C/D en fonction des cases cochées
-      function syncFacadeBubbles() {
-        const bubbles = document.querySelectorAll(".facade-label");
-        bubbles.forEach((bubble) => {
-          const code = bubble.dataset.facade;
-          const checkbox = document.querySelector(
-            'input[name="claddingSide"][value="' + code + '"]'
-          );
-          if (checkbox && checkbox.checked) {
-            bubble.classList.add("active");
-          } else {
-            bubble.classList.remove("active");
-          }
-        });
-      }
-
-      // Calcul des frais de livraison Option B (par département)
+      // Frais de livraison par département
       function getDeliveryPrice(postalCode) {
         if (!postalCode || postalCode.length !== 5) return 0;
         const dep = parseInt(postalCode.slice(0, 2), 10);
@@ -700,24 +724,98 @@
         return 350; // reste de la France
       }
 
-      // Met à jour les suggestions de ville en fonction du CP
-      function updateCitySuggestions() {
+      // Met à jour la liste des villes en fonction du CP
+      function updateCityOptions() {
         const postalInput = document.getElementById("postalCode");
-        const cityInput = document.getElementById("city");
-        const list = document.getElementById("cityList");
+        const citySelect = document.getElementById("city");
         const cp = postalInput.value.trim();
-        list.innerHTML = "";
+        citySelect.innerHTML = "";
 
-        const cities = POSTAL_CITIES[cp] || [];
+        const cities = POSTAL_CITIES[cp];
+
+        if (!cities || cities.length === 0) {
+          const opt = document.createElement("option");
+          opt.value = "";
+          opt.textContent =
+            "Sélectionnez votre ville ou précisez-la lors de la demande de devis";
+          citySelect.appendChild(opt);
+          return;
+        }
+
         cities.forEach((name) => {
           const opt = document.createElement("option");
           opt.value = name;
-          list.appendChild(opt);
+          opt.textContent = name;
+          citySelect.appendChild(opt);
         });
 
-        if (cities.length === 1 && !cityInput.value) {
-          cityInput.value = cities[0];
+        if (cities.length === 1) {
+          citySelect.value = cities[0];
         }
+      }
+
+      // 3D : met à jour pastilles + faces bardées
+      function updateBardage3DView() {
+        ["A", "B", "C", "D"].forEach((side) => {
+          const checkbox = document.querySelector(
+            'input[name="claddingSide"][value="' + side + '"]'
+          );
+          const active = checkbox && checkbox.checked;
+
+          const label = document.querySelector(
+            '.facade-label[data-side="' + side + '"]'
+          );
+          if (label) {
+            label.classList.toggle("active", active);
+          }
+
+          const face = document.querySelector(
+            '.shed-face[data-side="' + side + '"]'
+          );
+          if (face) {
+            face.classList.toggle("bardee", active);
+          }
+        });
+
+        // applique la couleur de bardage aux façades bardées
+        updateCladdingColor3D();
+      }
+
+      // 3D : couleur de toiture selon le RAL choisi
+      function updateRoofColor3D() {
+        const selected = document.querySelector(
+          'input[name="roofColor"]:checked'
+        );
+        if (!selected) return;
+
+        const ralBox = selected
+          .closest(".ral-choice")
+          ?.querySelector(".ral-box");
+        if (!ralBox) return;
+
+        const bgColor = window.getComputedStyle(ralBox).backgroundColor;
+        const roof = document.getElementById("shedRoof");
+        if (roof) {
+          roof.style.fill = bgColor;
+        }
+      }
+
+      // 3D : couleur de bardage selon le RAL choisi
+      function updateCladdingColor3D() {
+        const selected = document.querySelector(
+          'input[name="claddingColor"]:checked'
+        );
+        if (!selected) return;
+
+        const ralBox = selected
+          .closest(".ral-choice")
+          ?.querySelector(".ral-box");
+        if (!ralBox) return;
+
+        const bgColor = window.getComputedStyle(ralBox).backgroundColor;
+        document.querySelectorAll(".shed-face.bardee").forEach((face) => {
+          face.style.fill = bgColor;
+        });
       }
 
       function calculatePrice() {
@@ -726,18 +824,21 @@
         const length = parseFloat(document.getElementById("length").value);
         const height = parseFloat(document.getElementById("height").value);
 
-        // Bardage : façades cochées (A/B/C/D)
         const claddingChecked = document.querySelectorAll(
           'input[name="claddingSide"]:checked'
         );
         const claddingCount = claddingChecked.length;
 
-        // Couleur toiture
         const roofColor = document.querySelector(
           'input[name="roofColor"]:checked'
         ).value;
+        const claddingColorInput = document.querySelector(
+          'input[name="claddingColor"]:checked'
+        );
+        const claddingColor = claddingColorInput
+          ? claddingColorInput.value
+          : "Non précisé";
 
-        // Adresse
         const postalCode = document
           .getElementById("postalCode")
           .value.trim();
@@ -761,7 +862,7 @@
           structureBase *= increaseFactor;
         }
 
-        // --- BARDAGE PAR FAÇADE ---
+        // Bardage par façade
         let claddingArea = 0;
         claddingChecked.forEach((el) => {
           const code = el.value; // A, B, C ou D
@@ -787,8 +888,6 @@
           document.getElementById("optFaitiereDouble").checked;
         const optFaitiereSimple =
           document.getElementById("optFaitiereSimple").checked;
-
-        const optDoor = document.getElementById("optDoor").checked;
         const optInstall = document.getElementById("optInstall").checked;
 
         const habillageSelected =
@@ -800,17 +899,17 @@
           optFaitiereDouble ||
           optFaitiereSimple;
 
-        // Si au moins un habillage est choisi -> forfait habillages au m²
         if (habillageSelected) {
           optionsPrice += area * OPTIONS_PRICES.finishingPerM2;
         }
-        if (optDoor) optionsPrice += OPTIONS_PRICES.doorFixed;
-        if (optInstall) optionsPrice += area * OPTIONS_PRICES.installPerM2;
+        if (optInstall) {
+          optionsPrice += area * OPTIONS_PRICES.installPerM2;
+        }
 
         // Frais de livraison
         const deliveryHT = getDeliveryPrice(postalCode);
 
-        // TOTAL
+        // Total
         let totalHT = structureBase + claddingPrice + optionsPrice + deliveryHT;
         totalHT = Math.round(totalHT / 50) * 50;
 
@@ -848,9 +947,6 @@
         if (optRejetEau) selectedOptions.push("Rejet d'eau");
         if (optFaitiereDouble) selectedOptions.push("Faitière double");
         if (optFaitiereSimple) selectedOptions.push("Faitière simple");
-
-        if (optDoor)
-          selectedOptions.push("Porte coulissante / sectionnelle");
         if (optInstall) selectedOptions.push("Pose par nos équipes");
 
         const addressText = postalCode
@@ -870,11 +966,13 @@
           area.toFixed(1) + " m²";
         document.getElementById("claddingDisplay").textContent =
           claddingLabel;
+        document.getElementById("roofColorDisplay").textContent = roofColor;
+        document.getElementById("claddingColorDisplay").textContent =
+          claddingColor;
         document.getElementById("optionsDisplay").textContent =
           selectedOptions.length > 0
             ? selectedOptions.join(", ")
             : "Aucune option";
-        document.getElementById("roofColorDisplay").textContent = roofColor;
         document.getElementById("addressDisplay").textContent = addressText;
         document.getElementById("deliveryDisplay").textContent = deliveryHT
           ? formatCurrency(deliveryHT) + " HT"
@@ -900,14 +998,15 @@
           claddingLabel.toLowerCase() +
           ", toiture " +
           roofColor +
+          ", bardage " +
+          claddingColor +
           ". Prix estimatif : " +
           formatCurrency(totalHT) +
           " HT (dont livraison env. " +
           formatCurrency(deliveryHT) +
           ").";
 
-        // Met à jour la couleur des pastilles A/B/C/D
-        syncFacadeBubbles();
+        updateBardage3DView();
       }
 
       document.addEventListener("DOMContentLoaded", () => {
@@ -933,7 +1032,6 @@
           "optRejetEau",
           "optFaitiereDouble",
           "optFaitiereSimple",
-          "optDoor",
           "optInstall",
           "postalCode",
           "city",
@@ -941,126 +1039,57 @@
         idsToWatch.forEach((id) => {
           const el = document.getElementById(id);
           if (!el) return;
-          el.addEventListener("change", calculatePrice);
           if (id === "postalCode") {
             el.addEventListener("input", () => {
-              updateCitySuggestions();
+              updateCityOptions();
               calculatePrice();
             });
+          } else {
+            el.addEventListener("change", calculatePrice);
           }
         });
 
         document
           .querySelectorAll('input[name="roofColor"]')
-          .forEach((el) => el.addEventListener("change", calculatePrice));
+          .forEach((el) =>
+            el.addEventListener("change", () => {
+              updateRoofColor3D();
+              calculatePrice();
+            })
+          );
+
+        document
+          .querySelectorAll('input[name="claddingColor"]')
+          .forEach((el) =>
+            el.addEventListener("change", () => {
+              updateCladdingColor3D();
+              calculatePrice();
+            })
+          );
 
         document
           .querySelectorAll('input[name="claddingSide"]')
-          .forEach((el) => el.addEventListener("change", calculatePrice));
+          .forEach((el) =>
+            el.addEventListener("change", () => {
+              calculatePrice();
+              updateBardage3DView();
+            })
+          );
 
-        // Clic sur les pastilles A/B/C/D -> coche/décoche la façade
-        document.querySelectorAll(".facade-label").forEach((bubble) => {
-          bubble.addEventListener("click", () => {
-            const code = bubble.dataset.facade;
-            const checkbox = document.querySelector(
-              'input[name="claddingSide"][value="' + code + '"]'
-            );
-            if (checkbox) {
-              checkbox.checked = !checkbox.checked;
-              calculatePrice(); // recalcul + sync couleurs
-            }
-          });
-        });
+        document
+          .getElementById("btnCalculate")
+          .addEventListener("click", calculatePrice);
 
+        // Init vue 3D + ville + prix
+        updateCityOptions();
+        updateRoofColor3D();
+        updateCladdingColor3D();
+        updateBardage3DView();
         calculatePrice();
-        syncFacadeBubbles();
       });
     </script>
-    <script>
-  // Met à jour la couleur des pastilles + des faces du dessin
-  function updateBardage3DView() {
-    const checkboxes = document.querySelectorAll(".bardage-side");
-
-    checkboxes.forEach((cb) => {
-      const side = cb.dataset.side;
-      const active = cb.checked;
-
-      // pastille A/B/C/D
-      const label = document.querySelector(
-        '.facade-label[data-side="' + side + '"]'
-      );
-      if (label) {
-        label.classList.toggle("active", active);
-      }
-
-      // face correspondante sur le dessin (A et D visibles, C suggérée)
-      const face = document.querySelector(
-        '.shed-face[data-side="' + side + '"]'
-      );
-      if (face) {
-        face.classList.toggle("bardee", active);
-      }
-    });
-  }
-
-  // Met à jour la couleur de la toiture 3D selon le RAL sélectionné
-  function updateRoofColor3D() {
-    const selected = document.querySelector('input[name="roofColor"]:checked');
-    if (!selected) return;
-
-    // on récupère la couleur de fond de la pastille RAL
-    const ralBox = selected.closest(".ral-choice")?.querySelector(".ral-box");
-    if (!ralBox) return;
-
-    const bgColor = window.getComputedStyle(ralBox).backgroundColor;
-    const roof = document.getElementById("shedRoof");
-    if (roof) {
-      roof.style.fill = bgColor;
-    }
-  }
-
-  // Initialisation des interactions
-  function initBardage3D() {
-    const checkboxes = document.querySelectorAll(".bardage-side");
-
-    // Quand on coche/décoche les cartes de bardage
-    checkboxes.forEach((cb) => {
-      cb.addEventListener("change", updateBardage3DView);
-    });
-
-    // Cliquer sur le dessin ou sur les pastilles A/B/C/D coche/décoche
-    document
-      .querySelectorAll(".shed-face, .facade-label")
-      .forEach((el) => {
-        const side = el.dataset.side;
-        if (!side) return;
-        const cb = document.querySelector(
-          '.bardage-side[data-side="' + side + '"]'
-        );
-        if (!cb) return;
-
-        el.addEventListener("click", () => {
-          cb.checked = !cb.checked;
-          cb.dispatchEvent(new Event("change", { bubbles: true }));
-        });
-      });
-
-    // Mise à jour initiale
-    updateBardage3DView();
-    updateRoofColor3D();
-
-    // Mettre à jour la couleur de la toiture quand le RAL change
-    document
-      .querySelectorAll('input[name="roofColor"]')
-      .forEach((el) => {
-        el.addEventListener("change", updateRoofColor3D);
-      });
-  }
-
-  document.addEventListener("DOMContentLoaded", initBardage3D);
-</script>
-
   </body>
 </html>
+
 
 
