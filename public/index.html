@@ -1510,13 +1510,50 @@
 
     // ---- Chargement du modèle GLB ----
     const loader = new THREE.GLTFLoader();
-    loader.load(
-      "assets/abri-monopente-3x5m.glb",   // adapte le nom si ton fichier est différent
-      (gltf) => {
-        abriModel = gltf.scene;
+loader.load(
+  "assets/abri-monopente-3x5m.gltf",   // même nom que dans /public/assets
+  (gltf) => {
+    console.log("Modèle GLTF chargé", gltf);
+    abriModel = gltf.scene;
 
-        // Orientation (on ajustera si besoin)
-        abriModel.rotation.set(0, Math.PI, 0); // 180° sur Y si le modèle est “à l’envers”
+    // Orientation (à ajuster si besoin)
+    abriModel.rotation.set(0, Math.PI, 0);
+
+    abriModel.traverse((obj) => {
+      if (obj.isMesh) {
+        obj.castShadow = true;
+        obj.receiveShadow = true;
+      }
+    });
+
+    const box = new THREE.Box3().setFromObject(abriModel);
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    box.getSize(size);
+    box.getCenter(center);
+
+    abriModel.position.x -= center.x;
+    abriModel.position.z -= center.z;
+    abriModel.position.y -= box.min.y;
+
+    threeBuildingGroup.add(abriModel);
+
+    threeControls.target.set(0, size.y * 0.6, 0);
+    threeCamera.position.set(
+      size.x * 1.7,
+      size.y * 1.3,
+      size.z * 2.0
+    );
+    threeCamera.lookAt(threeControls.target);
+
+    updateThreeDFromForm();
+  },
+  undefined,
+  (error) => {
+    console.error("Erreur chargement GLTF", error);
+  }
+);
+
 
         // Ombres
         abriModel.traverse((obj) => {
