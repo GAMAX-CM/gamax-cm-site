@@ -976,6 +976,90 @@
         syncFacadeBubbles();
       });
     </script>
+    <script>
+  // Met à jour la couleur des pastilles + des faces du dessin
+  function updateBardage3DView() {
+    const checkboxes = document.querySelectorAll(".bardage-side");
+
+    checkboxes.forEach((cb) => {
+      const side = cb.dataset.side;
+      const active = cb.checked;
+
+      // pastille A/B/C/D
+      const label = document.querySelector(
+        '.facade-label[data-side="' + side + '"]'
+      );
+      if (label) {
+        label.classList.toggle("active", active);
+      }
+
+      // face correspondante sur le dessin (A et D visibles, C suggérée)
+      const face = document.querySelector(
+        '.shed-face[data-side="' + side + '"]'
+      );
+      if (face) {
+        face.classList.toggle("bardee", active);
+      }
+    });
+  }
+
+  // Met à jour la couleur de la toiture 3D selon le RAL sélectionné
+  function updateRoofColor3D() {
+    const selected = document.querySelector('input[name="roofColor"]:checked');
+    if (!selected) return;
+
+    // on récupère la couleur de fond de la pastille RAL
+    const ralBox = selected.closest(".ral-choice")?.querySelector(".ral-box");
+    if (!ralBox) return;
+
+    const bgColor = window.getComputedStyle(ralBox).backgroundColor;
+    const roof = document.getElementById("shedRoof");
+    if (roof) {
+      roof.style.fill = bgColor;
+    }
+  }
+
+  // Initialisation des interactions
+  function initBardage3D() {
+    const checkboxes = document.querySelectorAll(".bardage-side");
+
+    // Quand on coche/décoche les cartes de bardage
+    checkboxes.forEach((cb) => {
+      cb.addEventListener("change", updateBardage3DView);
+    });
+
+    // Cliquer sur le dessin ou sur les pastilles A/B/C/D coche/décoche
+    document
+      .querySelectorAll(".shed-face, .facade-label")
+      .forEach((el) => {
+        const side = el.dataset.side;
+        if (!side) return;
+        const cb = document.querySelector(
+          '.bardage-side[data-side="' + side + '"]'
+        );
+        if (!cb) return;
+
+        el.addEventListener("click", () => {
+          cb.checked = !cb.checked;
+          cb.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+      });
+
+    // Mise à jour initiale
+    updateBardage3DView();
+    updateRoofColor3D();
+
+    // Mettre à jour la couleur de la toiture quand le RAL change
+    document
+      .querySelectorAll('input[name="roofColor"]')
+      .forEach((el) => {
+        el.addEventListener("change", updateRoofColor3D);
+      });
+  }
+
+  document.addEventListener("DOMContentLoaded", initBardage3D);
+</script>
+
   </body>
 </html>
 
