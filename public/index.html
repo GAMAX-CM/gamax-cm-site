@@ -1091,204 +1091,202 @@
         });
       }
 
-<script>
-  function calculatePrice() {
-    const type = getSelectedType();
-    const width = parseFloat(document.getElementById("width").value);
-    const length = parseFloat(document.getElementById("length").value);
-    const height = parseFloat(document.getElementById("height").value);
-    if (!width || !length || !height) return;
+      function calculatePrice() {
+        const type = getSelectedType();
+        const width = parseFloat(document.getElementById("width").value);
+        const length = parseFloat(document.getElementById("length").value);
+        const height = parseFloat(document.getElementById("height").value);
+        if (!width || !length || !height) return;
 
-    const area = width * length;
+        const area = width * length;
 
-    const sizeKey = width + "x" + length;
-    let structureBase = STRUCTURE_PRICE_TABLE[type]?.[sizeKey] ?? 0;
+        const sizeKey = width + "x" + length;
+        let structureBase = STRUCTURE_PRICE_TABLE[type]?.[sizeKey] ?? 0;
 
-    if (height > 3) {
-      const extra = height - 3;
-      const steps = extra / 0.5;
-      structureBase *= 1 + steps * 0.1;
-    }
+        if (height > 3) {
+          const extra = height - 3;
+          const steps = extra / 0.5;
+          structureBase *= 1 + steps * 0.1;
+        }
 
-    const roofType =
-      document.querySelector('input[name="roofType"]:checked')?.value;
-    const roofUnit = ROOF_PRICE_PER_M2[roofType] ?? 0;
-    const roofCost = area * roofUnit;
+        const roofType =
+          document.querySelector('input[name="roofType"]:checked')?.value;
+        const roofUnit = ROOF_PRICE_PER_M2[roofType] ?? 0;
+        const roofCost = area * roofUnit;
 
-    let claddingArea = 0;
-    const claddings = document.querySelectorAll(
-      'input[name="claddingSide"]:checked'
-    );
-    claddings.forEach((el) => {
-      if (el.value === "A" || el.value === "C")
-        claddingArea += length * height;
-      else claddingArea += width * height;
-    });
+        let claddingArea = 0;
+        const claddings = document.querySelectorAll(
+          'input[name="claddingSide"]:checked'
+        );
+        claddings.forEach((el) => {
+          if (el.value === "A" || el.value === "C")
+            claddingArea += length * height;
+          else claddingArea += width * height;
+        });
 
-    const claddingType =
-      document.querySelector('input[name="claddingType"]:checked')?.value;
-    const cladUnit = CLADDING_PRICE_PER_M2[claddingType] ?? 0;
-    const claddingCost = claddingArea * cladUnit;
+        const claddingType =
+          document.querySelector('input[name="claddingType"]:checked')?.value;
+        const cladUnit = CLADDING_PRICE_PER_M2[claddingType] ?? 0;
+        const claddingCost = claddingArea * cladUnit;
 
-    const optFaitiereSolin = document.getElementById("optFaitiereSolin");
-    const optRiveSolin = document.getElementById("optRiveSolin");
-    const optGrandeRive = document.getElementById("optGrandeRive");
-    const optAngles = document.getElementById("optAngles");
-    const optRejetEau = document.getElementById("optRejetEau");
-    const optFaitiereDouble = document.getElementById("optFaitiereDouble");
-    const optFaitiereSimple = document.getElementById("optFaitiereSimple");
-    const optInstall = document.getElementById("optInstall");
+        const optFaitiereSolin = document.getElementById("optFaitiereSolin");
+        const optRiveSolin = document.getElementById("optRiveSolin");
+        const optGrandeRive = document.getElementById("optGrandeRive");
+        const optAngles = document.getElementById("optAngles");
+        const optRejetEau = document.getElementById("optRejetEau");
+        const optFaitiereDouble = document.getElementById("optFaitiereDouble");
+        const optFaitiereSimple = document.getElementById("optFaitiereSimple");
+        const optInstall = document.getElementById("optInstall");
 
-    let optionsPrice = 0;
-    const finishingSelected =
-      optFaitiereSolin.checked ||
-      optRiveSolin.checked ||
-      optGrandeRive.checked ||
-      optAngles.checked ||
-      optRejetEau.checked ||
-      optFaitiereDouble.checked ||
-      optFaitiereSimple.checked;
+        let optionsPrice = 0;
+        const finishingSelected =
+          optFaitiereSolin.checked ||
+          optRiveSolin.checked ||
+          optGrandeRive.checked ||
+          optAngles.checked ||
+          optRejetEau.checked ||
+          optFaitiereDouble.checked ||
+          optFaitiereSimple.checked;
 
-    if (finishingSelected)
-      optionsPrice += area * OPTIONS_PRICES.finishingPerM2;
-    if (optInstall.checked)
-      optionsPrice += area * OPTIONS_PRICES.installPerM2;
+        if (finishingSelected)
+          optionsPrice += area * OPTIONS_PRICES.finishingPerM2;
+        if (optInstall.checked)
+          optionsPrice += area * OPTIONS_PRICES.installPerM2;
 
-    const postalCode = document.getElementById("postalCode").value.trim();
-    const delivery = getDeliveryPrice(postalCode);
+        const postalCode = document.getElementById("postalCode").value.trim();
+        const delivery = getDeliveryPrice(postalCode);
 
-    let totalHT =
-      structureBase + roofCost + claddingCost + optionsPrice + delivery;
+        let totalHT =
+          structureBase + roofCost + claddingCost + optionsPrice + delivery;
 
-    totalHT = Math.round(totalHT / 50) * 50;
-    const totalTTC = Math.round((totalHT * (1 + TVA_RATE)) / 10) * 10;
-    const pricePerM2 = totalHT / area;
+        totalHT = Math.round(totalHT / 50) * 50;
+        const totalTTC = Math.round((totalHT * (1 + TVA_RATE)) / 10) * 10;
+        const pricePerM2 = totalHT / area;
 
-    const typeLabel = type === "bi" ? "Abris bipente" : "Abris monopente";
+        const typeLabel = type === "bi" ? "Abris bipente" : "Abris monopente";
 
-    const claddingChecked = Array.from(claddings);
-    const claddingCount = claddingChecked.length;
+        const claddingChecked = Array.from(claddings);
+        const claddingCount = claddingChecked.length;
 
-    let claddingAreaText = "";
-    if (claddingCount === 0) {
-      claddingAreaText =
-        "Abris ouvert (sans bardage) – 0 m² de bardage calculé";
-    } else {
-      const codes = claddingChecked.map((c) => c.value);
-      const sides = codes.map(
-        (code) => FACADE_LABELS[code] || "Façade " + code
-      );
-      claddingAreaText =
-        claddingCount +
-        " façade(s) bardée(s) : " +
-        sides.join(", ") +
-        " – env. " +
-        claddingArea.toFixed(1) +
-        " m² de bardage";
-    }
+        let claddingAreaText = "";
+        if (claddingCount === 0) {
+          claddingAreaText =
+            "Abris ouvert (sans bardage) – 0 m² de bardage calculé";
+        } else {
+          const codes = claddingChecked.map((c) => c.value);
+          const sides = codes.map(
+            (code) => FACADE_LABELS[code] || "Façade " + code
+          );
+          claddingAreaText =
+            claddingCount +
+            " façade(s) bardée(s) : " +
+            sides.join(", ") +
+            " – env. " +
+            claddingArea.toFixed(1) +
+            " m² de bardage";
+        }
 
-    const roofColor = document.querySelector(
-      'input[name="roofColor"]:checked'
-    )?.value;
+        const roofColor = document.querySelector(
+          'input[name="roofColor"]:checked'
+        )?.value;
 
-    const claddingColorInput = document.querySelector(
-      'input[name="claddingColor"]:checked'
-    );
-    const claddingColor = claddingColorInput
-      ? claddingColorInput.value
-      : "Non précisé";
+        const claddingColorInput = document.querySelector(
+          'input[name="claddingColor"]:checked'
+        );
+        const claddingColor = claddingColorInput
+          ? claddingColorInput.value
+          : "Non précisé";
 
-    const selectedOptions = [];
-    if (finishingSelected) selectedOptions.push("Habillages et finitions");
-    if (optFaitiereSolin.checked) selectedOptions.push("Faitière en solin");
-    if (optRiveSolin.checked) selectedOptions.push("Rive en solin");
-    if (optGrandeRive.checked) selectedOptions.push("Grande rive");
-    if (optAngles.checked) selectedOptions.push("Angles");
-    if (optRejetEau.checked) selectedOptions.push("Rejet d'eau");
-    if (optFaitiereDouble.checked) selectedOptions.push("Faitière double");
-    if (optFaitiereSimple.checked) selectedOptions.push("Faitière simple");
-    if (optInstall.checked) selectedOptions.push("Pose par nos équipes");
+        const selectedOptions = [];
+        if (finishingSelected) selectedOptions.push("Habillages et finitions");
+        if (optFaitiereSolin.checked) selectedOptions.push("Faitière en solin");
+        if (optRiveSolin.checked) selectedOptions.push("Rive en solin");
+        if (optGrandeRive.checked) selectedOptions.push("Grande rive");
+        if (optAngles.checked) selectedOptions.push("Angles");
+        if (optRejetEau.checked) selectedOptions.push("Rejet d'eau");
+        if (optFaitiereDouble.checked)
+          selectedOptions.push("Faitière double");
+        if (optFaitiereSimple.checked)
+          selectedOptions.push("Faitière simple");
+        if (optInstall.checked) selectedOptions.push("Pose par nos équipes");
 
-    const addressText = postalCode
-      ? postalCode +
-        (document.getElementById("city").value
-          ? " " + document.getElementById("city").value
-          : "")
-      : "Non renseignée";
+        const addressText = postalCode
+          ? postalCode +
+            (document.getElementById("city").value
+              ? " " + document.getElementById("city").value
+              : "")
+          : "Non renseignée";
 
-    document.getElementById("typeDisplay").textContent = typeLabel;
-    document.getElementById("dimensionsDisplay").textContent =
-      width.toString().replace(".", ",") +
-      " m x " +
-      length.toString().replace(".", ",") +
-      " m, hauteur " +
-      height.toString().replace(".", ",") +
-      " m";
-    document.getElementById("surfaceDisplay").textContent =
-      area.toFixed(1) + " m²";
+        document.getElementById("typeDisplay").textContent = typeLabel;
+        document.getElementById("dimensionsDisplay").textContent =
+          width.toString().replace(".", ",") +
+          " m x " +
+          length.toString().replace(".", ",") +
+          " m, hauteur " +
+          height.toString().replace(".", ",") +
+          " m";
+        document.getElementById("surfaceDisplay").textContent =
+          area.toFixed(1) + " m²";
 
-    document.getElementById("roofTypeDisplay").textContent =
-      ROOF_TYPE_LABELS[roofType] || "Non précisé";
-    document.getElementById("roofColorDisplay").textContent =
-      roofColor || "Non précisée";
+        document.getElementById("roofTypeDisplay").textContent =
+          ROOF_TYPE_LABELS[roofType] || "Non précisé";
+        document.getElementById("roofColorDisplay").textContent =
+          roofColor || "Non précisée";
 
-    document.getElementById("claddingTypeDisplay").textContent =
-      CLADDING_TYPE_LABELS[claddingType] || "Non précisé";
-    document.getElementById("claddingDisplay").textContent =
-      claddingAreaText;
-    document.getElementById("claddingColorDisplay").textContent =
-      claddingColor;
+        document.getElementById("claddingTypeDisplay").textContent =
+          CLADDING_TYPE_LABELS[claddingType] || "Non précisé";
+        document.getElementById("claddingDisplay").textContent =
+          claddingAreaText;
+        document.getElementById("claddingColorDisplay").textContent =
+          claddingColor;
 
-    document.getElementById("optionsDisplay").textContent =
-      selectedOptions.length > 0
-        ? selectedOptions.join(", ")
-        : "Aucune option";
+        document.getElementById("optionsDisplay").textContent =
+          selectedOptions.length > 0
+            ? selectedOptions.join(", ")
+            : "Aucune option";
 
-    document.getElementById("addressDisplay").textContent = addressText;
-    document.getElementById("deliveryDisplay").textContent = delivery
-      ? formatCurrency(delivery) + " HT"
-      : "À définir";
+        document.getElementById("addressDisplay").textContent = addressText;
+        document.getElementById("deliveryDisplay").textContent = delivery
+          ? formatCurrency(delivery) + " HT"
+          : "À définir";
 
-    document.getElementById("priceHT").textContent =
-      formatCurrency(totalHT);
-    document.getElementById("priceTTC").textContent =
-      formatCurrency(totalTTC);
-    document.getElementById("pricePerM2").textContent =
-      formatCurrency(pricePerM2);
+        document.getElementById("priceHT").textContent =
+          formatCurrency(totalHT);
+        document.getElementById("priceTTC").textContent =
+          formatCurrency(totalTTC);
+        document.getElementById("pricePerM2").textContent =
+          formatCurrency(pricePerM2);
 
-    document.getElementById("summarySentence").textContent =
-      typeLabel +
-      " de " +
-      width.toString().replace(".", ",") +
-      " m x " +
-      length.toString().replace(".", ",") +
-      " m, hauteur " +
-      height.toString().replace(".", ",") +
-      " m, " +
-      claddingAreaText.toLowerCase() +
-      ", toiture " +
-      (ROOF_TYPE_LABELS[roofType] || "") +
-      " " +
-      (roofColor || "") +
-      ", bardage " +
-      (CLADDING_TYPE_LABELS[claddingType] || "") +
-      " " +
-      claddingColor +
-      ". Prix estimatif : " +
-      formatCurrency(totalHT) +
-      " HT (dont livraison env. " +
-      formatCurrency(delivery) +
-      ").";
+        document.getElementById("summarySentence").textContent =
+          typeLabel +
+          " de " +
+          width.toString().replace(".", ",") +
+          " m x " +
+          length.toString().replace(".", ",") +
+          " m, hauteur " +
+          height.toString().replace(".", ",") +
+          " m, " +
+          claddingAreaText.toLowerCase() +
+          ", toiture " +
+          (ROOF_TYPE_LABELS[roofType] || "") +
+          " " +
+          (roofColor || "") +
+          ", bardage " +
+          (CLADDING_TYPE_LABELS[claddingType] || "") +
+          " " +
+          claddingColor +
+          ". Prix estimatif : " +
+          formatCurrency(totalHT) +
+          " HT (dont livraison env. " +
+          formatCurrency(delivery) +
+          ").";
 
-    updateBardage3DView();
+        updateBardage3DView();
 
-    // 👉 NOUVEAU : on met à jour la 3D quand le prix est recalculé
-    if (typeof updateModelScaleFromForm === "function") {
-      updateModelScaleFromForm();
-    }
-  }
-</script>
-
+        // 👉 met à jour le modèle 3D en fonction des dimensions
+        if (typeof updateModelScaleFromForm === "function") {
+          updateModelScaleFromForm();
+        }
       }
 
       document.addEventListener("DOMContentLoaded", () => {
@@ -1382,190 +1380,187 @@
         updateBardage3DView();
       });
     </script>
-<!-- === THREE.JS POUR LA 3D === -->
-<script src="https://unpkg.com/three@0.146.0/build/three.min.js"></script>
-<script src="https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
-<script src="https://unpkg.com/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
 
-<script>
-  // Modèle de base : monopente 3 m (largeur) x 5 m (longueur) x 2,15 m (hauteur avant)
-  const MODEL_PATH = "assets/abri-monopente-3x5m.gltf";
-  const BASE_WIDTH_M  = 3;
-  const BASE_LENGTH_M = 5;
-  const BASE_HEIGHT_M = 2.15;
+    <!-- === THREE.JS POUR LA 3D === -->
+    <script src="https://unpkg.com/three@0.146.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://unpkg.com/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
 
-  let scene, camera, renderer, controls;
-  let modelGroup = null;
-  let baseScale = 1;
+    <script>
+      // Modèle de base : monopente 3 m (largeur) x 5 m (longueur) x 2,15 m (hauteur avant)
+      const MODEL_PATH = "assets/abri-monopente-3x5m.gltf";
+      const BASE_WIDTH_M = 3;
+      const BASE_LENGTH_M = 5;
+      const BASE_HEIGHT_M = 2.15;
 
-  function initThree() {
-    const canvas = document.getElementById("viewer3d");
-    if (!canvas) return;
+      let scene, camera, renderer, controls;
+      let modelGroup = null;
+      let baseScale = 1;
 
-    const width  = canvas.clientWidth  || 400;
-    const height = canvas.clientHeight || (width * 3 / 4);
+      function initThree() {
+        const canvas = document.getElementById("viewer3d");
+        if (!canvas) return;
 
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf5f5f5);
+        const width = canvas.clientWidth || 400;
+        const height = canvas.clientHeight || (width * 3) / 4;
 
-    camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.set(6, 4, 8);
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf5f5f5);
 
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(window.devicePixelRatio || 1);
+        camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+        camera.position.set(6, 4, 8);
 
-    const ambient = new THREE.AmbientLight(0xffffff, 0.7);
-    scene.add(ambient);
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(window.devicePixelRatio || 1);
 
-    const dir = new THREE.DirectionalLight(0xffffff, 0.7);
-    dir.position.set(10, 20, 10);
-    scene.add(dir);
+        const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambient);
 
-    // Sol
-    const groundGeo = new THREE.PlaneGeometry(50, 50);
-    const groundMat = new THREE.MeshPhongMaterial({
-      color: 0xe0e0e0,
-      side: THREE.DoubleSide
-    });
-    const ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = 0; // plan au niveau 0
-    scene.add(ground);
+        const dir = new THREE.DirectionalLight(0xffffff, 0.7);
+        dir.position.set(10, 20, 10);
+        scene.add(dir);
 
-    controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
-    controls.target.set(0, 1.5, 0);
-
-    loadModel();
-
-    window.addEventListener("resize", onResizeThree);
-    animateThree();
-  }
-
-  function loadModel() {
-    const loader = new THREE.GLTFLoader();
-
-    loader.load(
-      MODEL_PATH,
-      (gltf) => {
-        if (modelGroup) {
-          scene.remove(modelGroup);
-          modelGroup.traverse((obj) => {
-            if (obj.isMesh) {
-              obj.geometry.dispose();
-              if (obj.material && obj.material.dispose) {
-                obj.material.dispose();
-              }
-            }
-          });
-        }
-
-        modelGroup = gltf.scene;
-        scene.add(modelGroup);
-
-        modelGroup.traverse((obj) => {
-          if (obj.isMesh) {
-            obj.castShadow = true;
-            obj.receiveShadow = true;
-          }
+        // Sol
+        const groundGeo = new THREE.PlaneGeometry(50, 50);
+        const groundMat = new THREE.MeshPhongMaterial({
+          color: 0xe0e0e0,
+          side: THREE.DoubleSide,
         });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = 0;
+        scene.add(ground);
 
-        // On met le modèle à une taille raisonnable ET posé au sol
-        const box = new THREE.Box3().setFromObject(modelGroup);
-        const size = new THREE.Vector3();
-        const center = new THREE.Vector3();
-        box.getSize(size);
-        box.getCenter(center);
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.08;
+        controls.target.set(0, 1.5, 0);
 
-        const maxDim = Math.max(size.x, size.y, size.z);
-        baseScale = 3 / maxDim;           // échelle de base (pour un abri "standard")
-        modelGroup.scale.setScalar(baseScale);
+        loadModel();
 
-        // On centre autour de l'origine
-        box.setFromObject(modelGroup);
-        box.getCenter(center);
-        modelGroup.position.sub(center);
-
-        // Puis on le pose sur le sol : bas des poteaux à y = 0
-        box.setFromObject(modelGroup);
-        const modelHeight = box.max.y - box.min.y;
-        modelGroup.position.y += modelHeight / 2;
-
-        // On mémorise la hauteur de référence du modèle (correspond à 2,15 m en "vrai")
-        modelGroup.userData.baseHeightMeters = BASE_HEIGHT_M;
-
-        // Première mise à l'échelle selon les valeurs du formulaire
-        updateModelScaleFromForm();
-
-        console.log("Modèle GLTF chargé :", MODEL_PATH);
-      },
-      undefined,
-      (error) => {
-        console.error("Erreur chargement GLTF :", error);
+        window.addEventListener("resize", onResizeThree);
+        animateThree();
       }
-    );
-  }
 
-  function onResizeThree() {
-    const canvas = document.getElementById("viewer3d");
-    if (!canvas || !renderer || !camera) return;
+      function loadModel() {
+        const loader = new THREE.GLTFLoader();
 
-    const width  = canvas.clientWidth  || 400;
-    const height = canvas.clientHeight || (width * 3 / 4);
+        loader.load(
+          MODEL_PATH,
+          (gltf) => {
+            if (modelGroup) {
+              scene.remove(modelGroup);
+              modelGroup.traverse((obj) => {
+                if (obj.isMesh) {
+                  obj.geometry.dispose();
+                  if (obj.material && obj.material.dispose) {
+                    obj.material.dispose();
+                  }
+                }
+              });
+            }
 
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-    renderer.setSize(width, height);
-  }
+            modelGroup = gltf.scene;
+            scene.add(modelGroup);
 
-  function animateThree() {
-    requestAnimationFrame(animateThree);
-    if (controls) controls.update();
-    if (renderer && scene && camera) {
-      renderer.render(scene, camera);
-    }
-  }
+            modelGroup.traverse((obj) => {
+              if (obj.isMesh) {
+                obj.castShadow = true;
+                obj.receiveShadow = true;
+              }
+            });
 
-  // Récupère les dimensions choisies dans le formulaire
-  function getFormDimensions() {
-    const wEl = document.getElementById("width");
-    const lEl = document.getElementById("length");
-    const hEl = document.getElementById("height");
+            // Mise à l'échelle de base + pose sur le sol
+            const box = new THREE.Box3().setFromObject(modelGroup);
+            const size = new THREE.Vector3();
+            const center = new THREE.Vector3();
+            box.getSize(size);
+            box.getCenter(center);
 
-    const width  = wEl ? parseFloat(wEl.value)  || BASE_WIDTH_M  : BASE_WIDTH_M;
-    const length = lEl ? parseFloat(lEl.value)  || BASE_LENGTH_M : BASE_LENGTH_M;
-    const height = hEl ? parseFloat(hEl.value)  || BASE_HEIGHT_M : BASE_HEIGHT_M;
+            const maxDim = Math.max(size.x, size.y, size.z);
+            baseScale = 3 / maxDim;
+            modelGroup.scale.setScalar(baseScale);
 
-    return { width, length, height };
-  }
+            box.setFromObject(modelGroup);
+            box.getCenter(center);
+            modelGroup.position.sub(center);
 
-  // Met à l’échelle le modèle 3D en fonction des dimensions du configurateur
-  function updateModelScaleFromForm() {
-    if (!modelGroup) return;
+            box.setFromObject(modelGroup);
+            const modelHeight = box.max.y - box.min.y;
+            modelGroup.position.y += modelHeight / 2;
 
-    const { width, length, height } = getFormDimensions();
+            modelGroup.userData.baseHeightMeters = BASE_HEIGHT_M;
 
-    const scaleX = width  / BASE_WIDTH_M;
-    const scaleZ = length / BASE_LENGTH_M;
-    const scaleY = height / BASE_HEIGHT_M;
+            updateModelScaleFromForm();
 
-    modelGroup.scale.set(
-      baseScale * scaleX,
-      baseScale * scaleY,
-      baseScale * scaleZ
-    );
-  }
+            console.log("Modèle GLTF chargé :", MODEL_PATH);
+          },
+          undefined,
+          (error) => {
+            console.error("Erreur chargement GLTF :", error);
+          }
+        );
+      }
 
-  // Lancement Three.js
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initThree);
-  } else {
-    initThree();
-  }
-</script>
+      function onResizeThree() {
+        const canvas = document.getElementById("viewer3d");
+        if (!canvas || !renderer || !camera) return;
 
+        const width = canvas.clientWidth || 400;
+        const height = canvas.clientHeight || (width * 3) / 4;
 
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+      }
+
+      function animateThree() {
+        requestAnimationFrame(animateThree);
+        if (controls) controls.update();
+        if (renderer && scene && camera) {
+          renderer.render(scene, camera);
+        }
+      }
+
+      function getFormDimensions() {
+        const wEl = document.getElementById("width");
+        const lEl = document.getElementById("length");
+        const hEl = document.getElementById("height");
+
+        const width = wEl ? parseFloat(wEl.value) || BASE_WIDTH_M : BASE_WIDTH_M;
+        const length = lEl
+          ? parseFloat(lEl.value) || BASE_LENGTH_M
+          : BASE_LENGTH_M;
+        const height = hEl
+          ? parseFloat(hEl.value) || BASE_HEIGHT_M
+          : BASE_HEIGHT_M;
+
+        return { width, length, height };
+      }
+
+      // Met à l’échelle le modèle 3D en fonction des dimensions du configurateur
+      function updateModelScaleFromForm() {
+        if (!modelGroup) return;
+
+        const { width, length, height } = getFormDimensions();
+
+        const scaleX = width / BASE_WIDTH_M;
+        const scaleZ = length / BASE_LENGTH_M;
+        const scaleY = height / BASE_HEIGHT_M;
+
+        modelGroup.scale.set(
+          baseScale * scaleX,
+          baseScale * scaleY,
+          baseScale * scaleZ
+        );
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initThree);
+      } else {
+        initThree();
+      }
+    </script>
   </body>
 </html>
