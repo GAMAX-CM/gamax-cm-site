@@ -1246,7 +1246,6 @@
 <script src="https://unpkg.com/three@0.146.0/build/three.min.js"></script>
 <script src="https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
 
-
 <script>
   // ----- 3D INTERACTIF (Three.js) -----
   let threeScene, threeCamera, threeRenderer, threeControls;
@@ -1269,7 +1268,7 @@
     threeScene.background = new THREE.Color(0xf5f5f5);
 
     threeCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    threeCamera.position.set(10, 8, 10);
+    threeCamera.position.set(6, 5, 8);
 
     // Renderer
     threeRenderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -1280,12 +1279,12 @@
     const ambient = new THREE.AmbientLight(0xffffff, 0.7);
     threeScene.add(ambient);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
     dirLight.position.set(10, 20, 10);
     threeScene.add(dirLight);
 
     // Sol
-    const groundGeo = new THREE.PlaneGeometry(50, 50);
+    const groundGeo = new THREE.PlaneGeometry(20, 20);
     const groundMat = new THREE.MeshPhongMaterial({
       color: 0xe0e0e0,
       side: THREE.DoubleSide,
@@ -1303,10 +1302,10 @@
     const postGeo = new THREE.BoxGeometry(0.15, 1, 0.15);
     const postMat = new THREE.MeshPhongMaterial({ color: 0x555555 });
     const postPositions = [
-      [-1, 0.5, -1], // arrière gauche
-      [ 1, 0.5, -1], // arrière droit
-      [-1, 0.5,  1], // avant gauche
-      [ 1, 0.5,  1], // avant droit
+      [-1, 0.5, -1],
+      [ 1, 0.5, -1],
+      [-1, 0.5,  1],
+      [ 1, 0.5,  1],
     ];
     postPositions.forEach((p) => {
       const post = new THREE.Mesh(postGeo, postMat);
@@ -1320,7 +1319,7 @@
     const roofMat = new THREE.MeshPhongMaterial({ color: 0x999999 });
     threeRoofMesh = new THREE.Mesh(roofGeo, roofMat);
     threeRoofMesh.position.y = 1.6;
-    threeRoofMesh.rotation.x = -Math.PI * 5 / 180; // pente par défaut
+    threeRoofMesh.rotation.x = -Math.PI * 5 / 180;
     threeBuildingGroup.add(threeRoofMesh);
 
     // Panneaux de bardage (A, C = longs pans ; B, D = pignons)
@@ -1333,22 +1332,18 @@
     const frontBackGeo = new THREE.BoxGeometry(2.0, 1.4, 0.04);  // A, C
     const sideGeo      = new THREE.BoxGeometry(0.04, 1.4, 2.0);  // B, D
 
-    // A – long pan avant
     const wallA = new THREE.Mesh(frontBackGeo, wallMat.clone());
     threeBuildingGroup.add(wallA);
     threeWallMeshes.push(wallA);
 
-    // C – long pan arrière
     const wallC = new THREE.Mesh(frontBackGeo, wallMat.clone());
     threeBuildingGroup.add(wallC);
     threeWallMeshes.push(wallC);
 
-    // B – pignon gauche
     const wallB = new THREE.Mesh(sideGeo, wallMat.clone());
     threeBuildingGroup.add(wallB);
     threeWallMeshes.push(wallB);
 
-    // D – pignon droit
     const wallD = new THREE.Mesh(sideGeo, wallMat.clone());
     threeBuildingGroup.add(wallD);
     threeWallMeshes.push(wallD);
@@ -1357,7 +1352,7 @@
     threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
     threeControls.enableDamping = true;
     threeControls.dampingFactor = 0.1;
-    threeControls.target.set(0, 0.8, 0);
+    threeControls.target.set(0, 1.2, 0);
 
     window.addEventListener("resize", onWindowResize3D);
 
@@ -1413,7 +1408,6 @@
       if (box) claddingColorCss = window.getComputedStyle(box).backgroundColor;
     }
 
-    // Côtés bardés A/B/C/D
     const claddingSides = [];
     document
       .querySelectorAll('input[name="claddingSide"]:checked')
@@ -1435,7 +1429,10 @@
       claddingSides,
     } = getFormConfig3D();
 
-    const scale = 0.5; // 1 unité ≈ 0,5 m
+    // Normalisation : l’abri garde une taille visuelle cohérente
+    const maxDim = Math.max(width, length);
+    const scale = 4 / maxDim; // l’abri fait ~4 unités max dans la scène
+
     const w = width * scale;
     const l = length * scale;
     const h = height * scale;
@@ -1487,6 +1484,12 @@
     threeWallMeshes.forEach((mesh) => {
       mesh.material.color = new THREE.Color(claddingColorCss);
     });
+
+    // Recentrer la caméra sur l’abri
+    if (threeControls) {
+      threeControls.target.set(0, h * 0.6, 0);
+      threeControls.update();
+    }
   }
 
   function bindThreeDFormEvents() {
@@ -1499,21 +1502,15 @@
 
     document
       .querySelectorAll('input[name="slopeType"]')
-      .forEach((el) =>
-        el.addEventListener("change", updateThreeDFromForm)
-      );
+      .forEach((el) => el.addEventListener("change", updateThreeDFromForm));
 
     document
       .querySelectorAll('input[name="roofColor"], input[name="claddingColor"]')
-      .forEach((el) =>
-        el.addEventListener("change", updateThreeDFromForm)
-      );
+      .forEach((el) => el.addEventListener("change", updateThreeDFromForm));
 
     document
       .querySelectorAll('input[name="claddingSide"]')
-      .forEach((el) =>
-        el.addEventListener("change", updateThreeDFromForm)
-      );
+      .forEach((el) => el.addEventListener("change", updateThreeDFromForm));
   }
 
   function initThreeD() {
@@ -1529,6 +1526,7 @@
     initThreeD();
   }
 </script>
+
 
   </body>
 </html>
