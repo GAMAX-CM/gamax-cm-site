@@ -872,17 +872,32 @@
         sandwich40: "Panneau sandwich ép. 40 mm",
       };
 
-      // ---- CONSTANTES TARIFAIRES (à ajuster) ----
-      const UNIT_PRICE_PER_M2 = {
-        mono: 80, // €/m² structure + toiture monopente
-        bi: 88, // €/m² structure + toiture bipente
-      };
+      // ---- CONSTANTES TARIFAIRES (MISE À JOUR) ----
 
-      const BARDAGE_PRICE_PER_M2 = 50; // €/m² bardage
-      const OPTIONS_PRICES = {
-        finishingPerM2: 8, // habillages au m²
-        installPerM2: 35, // pose
-      };
+// Prix structure seule (hors couverture)
+const STRUCTURE_BASE_PRICE_PER_M2 = {
+  mono: 60, 
+  bi: 66,
+};
+
+// Prix couverture toiture (€/m²)
+const ROOF_PRICE_PER_M2 = {
+  bac_simple: 15.34,      // Bac acier simple
+  bac_regul: 17.35,       // Bac acier + régulateur condensation
+  sandwich40: 37.95       // Panneau sandwich 40mm
+};
+
+// Prix bardage (€/m²)
+const CLADDING_PRICE_PER_M2 = {
+  bac_simple: 13.09,      // Bardage bac acier
+  sandwich40: 36.00       // Bardage sandwich
+};
+
+// Autres options (inchangées pour l’instant)
+const OPTIONS_PRICES = {
+  finishingPerM2: 8,
+  installPerM2: 35,
+};
 
       const TVA_RATE = 0.2;
 
