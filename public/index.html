@@ -1442,5 +1442,201 @@
     initThreeD();
   }
 </script>
+    <!-- === THREE.JS + CONTROLS + LOADER GLB === -->
+<script src="https://unpkg.com/three@0.146.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://unpkg.com/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
+
+<script>
+  // ----- 3D INTERACTIF AVEC MODELE GLB -----
+  let threeScene, threeCamera, threeRenderer, threeControls;
+  let threeBuildingGroup;
+  let abriModel = null;
+
+  const BASE_WIDTH_METERS  = 3;   // ton modèle de base = 3 x 5 m
+  const BASE_LENGTH_METERS = 5;
+  const BASE_HEIGHT_METERS = 2.7;
+
+  function initThreeDScene() {
+    const container = document.getElementById("viewer3d-container");
+    const canvas = document.getElementById("viewer3d");
+    if (!container || !canvas) return;
+    if (typeof THREE === "undefined") return;
+
+    const width  = container.clientWidth || 400;
+    const height = container.clientHeight || (width * 3 / 4);
+
+    // Scène
+    threeScene = new THREE.Scene();
+    threeScene.background = new THREE.Color(0xf5f5f5);
+
+    // Caméra
+    threeCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    threeCamera.position.set(8, 5, 10);
+
+    // Renderer
+    threeRenderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    threeRenderer.setSize(width, height);
+    threeRenderer.setPixelRatio(window.devicePixelRatio || 1);
+
+    // Lumières
+    const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+    threeScene.add(ambient);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(10, 20, 10);
+    threeScene.add(dirLight);
+
+    // Sol
+    const groundGeo = new THREE.PlaneGeometry(30, 30);
+    const groundMat = new THREE.MeshPhongMaterial({
+      color: 0xe0e0e0,
+      side: THREE.DoubleSide,
+    });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = 0;
+    threeScene.add(ground);
+
+    // Groupe pour le bâtiment
+    threeBuildingGroup = new THREE.Group();
+    threeScene.add(threeBuildingGroup);
+
+    // Contrôles
+    threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
+    threeControls.enableDamping = true;
+    threeControls.dampingFactor = 0.1;
+    threeControls.target.set(0, 1.5, 0);
+
+    // ---- Chargement du modèle GLB ----
+    const loader = new THREE.GLTFLoader();
+    loader.load(
+      "assets/abri-monopente-3x5m.glb",   // adapte le nom si ton fichier est différent
+      (gltf) => {
+        abriModel = gltf.scene;
+
+        // Orientation (on ajustera si besoin)
+        abriModel.rotation.set(0, Math.PI, 0); // 180° sur Y si le modèle est “à l’envers”
+
+        // Ombres
+        abriModel.traverse((obj) => {
+          if (obj.isMesh) {
+            obj.castShadow = true;
+            obj.receiveShadow = true;
+          }
+        });
+
+        // Boîte englobante pour centrer le modèle
+        const box = new THREE.Box3().setFromObject(abriModel);
+        const size = new THREE.Vector3();
+        const center = new THREE.Vector3();
+        box.getSize(size);
+        box.getCenter(center);
+
+        // On centre le modèle en X/Z et on le pose sur le sol
+        abriModel.position.x -= center.x;
+        abriModel.position.z -= center.z;
+        abriModel.position.y -= box.min.y;
+
+        threeBuildingGroup.add(abriModel);
+
+        // Caméra cadrée sur l'abri
+        threeControls.target.set(0, size.y * 0.6, 0);
+        threeCamera.position.set(
+          size.x * 1.7,
+          size.y * 1.3,
+          size.z * 2.0
+        );
+        threeCamera.lookAt(threeControls.target);
+
+        updateThreeDFromForm();
+      },
+      undefined,
+      (error) => {
+        console.error("Erreur chargement GLB", error);
+      }
+    );
+
+    window.addEventListener("resize", onWindowResize3D);
+    animate3D();
+  }
+
+  function onWindowResize3D() {
+    const container = document.getElementById("viewer3d-container");
+    if (!container || !threeRenderer || !threeCamera) return;
+
+    const width  = container.clientWidth || 400;
+    const height = container.clientHeight || (width * 3 / 4);
+
+    threeCamera.aspect = width / height;
+    threeCamera.updateProjectionMatrix();
+    threeRenderer.setSize(width, height);
+  }
+
+  function animate3D() {
+    requestAnimationFrame(animate3D);
+    if (!threeRenderer || !threeScene || !threeCamera) return;
+    if (threeControls) threeControls.update();
+    threeRenderer.render(threeScene, threeCamera);
+  }
+
+  // Récupère les dimensions du formulaire
+  function getFormConfig3D() {
+    const widthEl  = document.getElementById("width");
+    const lengthEl = document.getElementById("length");
+    const heightEl = document.getElementById("height");
+
+    const width  = widthEl  ? parseFloat(widthEl.value)  || 3   : 3;
+    const length = lengthEl ? parseFloat(lengthEl.value) || 5   : 5;
+    const height = heightEl ? parseFloat(heightEl.value) || 2.7 : 2.7;
+
+    return { width, length, height };
+  }
+
+  // Met à l'échelle le modèle suivant les dimensions choisies
+  function updateThreeDFromForm() {
+    if (!abriModel) return;
+
+    const { width, length, height } = getFormConfig3D();
+
+    // Normalisation pour rester dans le cadre
+    const maxDim = Math.max(width, length);
+    const globalScale = 4 / maxDim; // l'abri tient dans ~4 unités max
+
+    const scaleX = (width  / BASE_WIDTH_METERS)  * globalScale;
+    const scaleZ = (length / BASE_LENGTH_METERS) * globalScale;
+    const scaleY = (height / BASE_HEIGHT_METERS) * globalScale;
+
+    abriModel.scale.set(scaleX, scaleY * 1.15, scaleZ); // 1.15 pour éviter un effet “écrasé”
+
+    const visualHeight = height * globalScale;
+    if (threeControls) {
+      threeControls.target.set(0, visualHeight * 0.6, 0);
+      threeControls.update();
+    }
+  }
+
+  function bindThreeDFormEvents() {
+    ["width", "length", "height"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("change", updateThreeDFromForm);
+      el.addEventListener("input", updateThreeDFromForm);
+    });
+  }
+
+  function initThreeD() {
+    if (!document.getElementById("viewer3d-container")) return;
+    initThreeDScene();
+    bindThreeDFormEvents();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initThreeD);
+  } else {
+    initThreeD();
+  }
+</script>
+
 </body>
 </html>
