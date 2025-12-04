@@ -141,9 +141,64 @@
               </div>
             </div>
 
-            <!-- 3. COULEUR TOITURE -->
-            <h3>3. Couleur toiture (RAL)</h3>
+            <!-- 3. TOITURE -->
+            <h3>3. Toiture</h3>
+            <!-- 3.1 Type de toiture -->
             <div class="field">
+              <label>Type de couverture</label>
+              <div class="bardage-grid">
+                <label class="bardage-choice">
+                  <input
+                    type="radio"
+                    name="roofType"
+                    value="bac_simple"
+                    checked
+                  />
+                  <div class="bardage-card">
+                    <span class="bardage-label-main">Bac acier simple</span>
+                    <span class="bardage-label-sub">
+                      Tôle nervurée standard, économique.
+                    </span>
+                  </div>
+                </label>
+
+                <label class="bardage-choice">
+                  <input
+                    type="radio"
+                    name="roofType"
+                    value="bac_regul"
+                  />
+                  <div class="bardage-card">
+                    <span class="bardage-label-main">
+                      Bac acier avec régulateur de condensation
+                    </span>
+                    <span class="bardage-label-sub">
+                      Recommandé si l’abri est bardé (limite la condensation).
+                    </span>
+                  </div>
+                </label>
+
+                <label class="bardage-choice">
+                  <input
+                    type="radio"
+                    name="roofType"
+                    value="sandwich40"
+                  />
+                  <div class="bardage-card">
+                    <span class="bardage-label-main">
+                      Panneau sandwich ép. 40&nbsp;mm
+                    </span>
+                    <span class="bardage-label-sub">
+                      Meilleure isolation thermique, intérieur plus confortable.
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- 3.2 Couleur toiture -->
+            <div class="field">
+              <label>Couleur de toiture (RAL)</label>
               <div class="ral-grid">
                 <label class="ral-choice">
                   <input
@@ -232,9 +287,49 @@
               </div>
             </div>
 
-            <!-- 4. COULEUR BARDAGE -->
-            <h3>4. Couleur bardage (RAL)</h3>
+            <!-- 4. BARDAGE -->
+            <h3>4. Bardage</h3>
+
+            <!-- 4.1 Type de bardage -->
             <div class="field">
+              <label>Type de bardage</label>
+              <div class="bardage-grid">
+                <label class="bardage-choice">
+                  <input
+                    type="radio"
+                    name="claddingType"
+                    value="bac_simple"
+                    checked
+                  />
+                  <div class="bardage-card">
+                    <span class="bardage-label-main">Bac acier simple</span>
+                    <span class="bardage-label-sub">
+                      Bardage simple peau, économique.
+                    </span>
+                  </div>
+                </label>
+
+                <label class="bardage-choice">
+                  <input
+                    type="radio"
+                    name="claddingType"
+                    value="sandwich40"
+                  />
+                  <div class="bardage-card">
+                    <span class="bardage-label-main">
+                      Panneau sandwich ép. 40&nbsp;mm
+                    </span>
+                    <span class="bardage-label-sub">
+                      Bardage isolé pour un confort intérieur amélioré.
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- 4.2 Couleur bardage -->
+            <div class="field">
+              <label>Couleur bardage (RAL)</label>
               <div class="ral-grid">
                 <label class="ral-choice">
                   <input
@@ -247,34 +342,53 @@
                 </label>
 
                 <label class="ral-choice">
-                  <input type="radio" name="claddingColor" value="RAL 8012" />
+                  <input
+                    type="radio"
+                    name="claddingColor"
+                    value="RAL 8012"
+                  />
                   <div class="ral-box" style="background:#5a1f1b">8012</div>
                 </label>
 
                 <label class="ral-choice">
-                  <input type="radio" name="claddingColor" value="RAL 9002" />
+                  <input
+                    type="radio"
+                    name="claddingColor"
+                    value="RAL 9002"
+                  />
                   <div class="ral-box" style="background:#dcdcd3">9002</div>
                 </label>
 
                 <label class="ral-choice">
-                  <input type="radio" name="claddingColor" value="RAL 9006" />
+                  <input
+                    type="radio"
+                    name="claddingColor"
+                    value="RAL 9006"
+                  />
                   <div class="ral-box" style="background:#a5a9ad">9006</div>
                 </label>
 
                 <label class="ral-choice">
-                  <input type="radio" name="claddingColor" value="RAL 7015" />
+                  <input
+                    type="radio"
+                    name="claddingColor"
+                    value="RAL 7015"
+                  />
                   <div class="ral-box" style="background:#51565c">7015</div>
                 </label>
 
                 <label class="ral-choice">
-                  <input type="radio" name="claddingColor" value="RAL 1015" />
+                  <input
+                    type="radio"
+                    name="claddingColor"
+                    value="RAL 1015"
+                  />
                   <div class="ral-box" style="background:#e8d9b5">1015</div>
                 </label>
               </div>
             </div>
 
-            <!-- 5. BARDAGE -->
-            <h3>5. Bardage</h3>
+            <!-- 4.3 Côtés bardés + 3D -->
             <div class="field">
               <p class="field-help">
                 Choisissez les côtés à fermer en bardage. Vous pouvez cliquer
@@ -419,8 +533,8 @@
               </div>
             </div>
 
-            <!-- 6. OPTIONS COMPLÉMENTAIRES -->
-            <h3>6. Options complémentaires</h3>
+            <!-- 5. OPTIONS COMPLÉMENTAIRES -->
+            <h3>5. Options complémentaires</h3>
             <p class="field-help">
               Les bavettes et habillages de finition seront fournis dans la
               même couleur que le bardage sélectionné.
@@ -526,8 +640,8 @@
               </label>
             </div>
 
-            <!-- 7. ADRESSE DU PROJET & LIVRAISON -->
-            <h3>7. Adresse du projet & livraison</h3>
+            <!-- 6. ADRESSE DU PROJET & LIVRAISON -->
+            <h3>6. Adresse du projet & livraison</h3>
             <div class="form-grid address-grid">
               <div class="field">
                 <label for="postalCode">Code postal</label>
@@ -593,12 +707,20 @@
                   <span id="surfaceDisplay">–</span>
                 </li>
                 <li>
-                  Bardage :
-                  <span id="claddingDisplay">–</span>
+                  Type de toiture :
+                  <span id="roofTypeDisplay">–</span>
                 </li>
                 <li>
                   Couleur toiture :
                   <span id="roofColorDisplay">–</span>
+                </li>
+                <li>
+                  Type de bardage :
+                  <span id="claddingTypeDisplay">–</span>
+                </li>
+                <li>
+                  Bardage :
+                  <span id="claddingDisplay">–</span>
                 </li>
                 <li>
                   Couleur bardage :
@@ -650,6 +772,17 @@
         D: "Façade D (pignon droit)",
       };
 
+      const ROOF_TYPE_LABELS = {
+        bac_simple: "Bac acier simple",
+        bac_regul: "Bac acier avec régulateur de condensation",
+        sandwich40: "Panneau sandwich ép. 40 mm",
+      };
+
+      const CLADDING_TYPE_LABELS = {
+        bac_simple: "Bac acier simple",
+        sandwich40: "Panneau sandwich ép. 40 mm",
+      };
+
       // ---- CONSTANTES TARIFAIRES (à ajuster) ----
       const UNIT_PRICE_PER_M2 = {
         mono: 80, // €/m² structure + toiture monopente
@@ -663,18 +796,6 @@
       };
 
       const TVA_RATE = 0.2;
-
-      // Villes proposées en fonction du code postal (exemples – à compléter)
-      const POSTAL_CITIES = {
-        "47400": ["Tonneins"],
-        "47320": ["Clairac"],
-        "47200": ["Marmande"],
-        "47110": ["Sainte-Livrade-sur-Lot"],
-        "40000": ["Mont-de-Marsan"],
-        "33000": ["Bordeaux"],
-        "24000": ["Périgueux"],
-        "46000": ["Cahors"],
-      };
 
       function formatCurrency(value) {
         return new Intl.NumberFormat("fr-FR", {
@@ -724,20 +845,48 @@
         return 350; // reste de la France
       }
 
-      // Met à jour la liste des villes en fonction du CP
-      function updateCityOptions() {
+      // API IGN : récupération des villes par code postal
+      async function fetchCitiesFromAPI(postalCode) {
+        if (!postalCode || postalCode.length !== 5) return [];
+
+        try {
+          const response = await fetch(
+            "https://apicarto.ign.fr/api/codes-postaux/communes/" + postalCode
+          );
+          if (!response.ok) return [];
+          const data = await response.json();
+          // L'API renvoie un tableau d'objets avec au moins la propriété "nomCommune"
+          return data.map((item) => item.nomCommune);
+        } catch (e) {
+          console.error("Erreur API communes", e);
+          return [];
+        }
+      }
+
+      // Met à jour la liste des villes en fonction du CP via l'API
+      async function updateCityOptions() {
         const postalInput = document.getElementById("postalCode");
         const citySelect = document.getElementById("city");
         const cp = postalInput.value.trim();
+
         citySelect.innerHTML = "";
 
-        const cities = POSTAL_CITIES[cp];
+        if (cp.length !== 5) {
+          const opt = document.createElement("option");
+          opt.value = "";
+          opt.textContent =
+            "Sélectionnez votre ville après saisie du code postal";
+          citySelect.appendChild(opt);
+          return;
+        }
+
+        const cities = await fetchCitiesFromAPI(cp);
 
         if (!cities || cities.length === 0) {
           const opt = document.createElement("option");
           opt.value = "";
           opt.textContent =
-            "Sélectionnez votre ville ou précisez-la lors de la demande de devis";
+            "Aucune ville trouvée, précisez la ville dans votre message";
           citySelect.appendChild(opt);
           return;
         }
@@ -839,6 +988,18 @@
           ? claddingColorInput.value
           : "Non précisé";
 
+        const roofTypeInput = document.querySelector(
+          'input[name="roofType"]:checked'
+        );
+        const roofType = roofTypeInput ? roofTypeInput.value : null;
+
+        const claddingTypeInput = document.querySelector(
+          'input[name="claddingType"]:checked'
+        );
+        const claddingType = claddingTypeInput
+          ? claddingTypeInput.value
+          : null;
+
         const postalCode = document
           .getElementById("postalCode")
           .value.trim();
@@ -850,7 +1011,7 @@
 
         const area = width * length;
 
-        // Structure + toiture
+        // Structure + toiture (pour l'instant, même base selon mono/bi)
         let structureBase =
           area * (UNIT_PRICE_PER_M2[type] || UNIT_PRICE_PER_M2["mono"]);
 
@@ -862,7 +1023,7 @@
           structureBase *= increaseFactor;
         }
 
-        // Bardage par façade
+        // Bardage par façade (surface totale bardée)
         let claddingArea = 0;
         claddingChecked.forEach((el) => {
           const code = el.value; // A, B, C ou D
@@ -964,11 +1125,18 @@
           " m";
         document.getElementById("surfaceDisplay").textContent =
           area.toFixed(1) + " m²";
+
+        document.getElementById("roofTypeDisplay").textContent =
+          ROOF_TYPE_LABELS[roofType] || "Non précisé";
+        document.getElementById("roofColorDisplay").textContent = roofColor;
+
+        document.getElementById("claddingTypeDisplay").textContent =
+          CLADDING_TYPE_LABELS[claddingType] || "Non précisé";
         document.getElementById("claddingDisplay").textContent =
           claddingLabel;
-        document.getElementById("roofColorDisplay").textContent = roofColor;
         document.getElementById("claddingColorDisplay").textContent =
           claddingColor;
+
         document.getElementById("optionsDisplay").textContent =
           selectedOptions.length > 0
             ? selectedOptions.join(", ")
@@ -997,8 +1165,12 @@
           " m, " +
           claddingLabel.toLowerCase() +
           ", toiture " +
+          (ROOF_TYPE_LABELS[roofType] || "") +
+          " " +
           roofColor +
           ", bardage " +
+          (CLADDING_TYPE_LABELS[claddingType] || "") +
+          " " +
           claddingColor +
           ". Prix estimatif : " +
           formatCurrency(totalHT) +
@@ -1006,6 +1178,7 @@
           formatCurrency(deliveryHT) +
           ").";
 
+        // Mise à jour visuelle 3D
         updateBardage3DView();
       }
 
@@ -1033,27 +1206,46 @@
           "optFaitiereDouble",
           "optFaitiereSimple",
           "optInstall",
-          "postalCode",
           "city",
         ];
         idsToWatch.forEach((id) => {
           const el = document.getElementById(id);
           if (!el) return;
-          if (id === "postalCode") {
-            el.addEventListener("input", () => {
-              updateCityOptions();
-              calculatePrice();
-            });
-          } else {
-            el.addEventListener("change", calculatePrice);
-          }
+          el.addEventListener("change", calculatePrice);
         });
+
+        // code postal : mise à jour villes + recalcul
+        const postalInput = document.getElementById("postalCode");
+        if (postalInput) {
+          postalInput.addEventListener("input", () => {
+            updateCityOptions();
+            calculatePrice();
+          });
+        }
+
+        // Toiture : type + couleur
+        document
+          .querySelectorAll('input[name="roofType"]')
+          .forEach((el) =>
+            el.addEventListener("change", () => {
+              calculatePrice();
+            })
+          );
 
         document
           .querySelectorAll('input[name="roofColor"]')
           .forEach((el) =>
             el.addEventListener("change", () => {
               updateRoofColor3D();
+              calculatePrice();
+            })
+          );
+
+        // Bardage : type + couleur + façades
+        document
+          .querySelectorAll('input[name="claddingType"]')
+          .forEach((el) =>
+            el.addEventListener("change", () => {
               calculatePrice();
             })
           );
@@ -1072,15 +1264,32 @@
           .forEach((el) =>
             el.addEventListener("change", () => {
               calculatePrice();
-              updateBardage3DView();
+              updateBardage3DView(); // garantit que décocher enlève bien la façade sur le 3D
             })
           );
+
+        // Interaction clic sur le dessin + pastilles A/B/C/D
+        document
+          .querySelectorAll(".shed-face, .facade-label")
+          .forEach((el) => {
+            const side = el.dataset.side;
+            if (!side) return;
+            const cb = document.querySelector(
+              'input[name="claddingSide"][value="' + side + '"]'
+            );
+            if (!cb) return;
+
+            el.addEventListener("click", () => {
+              cb.checked = !cb.checked;
+              cb.dispatchEvent(new Event("change", { bubbles: true }));
+            });
+          });
 
         document
           .getElementById("btnCalculate")
           .addEventListener("click", calculatePrice);
 
-        // Init vue 3D + ville + prix
+        // Init vue 3D + couleurs + CP + prix
         updateCityOptions();
         updateRoofColor3D();
         updateCladdingColor3D();
@@ -1090,6 +1299,4 @@
     </script>
   </body>
 </html>
-
-
 
