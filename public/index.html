@@ -904,31 +904,38 @@
       }
 
       // 3D : met à jour pastilles + faces bardées
-      function updateBardage3DView() {
-        ["A", "B", "C", "D"].forEach((side) => {
-          const checkbox = document.querySelector(
-            'input[name="claddingSide"][value="' + side + '"]'
-          );
-          const active = checkbox && checkbox.checked;
+function updateBardage3DView() {
+  ["A", "B", "C", "D"].forEach((side) => {
+    const checkbox = document.querySelector(
+      'input[name="claddingSide"][value="' + side + '"]'
+    );
+    const active = checkbox && checkbox.checked;
 
-          const label = document.querySelector(
-            '.facade-label[data-side="' + side + '"]'
-          );
-          if (label) {
-            label.classList.toggle("active", active);
-          }
+    // Pastille A/B/C/D
+    const label = document.querySelector(
+      '.facade-label[data-side="' + side + '"]'
+    );
+    if (label) {
+      label.classList.toggle("active", active);
+    }
 
-          const face = document.querySelector(
-            '.shed-face[data-side="' + side + '"]'
-          );
-          if (face) {
-            face.classList.toggle("bardee", active);
-          }
-        });
+    // Face 3D
+    const face = document.querySelector(
+      '.shed-face[data-side="' + side + '"]'
+    );
+    if (face) {
+      face.classList.toggle("bardee", active);
 
-        // applique la couleur de bardage aux façades bardées
-        updateCladdingColor3D();
+      // SI DÉCOCHÉ → on enlève la couleur
+      if (!active) {
+        face.style.fill = "none";   // ou "" si tu préfères
       }
+    }
+  });
+
+  // applique la couleur de bardage aux façades bardées
+  updateCladdingColor3D();
+}
 
       // 3D : couleur de toiture selon le RAL choisi
       function updateRoofColor3D() {
