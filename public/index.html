@@ -1241,19 +1241,19 @@
       .getElementById("btnCalculate")
       .addEventListener("click", calculatePrice);
   });
-</script>
 <!-- THREE.JS (version compatible OrbitControls) -->
 <script src="https://unpkg.com/three@0.146.0/build/three.min.js"></script>
 <script src="https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://unpkg.com/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
-  
 
 <script>
   // ----- 3D INTERACTIF AVEC MODELE GLB -----
   let threeScene, threeCamera, threeRenderer, threeControls;
   let threeBuildingGroup;
   let abriModel = null;
-  let baseSize = { width: 3, length: 5, height: 2.7 }; // dimensions du modèle de base (3x5m)
+
+  // taille du modèle en unités 3D (remplie après chargement)
+  const baseSize = { width: 3, length: 5, height: 2.7 };
 
   function initThreeDScene() {
     const container = document.getElementById("viewer3d-container");
@@ -1261,7 +1261,7 @@
     if (!container || !canvas) return;
     if (typeof THREE === "undefined") return;
 
-    const width  = container.clientWidth || 400;
+    const width = container.clientWidth || 400;
     const height = container.clientHeight || (width * 3 / 4);
 
     // Scène
@@ -1296,24 +1296,27 @@
     ground.position.y = 0;
     threeScene.add(ground);
 
-    // Groupe pour le bâtiment
+    // Groupe bâtiment
     threeBuildingGroup = new THREE.Group();
     threeScene.add(threeBuildingGroup);
 
-    // Contrôles caméra
+    // Contrôles
     threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
     threeControls.enableDamping = true;
     threeControls.dampingFactor = 0.1;
     threeControls.target.set(0, 1.5, 0);
 
-    // Charger le modèle GLB
+    // ----- Chargement du modèle GLB -----
     const loader = new THREE.GLTFLoader();
     loader.load(
-      "assets/abri-monopente-3x5m.glb",
+      "assets/abri-monopente-3x5m.glb",       // ⚠️ vérifier que le fichier porte bien ce nom
       (gltf) => {
         abriModel = gltf.scene;
 
-        // Nettoyage matériaux / ombres
+        // Orientation du modèle
+        abriModel.rotation.set(0, Math.PI, 0); // 180° sur Y si ton modèle est à l'envers
+
+        // Matériaux / ombres
         abriModel.traverse((obj) => {
           if (obj.isMesh) {
             obj.castShadow = true;
@@ -1321,32 +1324,40 @@
           }
         });
 
-        // Centrer le modèle à l'origine
+        // Calcul boîte englobante pour centrer
         const box = new THREE.Box3().setFromObject(abriModel);
         const size = new THREE.Vector3();
         const center = new THREE.Vector3();
         box.getSize(size);
         box.getCenter(center);
-        abriModel.position.sub(center); // centre du modèle à (0,0,0)
 
-        // Sauvegarder la taille réelle du modèle
-        baseSize.width  = size.x;
+        // On centre en X/Z et on pose le modèle sur le sol (y = 0)
+        abriModel.position.x -= center.x;
+        abriModel.position.z -= center.z;
+        abriModel.position.y -= box.min.y;
+
+        // Sauvegarde de la taille réelle du modèle
+        baseSize.width = size.x;
         baseSize.length = size.z;
         baseSize.height = size.y;
 
         threeBuildingGroup.add(abriModel);
 
-        // Ajuster la caméra sur le modèle
-        threeControls.target.set(0, size.y * 0.5, 0);
-        threeCamera.position.set(size.x * 1.8, size.y * 1.4, size.z * 2.2);
+        // Caméra recadrée sur l'abri
+        threeControls.target.set(0, size.y * 0.6, 0);
+        threeCamera.position.set(
+          size.x * 1.7,
+          size.y * 1.3,
+          size.z * 2.0
+        );
         threeCamera.lookAt(threeControls.target);
 
-        // Mettre à jour l'échelle en fonction du formulaire
+        // Mise à l'échelle selon le formulaire
         updateThreeDFromForm();
       },
       undefined,
-      (err) => {
-        console.error("Erreur chargement GLB", err);
+      (error) => {
+        console.error("Erreur chargement GLB", error);
       }
     );
 
@@ -1358,7 +1369,7 @@
     const container = document.getElementById("viewer3d-container");
     if (!container || !threeRenderer || !threeCamera) return;
 
-    const width  = container.clientWidth || 400;
+    const width = container.clientWidth || 400;
     const height = container.clientHeight || (width * 3 / 4);
 
     threeCamera.aspect = width / height;
@@ -1373,10 +1384,8 @@
     threeRenderer.render(threeScene, threeCamera);
   }
 
+  // Récupère les dimensions du formulaire
   function getFormConfig3D() {
-    const type =
-      typeof getSelectedType === "function" ? getSelectedType() : "mono";
-
     const widthEl  = document.getElementById("width");
     const lengthEl = document.getElementById("length");
     const heightEl = document.getElementById("height");
@@ -1385,26 +1394,29 @@
     const length = lengthEl ? parseFloat(lengthEl.value) || 5   : 5;
     const height = heightEl ? parseFloat(heightEl.value) || 2.7 : 2.7;
 
-    return { type, width, length, height };
+    return { width, length, height };
   }
 
+  // Met à jour l'échelle du modèle selon les dimensions choisies
   function updateThreeDFromForm() {
-    if (!abriModel) return; // modèle pas encore chargé
+    if (!abriModel || !baseSize.width || !baseSize.length || !baseSize.height) return;
 
     const { width, length, height } = getFormConfig3D();
 
-    // On garde l'abri visible quelle que soit la dimension :
+    // Pour garder l'abri dans le cadre : on normalise sur la plus grande dimension
     const maxDim = Math.max(width, length);
-    const displayScale = 4 / maxDim; // l'abri tient dans ~4 unités
+    const unitsPerMeter = 4 / maxDim; // l'abri fait ~4 unités max dans la scène
 
-    const sx = (width  / 3) * displayScale;  // base = 3 m
-    const sz = (length / 5) * displayScale;  // base = 5 m
-    const sy = (height / 2.7) * displayScale;
+    const scaleX = (width  * unitsPerMeter) / baseSize.width;
+    const scaleZ = (length * unitsPerMeter) / baseSize.length;
+    const scaleY = (height * unitsPerMeter) / baseSize.height;
 
-    abriModel.scale.set(sx, sy, sz);
+    abriModel.scale.set(scaleX, scaleY * 1.15, scaleZ); // 1.15 pour éviter l'effet écrasé
 
+    // Recentrage de la cible caméra en hauteur
+    const visualHeight = height * unitsPerMeter;
     if (threeControls) {
-      threeControls.target.set(0, (baseSize.height * sy) * 0.5, 0);
+      threeControls.target.set(0, visualHeight * 0.6, 0);
       threeControls.update();
     }
   }
@@ -1416,12 +1428,6 @@
       el.addEventListener("change", updateThreeDFromForm);
       el.addEventListener("input", updateThreeDFromForm);
     });
-
-    document
-      .querySelectorAll('input[name="slopeType"]')
-      .forEach((el) =>
-        el.addEventListener("change", updateThreeDFromForm)
-      );
   }
 
   function initThreeD() {
@@ -1436,7 +1442,5 @@
     initThreeD();
   }
 </script>
-
-
-  </body>
+</body>
 </html>
