@@ -1392,26 +1392,28 @@
       });
     </script>
 
-    <!-- === THREE.JS POUR LA 3D === -->
+    <    <!-- === THREE.JS POUR LA 3D === -->
     <script src="https://unpkg.com/three@0.146.0/build/three.min.js"></script>
     <script src="https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://unpkg.com/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
 
     <script>
-      // Modèle de base : monopente 3 x 5 m
+      // Modèle de base : monopente 3 x 5 m (charpente seule)
       const MODEL_PATH = "assets/abri-monopente-3x5m.gltf";
       const BASE_WIDTH_M = 3;   // largeur
       const BASE_LENGTH_M = 5;  // longueur
       const BASE_HEIGHT_M = 2.15;
 
       let scene, camera, renderer, controls;
-      let templateBay = null;
-      let modelRoot = null;
+      let templateBay = null;   // travée de base
+      let modelRoot = null;     // ensemble des travées
       let baseScale = 1;
       let baseSize = null;
 
-      let roofMeshes = [];
-      let claddingMeshes = [];
+      // Groupe pour couverture + bardage
+      let coverGroup = null;
+      let roofPlane = null;
+      const claddingPlanes = { A: null, B: null, C: null, D: null };
 
       function initThree() {
         const canvas = document.getElementById("viewer3d");
@@ -1466,26 +1468,7 @@
           (gltf) => {
             templateBay = gltf.scene;
 
-            templateBay.traverse((obj) => {
-              if (obj.isMesh) {
-                obj.castShadow = true;
-                obj.receiveShadow = true;
-                const n = (obj.name || "").toLowerCase();
-                if (n.includes("toit") || n.includes("roof")) {
-                  obj.userData.partType = "roof";
-                } else if (
-                  n.includes("bardage") ||
-                  n.includes("clad") ||
-                  n.includes("tôle") ||
-                  n.includes("tole")
-                ) {
-                  obj.userData.partType = "cladding";
-                } else {
-                  obj.userData.partType = "structure";
-                }
-              }
-            });
-
+            // Dimensions brutes de la travée de base
             const box = new THREE.Box3().setFromObject(templateBay);
             baseSize = new THREE.Vector3();
             const center = new THREE.Vector3();
@@ -1493,7 +1476,7 @@
             box.getCenter(center);
 
             const maxDim = Math.max(baseSize.x, baseSize.y, baseSize.z);
-            baseScale = 3 / maxDim;
+            baseScale = 3 / maxDim; // taille visuelle de base
 
             rebuildModelFromForm();
             console.log("Modèle GLTF chargé :", MODEL_PATH);
@@ -1525,6 +1508,7 @@
         }
       }
 
+      // --------- RÉCUP DIMENSIONS FORMULAIRE ---------
       function getFormDimensions() {
         const wEl = document.getElementById("width");
         const lEl = document.getElementById("length");
@@ -1542,15 +1526,17 @@
         if (length <= 12) return 2;
         if (length <= 18) return 3;
         if (length <= 24) return 4;
-        return 6;
+        return 6; // 25 à 30 m
       }
 
+      // --------- RECONSTRUCTION CHARPENTE ---------
       function rebuildModelFromForm() {
         if (!templateBay || !baseSize) return;
 
         const { width, length, height } = getFormDimensions();
         const bayCount = getBayCountForLength(length);
 
+        // Supprime ancien modèle
         if (modelRoot) {
           scene.remove(modelRoot);
           modelRoot = null;
@@ -1558,6 +1544,7 @@
 
         modelRoot = new THREE.Group();
 
+        // Travées le long de X
         const baySpacingX = baseSize.x;
         const startOffset = -((bayCount - 1) * baySpacingX) / 2;
 
@@ -1569,9 +1556,9 @@
 
         const totalBaseLengthForBayCount = BASE_LENGTH_M * bayCount;
 
-        const factorX = length / totalBaseLengthForBayCount;
-        const factorZ = width  / BASE_WIDTH_M;
-        const factorY = height / BASE_HEIGHT_M;
+        const factorX = length / totalBaseLengthForBayCount; // longueur
+        const factorZ = width  / BASE_WIDTH_M;               // largeur
+        const factorY = height / BASE_HEIGHT_M;              // hauteur
 
         modelRoot.scale.set(
           baseScale * factorX,
@@ -1579,6 +1566,7 @@
           baseScale * factorZ
         );
 
+        // Centrage + repos sur le sol
         const box = new THREE.Box3().setFromObject(modelRoot);
         const center = new THREE.Vector3();
         box.getCenter(center);
@@ -1588,21 +1576,12 @@
         const minY = box2.min.y;
         modelRoot.position.y -= minY;
 
-        roofMeshes = [];
-        claddingMeshes = [];
-
-        modelRoot.traverse((obj) => {
-          if (obj.isMesh) {
-            if (obj.userData.partType === "roof") {
-              roofMeshes.push(obj);
-            } else if (obj.userData.partType === "cladding") {
-              claddingMeshes.push(obj);
-            }
-          }
-        });
-
         scene.add(modelRoot);
 
+        // Recrée couverture + bardage en fonction des nouvelles dimensions
+        rebuildCoversFromBox(box2);
+
+        // Cible de la caméra
         const midHeight = (box2.max.y - box2.min.y) / 2;
         if (controls) {
           controls.target.set(0, midHeight, 0);
@@ -1611,6 +1590,104 @@
         updateModelAppearanceFromForm();
       }
 
+      // --------- CRÉATION COUVERTURE + BARDAGE ---------
+      function rebuildCoversFromBox(box) {
+        // Nettoyage ancien groupe
+        if (coverGroup) {
+          coverGroup.traverse((obj) => {
+            if (obj.isMesh) {
+              obj.geometry.dispose();
+              obj.material.dispose();
+            }
+          });
+          scene.remove(coverGroup);
+        }
+
+        coverGroup = new THREE.Group();
+        roofPlane = null;
+        claddingPlanes.A = claddingPlanes.B =
+          claddingPlanes.C = claddingPlanes.D = null;
+
+        const lengthX = box.max.x - box.min.x; // longueur
+        const heightY = box.max.y - box.min.y; // hauteur
+        const widthZ  = box.max.z - box.min.z; // largeur
+
+        const midX = (box.max.x + box.min.x) / 2;
+        const midZ = (box.max.z + box.min.z) / 2;
+
+        const epsY = 0.02 * heightY;
+        const epsZ = 0.01 * widthZ;
+        const epsX = 0.01 * lengthX;
+
+        // --- Couverture (un seul grand plan) ---
+        const roofGeo = new THREE.PlaneGeometry(lengthX, widthZ);
+        const roofMat = new THREE.MeshStandardMaterial({
+          color: 0x999999,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.95,
+        });
+        roofPlane = new THREE.Mesh(roofGeo, roofMat);
+        roofPlane.rotation.x = -Math.PI / 2;
+        roofPlane.position.set(midX, box.max.y + epsY, midZ);
+        coverGroup.add(roofPlane);
+
+        // Fonction utilitaire pour les 4 façades
+        function makeWall(code, sizeX, sizeY, pos, rotY) {
+          const geo = new THREE.PlaneGeometry(sizeX, sizeY);
+          const mat = new THREE.MeshStandardMaterial({
+            color: 0xaaaaaa,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.9,
+          });
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.position.copy(pos);
+          mesh.rotation.y = rotY;
+          coverGroup.add(mesh);
+          claddingPlanes[code] = mesh;
+        }
+
+        // A : long pan avant (côté +Z)
+        makeWall(
+          "A",
+          lengthX,
+          heightY,
+          new THREE.Vector3(midX, box.min.y + heightY / 2, box.max.z + epsZ),
+          Math.PI // regarde vers -Z
+        );
+
+        // C : long pan arrière (côté -Z)
+        makeWall(
+          "C",
+          lengthX,
+          heightY,
+          new THREE.Vector3(midX, box.min.y + heightY / 2, box.min.z - epsZ),
+          0 // regarde vers +Z
+        );
+
+        // B : pignon gauche (côté -X)
+        makeWall(
+          "B",
+          widthZ,
+          heightY,
+          new THREE.Vector3(box.min.x - epsX, box.min.y + heightY / 2, midZ),
+          -Math.PI / 2 // regarde vers +X
+        );
+
+        // D : pignon droit (côté +X)
+        makeWall(
+          "D",
+          widthZ,
+          heightY,
+          new THREE.Vector3(box.max.x + epsX, box.min.y + heightY / 2, midZ),
+          Math.PI / 2 // regarde vers -X
+        );
+
+        scene.add(coverGroup);
+      }
+
+      // --------- COULEURS (depuis le formulaire) ---------
       function getCurrentColorsFromForm() {
         let roofColorCss = "#999999";
         const roofRadio = document.querySelector('input[name="roofColor"]:checked');
@@ -1620,50 +1697,59 @@
         }
 
         let claddingColorCss = "#bbbbbb";
-        const cladRadio = document.querySelector('input[name="claddingColor"]:checked');
+        const cladRadio = document.querySelector(
+          'input[name="claddingColor"]:checked'
+        );
         if (cladRadio) {
           const box = cladRadio.closest(".ral-choice")?.querySelector(".ral-box");
           if (box) claddingColorCss = window.getComputedStyle(box).backgroundColor;
         }
 
-        const hasCladding =
-          document.querySelectorAll('input[name="claddingSide"]:checked').length > 0;
-
-        return { roofColorCss, claddingColorCss, hasCladding };
+        return { roofColorCss, claddingColorCss };
       }
 
+      // --------- MISE À JOUR APPARENCE 3D ---------
       function updateModelAppearanceFromForm() {
-        if (!modelRoot) return;
+        if (!roofPlane && !claddingPlanes.A && !claddingPlanes.B &&
+            !claddingPlanes.C && !claddingPlanes.D) return;
 
-        const { roofColorCss, claddingColorCss, hasCladding } =
-          getCurrentColorsFromForm();
+        const { roofColorCss, claddingColorCss } = getCurrentColorsFromForm();
 
-        roofMeshes.forEach((m) => {
-          if (!m.material) return;
-          if (m.material.color) {
-            m.material.color.set(roofColorCss);
+        // Couleur de toit
+        if (roofPlane && roofPlane.material && roofPlane.material.color) {
+          roofPlane.material.color.set(roofColorCss);
+          roofPlane.visible = true;
+        }
+
+        // Bardage par façade A/B/C/D
+        ["A", "B", "C", "D"].forEach((side) => {
+          const mesh = claddingPlanes[side];
+          if (!mesh || !mesh.material) return;
+
+          const cb = document.querySelector(
+            'input[name="claddingSide"][value="' + side + '"]'
+          );
+          const checked = cb ? cb.checked : false;
+
+          if (mesh.material.color) {
+            mesh.material.color.set(claddingColorCss);
           }
-          m.visible = true;
-        });
-
-        claddingMeshes.forEach((m) => {
-          if (!m.material) return;
-          if (m.material.color) {
-            m.material.color.set(claddingColorCss);
-          }
-          m.visible = hasCladding;
+          mesh.visible = checked; // visible seulement si la façade est cochée
         });
       }
 
+      // Exposées pour le script de calcul
       function updateModelScaleFromForm() {
         rebuildModelFromForm();
       }
 
+      // Initialisation
       if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", initThree);
       } else {
         initThree();
       }
     </script>
+
   </body>
 </html>
