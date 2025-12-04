@@ -838,576 +838,728 @@
         </div>
       </div>
     </section>
+<script>
+  // ---- DIMENSIONS AUTORISÉES ----
+  const DIMENSIONS = {
+    mono: {
+      widths: [3, 4, 5, 6],
+      lengths: [3, 4, 5, 6, 8, 10, 12, 15, 18, 20, 24, 25, 30],
+      heights: [2.15, 3.5],
+    },
+    bi: {
+      widths: [4, 5, 6, 7, 8, 10, 12],
+      lengths: [3, 4, 5, 6, 8, 10, 12, 15, 18, 20, 24, 25, 30],
+      heights: [3],
+    },
+  };
 
-    <script>
-      // ---- DIMENSIONS AUTORISÉES ----
-      const DIMENSIONS = {
-        mono: {
-          widths: [3, 4, 5, 6],
-          lengths: [3, 4, 5, 6, 8, 10, 12, 15, 18, 20, 24, 25, 30],
-          heights: [2.15, 3.5],
-        },
-        bi: {
-          widths: [4, 5, 6, 7, 8, 10, 12],
-          lengths: [3, 4, 5, 6, 8, 10, 12, 15, 18, 20, 24, 25, 30],
-          heights: [3],
-        },
-      };
+  const FACADE_LABELS = {
+    A: "Façade A (long pan avant)",
+    B: "Façade B (pignon gauche)",
+    C: "Façade C (long pan arrière)",
+    D: "Façade D (pignon droit)",
+  };
 
-      const FACADE_LABELS = {
-        A: "Façade A (long pan avant)",
-        B: "Façade B (pignon gauche)",
-        C: "Façade C (long pan arrière)",
-        D: "Façade D (pignon droit)",
-      };
+  const ROOF_TYPE_LABELS = {
+    bac_simple: "Bac acier simple",
+    bac_regul: "Bac acier avec régulateur de condensation",
+    sandwich40: "Panneau sandwich ép. 40 mm",
+  };
 
-      const ROOF_TYPE_LABELS = {
-        bac_simple: "Bac acier simple",
-        bac_regul: "Bac acier avec régulateur de condensation",
-        sandwich40: "Panneau sandwich ép. 40 mm",
-      };
+  const CLADDING_TYPE_LABELS = {
+    bac_simple: "Bac acier simple",
+    sandwich40: "Panneau sandwich ép. 40 mm",
+  };
 
-      const CLADDING_TYPE_LABELS = {
-        bac_simple: "Bac acier simple",
-        sandwich40: "Panneau sandwich ép. 40 mm",
-      };
+  // ---- TARIFS STRUCTURE PAR DIMENSION ----
+  // Clé = "largeur x longueur" (en mètres), valeur = prix HT structure seule (sans toiture, sans bardage)
+  // ⚠️ À REMPLIR AVEC TES PRIX RÉELS
+  const STRUCTURE_PRICE_TABLE = {
+    mono: {
+      // EXEMPLES — à modifier :
+      "3x3": 0,
+      "3x4": 0,
+      "3x5": 0,
+      "3x6": 0,
+      "3x8": 0,
+      "3x10": 0,
+      "3x12": 0,
+      "3x15": 0,
+      "3x18": 0,
+      "3x20": 0,
+      "3x24": 0,
+      "3x25": 0,
+      "3x30": 0,
 
-      // ---- CONSTANTES TARIFAIRES (MISE À JOUR) ----
+      "4x3": 0,
+      "4x4": 0,
+      "4x5": 0,
+      "4x6": 0,
+      "4x8": 0,
+      "4x10": 0,
+      "4x12": 0,
+      "4x15": 0,
+      "4x18": 0,
+      "4x20": 0,
+      "4x24": 0,
+      "4x25": 0,
+      "4x30": 0,
 
-// Prix structure seule (hors couverture)
-const STRUCTURE_BASE_PRICE_PER_M2 = {
-  mono: 60, 
-  bi: 66,
-};
+      "5x3": 0,
+      "5x4": 0,
+      "5x5": 0,
+      "5x6": 0,
+      "5x8": 0,
+      "5x10": 0,
+      "5x12": 0,
+      "5x15": 0,
+      "5x18": 0,
+      "5x20": 0,
+      "5x24": 0,
+      "5x25": 0,
+      "5x30": 0,
 
-// Prix couverture toiture (€/m²)
-const ROOF_PRICE_PER_M2 = {
-  bac_simple: 15.34,      // Bac acier simple
-  bac_regul: 17.35,       // Bac acier + régulateur condensation
-  sandwich40: 37.95       // Panneau sandwich 40mm
-};
+      "6x3": 0,
+      "6x4": 0,
+      "6x5": 0,
+      "6x6": 0,
+      "6x8": 0,
+      "6x10": 0,
+      "6x12": 0,
+      "6x15": 0,
+      "6x18": 0,
+      "6x20": 0,
+      "6x24": 0,
+      "6x25": 0,
+      "6x30": 0,
+    },
+    bi: {
+      // EXEMPLES — à modifier :
+      "4x3": 0,
+      "4x4": 0,
+      "4x5": 0,
+      "4x6": 0,
+      "4x8": 0,
+      "4x10": 0,
+      "4x12": 0,
+      "4x15": 0,
+      "4x18": 0,
+      "4x20": 0,
+      "4x24": 0,
+      "4x25": 0,
+      "4x30": 0,
 
-// Prix bardage (€/m²)
-const CLADDING_PRICE_PER_M2 = {
-  bac_simple: 13.09,      // Bardage bac acier
-  sandwich40: 36.00       // Bardage sandwich
-};
+      "5x3": 0,
+      "5x4": 0,
+      "5x5": 0,
+      "5x6": 0,
+      "5x8": 0,
+      "5x10": 0,
+      "5x12": 0,
+      "5x15": 0,
+      "5x18": 0,
+      "5x20": 0,
+      "5x24": 0,
+      "5x25": 0,
+      "5x30": 0,
 
-// Autres options (inchangées pour l’instant)
-const OPTIONS_PRICES = {
-  finishingPerM2: 8,
-  installPerM2: 35,
-};
+      "6x3": 0,
+      "6x4": 0,
+      "6x5": 0,
+      "6x6": 0,
+      "6x8": 0,
+      "6x10": 0,
+      "6x12": 0,
+      "6x15": 0,
+      "6x18": 0,
+      "6x20": 0,
+      "6x24": 0,
+      "6x25": 0,
+      "6x30": 0,
 
-      const TVA_RATE = 0.2;
+      "7x3": 0,
+      "7x4": 0,
+      "7x5": 0,
+      "7x6": 0,
+      "7x8": 0,
+      "7x10": 0,
+      "7x12": 0,
+      "7x15": 0,
+      "7x18": 0,
+      "7x20": 0,
+      "7x24": 0,
+      "7x25": 0,
+      "7x30": 0,
 
-      function formatCurrency(value) {
-        return new Intl.NumberFormat("fr-FR", {
-          style: "currency",
-          currency: "EUR",
-          maximumFractionDigits: 0,
-        }).format(value);
-      }
+      "8x3": 0,
+      "8x4": 0,
+      "8x5": 0,
+      "8x6": 0,
+      "8x8": 0,
+      "8x10": 0,
+      "8x12": 0,
+      "8x15": 0,
+      "8x18": 0,
+      "8x20": 0,
+      "8x24": 0,
+      "8x25": 0,
+      "8x30": 0,
 
-      function getSelectedType() {
-        const input = document.querySelector('input[name="slopeType"]:checked');
-        return input ? input.value : "mono";
-      }
+      "10x3": 0,
+      "10x4": 0,
+      "10x5": 0,
+      "10x6": 0,
+      "10x8": 0,
+      "10x10": 0,
+      "10x12": 0,
+      "10x15": 0,
+      "10x18": 0,
+      "10x20": 0,
+      "10x24": 0,
+      "10x25": 0,
+      "10x30": 0,
 
-      function populateSelect(selectEl, values) {
-        selectEl.innerHTML = "";
-        values.forEach((val, index) => {
-          const opt = document.createElement("option");
-          opt.value = val;
-          opt.textContent = val.toString().replace(".", ",") + " m";
-          if (index === 0) opt.selected = true;
-          selectEl.appendChild(opt);
-        });
-      }
+      "12x3": 0,
+      "12x4": 0,
+      "12x5": 0,
+      "12x6": 0,
+      "12x8": 0,
+      "12x10": 0,
+      "12x12": 0,
+      "12x15": 0,
+      "12x18": 0,
+      "12x20": 0,
+      "12x24": 0,
+      "12x25": 0,
+      "12x30": 0,
+    },
+  };
 
-      function populateDimensions() {
-        const type = getSelectedType();
-        const config = DIMENSIONS[type];
+  // ---- PRIX COUVERTURE & BARDAGE (€/m²) ----
+  const ROOF_PRICE_PER_M2 = {
+    bac_simple: 15.34,
+    bac_regul: 17.35,
+    sandwich40: 37.95,
+  };
 
-        const widthSelect = document.getElementById("width");
-        const lengthSelect = document.getElementById("length");
-        const heightSelect = document.getElementById("height");
+  const CLADDING_PRICE_PER_M2 = {
+    bac_simple: 13.09,
+    sandwich40: 36.0,
+  };
 
-        populateSelect(widthSelect, config.widths);
-        populateSelect(lengthSelect, config.lengths);
-        populateSelect(heightSelect, config.heights);
-      }
+  // Options
+  const OPTIONS_PRICES = {
+    finishingPerM2: 8,
+    installPerM2: 35,
+  };
 
-      // Frais de livraison par département
-      function getDeliveryPrice(postalCode) {
-        if (!postalCode || postalCode.length !== 5) return 0;
-        const dep = parseInt(postalCode.slice(0, 2), 10);
-        if (isNaN(dep)) return 0;
+  const TVA_RATE = 0.2;
 
-        if (dep === 47) return 150; // Lot-et-Garonne
-        if ([40, 33, 24, 46].includes(dep)) return 250; // départements limitrophes
-        return 350; // reste de la France
-      }
+  function formatCurrency(value) {
+    return new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: "EUR",
+      maximumFractionDigits: 0,
+    }).format(value);
+  }
 
-      // API IGN : récupération des villes par code postal
-      async function fetchCitiesFromAPI(postalCode) {
-        if (!postalCode || postalCode.length !== 5) return [];
+  function getSelectedType() {
+    const input = document.querySelector('input[name="slopeType"]:checked');
+    return input ? input.value : "mono";
+  }
 
-        try {
-          const response = await fetch(
-            "https://apicarto.ign.fr/api/codes-postaux/communes/" + postalCode
-          );
-          if (!response.ok) return [];
-          const data = await response.json();
-          // L'API renvoie un tableau d'objets avec au moins la propriété "nomCommune"
-          return data.map((item) => item.nomCommune);
-        } catch (e) {
-          console.error("Erreur API communes", e);
-          return [];
-        }
-      }
+  function populateSelect(selectEl, values) {
+    selectEl.innerHTML = "";
+    values.forEach((val, index) => {
+      const opt = document.createElement("option");
+      opt.value = val;
+      opt.textContent = val.toString().replace(".", ",") + " m";
+      if (index === 0) opt.selected = true;
+      selectEl.appendChild(opt);
+    });
+  }
 
-      // Met à jour la liste des villes en fonction du CP via l'API
-      async function updateCityOptions() {
-        const postalInput = document.getElementById("postalCode");
-        const citySelect = document.getElementById("city");
-        const cp = postalInput.value.trim();
+  function populateDimensions() {
+    const type = getSelectedType();
+    const config = DIMENSIONS[type];
 
-        citySelect.innerHTML = "";
+    const widthSelect = document.getElementById("width");
+    const lengthSelect = document.getElementById("length");
+    const heightSelect = document.getElementById("height");
 
-        if (cp.length !== 5) {
-          const opt = document.createElement("option");
-          opt.value = "";
-          opt.textContent =
-            "Sélectionnez votre ville après saisie du code postal";
-          citySelect.appendChild(opt);
-          return;
-        }
+    populateSelect(widthSelect, config.widths);
+    populateSelect(lengthSelect, config.lengths);
+    populateSelect(heightSelect, config.heights);
+  }
 
-        const cities = await fetchCitiesFromAPI(cp);
+  // Frais de livraison par département
+  function getDeliveryPrice(postalCode) {
+    if (!postalCode || postalCode.length !== 5) return 0;
+    const dep = parseInt(postalCode.slice(0, 2), 10);
+    if (isNaN(dep)) return 0;
 
-        if (!cities || cities.length === 0) {
-          const opt = document.createElement("option");
-          opt.value = "";
-          opt.textContent =
-            "Aucune ville trouvée, précisez la ville dans votre message";
-          citySelect.appendChild(opt);
-          return;
-        }
+    if (dep === 47) return 150;
+    if ([40, 33, 24, 46].includes(dep)) return 250;
+    return 350;
+  }
 
-        cities.forEach((name) => {
-          const opt = document.createElement("option");
-          opt.value = name;
-          opt.textContent = name;
-          citySelect.appendChild(opt);
-        });
+  // API IGN : récupération des villes par code postal
+  async function fetchCitiesFromAPI(postalCode) {
+    if (!postalCode || postalCode.length !== 5) return [];
 
-        if (cities.length === 1) {
-          citySelect.value = cities[0];
-        }
-      }
+    try {
+      const response = await fetch(
+        "https://apicarto.ign.fr/api/codes-postaux/communes/" + postalCode
+      );
+      if (!response.ok) return [];
+      const data = await response.json();
+      return data.map((item) => item.nomCommune);
+    } catch (e) {
+      console.error("Erreur API communes", e);
+      return [];
+    }
+  }
 
-      // 3D : met à jour pastilles + faces bardées
-function updateBardage3DView() {
-  ["A", "B", "C", "D"].forEach((side) => {
-    const checkbox = document.querySelector(
-      'input[name="claddingSide"][value="' + side + '"]'
-    );
-    const active = checkbox && checkbox.checked;
+  async function updateCityOptions() {
+    const postalInput = document.getElementById("postalCode");
+    const citySelect = document.getElementById("city");
+    const cp = postalInput.value.trim();
 
-    // Pastille A/B/C/D
-    const label = document.querySelector(
-      '.facade-label[data-side="' + side + '"]'
-    );
-    if (label) {
-      label.classList.toggle("active", active);
+    citySelect.innerHTML = "";
+
+    if (cp.length !== 5) {
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent =
+        "Sélectionnez votre ville après saisie du code postal";
+      citySelect.appendChild(opt);
+      return;
     }
 
-    // Face 3D
-    const face = document.querySelector(
-      '.shed-face[data-side="' + side + '"]'
-    );
-    if (face) {
-      face.classList.toggle("bardee", active);
+    const cities = await fetchCitiesFromAPI(cp);
 
-      // SI DÉCOCHÉ → on enlève la couleur
-      if (!active) {
-        face.style.fill = "none";   // ou "" si tu préfères
-      }
+    if (!cities || cities.length === 0) {
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent =
+        "Aucune ville trouvée, précisez la ville dans votre message";
+      citySelect.appendChild(opt);
+      return;
     }
-  });
 
-  // applique la couleur de bardage aux façades bardées
-  updateCladdingColor3D();
-}
+    cities.forEach((name) => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      citySelect.appendChild(opt);
+    });
 
-      // 3D : couleur de toiture selon le RAL choisi
-      function updateRoofColor3D() {
-        const selected = document.querySelector(
-          'input[name="roofColor"]:checked'
-        );
-        if (!selected) return;
+    if (cities.length === 1) {
+      citySelect.value = cities[0];
+    }
+  }
 
-        const ralBox = selected
-          .closest(".ral-choice")
-          ?.querySelector(".ral-box");
-        if (!ralBox) return;
+  // 3D : pastilles + façades bardées
+  function updateBardage3DView() {
+    ["A", "B", "C", "D"].forEach((side) => {
+      const checkbox = document.querySelector(
+        'input[name="claddingSide"][value="' + side + '"]'
+      );
+      const active = checkbox && checkbox.checked;
 
-        const bgColor = window.getComputedStyle(ralBox).backgroundColor;
-        const roof = document.getElementById("shedRoof");
-        if (roof) {
-          roof.style.fill = bgColor;
-        }
+      const label = document.querySelector(
+        '.facade-label[data-side="' + side + '"]'
+      );
+      if (label) {
+        label.classList.toggle("active", active);
       }
 
-      // 3D : couleur de bardage selon le RAL choisi
-      function updateCladdingColor3D() {
-        const selected = document.querySelector(
-          'input[name="claddingColor"]:checked'
-        );
-        if (!selected) return;
-
-        const ralBox = selected
-          .closest(".ral-choice")
-          ?.querySelector(".ral-box");
-        if (!ralBox) return;
-
-        const bgColor = window.getComputedStyle(ralBox).backgroundColor;
-        document.querySelectorAll(".shed-face.bardee").forEach((face) => {
-          face.style.fill = bgColor;
-        });
+      const face = document.querySelector(
+        '.shed-face[data-side="' + side + '"]'
+      );
+      if (face) {
+        face.classList.toggle("bardee", active);
+        if (!active) {
+          face.style.fill = "none";
+        }
       }
+    });
 
-      function calculatePrice() {
-        const type = getSelectedType();
-        const width = parseFloat(document.getElementById("width").value);
-        const length = parseFloat(document.getElementById("length").value);
-        const height = parseFloat(document.getElementById("height").value);
+    updateCladdingColor3D();
+  }
 
-        const claddingChecked = document.querySelectorAll(
-          'input[name="claddingSide"]:checked'
-        );
-        const claddingCount = claddingChecked.length;
+  function updateRoofColor3D() {
+    const selected = document.querySelector(
+      'input[name="roofColor"]:checked'
+    );
+    if (!selected) return;
 
-        const roofColor = document.querySelector(
-          'input[name="roofColor"]:checked'
-        ).value;
-        const claddingColorInput = document.querySelector(
-          'input[name="claddingColor"]:checked'
-        );
-        const claddingColor = claddingColorInput
-          ? claddingColorInput.value
-          : "Non précisé";
+    const ralBox = selected.closest(".ral-choice")?.querySelector(".ral-box");
+    if (!ralBox) return;
 
-        const roofTypeInput = document.querySelector(
-          'input[name="roofType"]:checked'
-        );
-        const roofType = roofTypeInput ? roofTypeInput.value : null;
+    const bgColor = window.getComputedStyle(ralBox).backgroundColor;
+    const roof = document.getElementById("shedRoof");
+    if (roof) {
+      roof.style.fill = bgColor;
+    }
+  }
 
-        const claddingTypeInput = document.querySelector(
-          'input[name="claddingType"]:checked'
-        );
-        const claddingType = claddingTypeInput
-          ? claddingTypeInput.value
-          : null;
+  function updateCladdingColor3D() {
+    const selected = document.querySelector(
+      'input[name="claddingColor"]:checked'
+    );
+    if (!selected) return;
 
-        const postalCode = document
-          .getElementById("postalCode")
-          .value.trim();
-        const city = document.getElementById("city").value.trim();
+    const ralBox = selected.closest(".ral-choice")?.querySelector(".ral-box");
+    if (!ralBox) return;
 
-        if (!width || !length || !height) {
-          return;
-        }
+    const bgColor = window.getComputedStyle(ralBox).backgroundColor;
+    document.querySelectorAll(".shed-face.bardee").forEach((face) => {
+      face.style.fill = bgColor;
+    });
+  }
 
-        const area = width * length;
+  function calculatePrice() {
+    const type = getSelectedType();
+    const width = parseFloat(document.getElementById("width").value);
+    const length = parseFloat(document.getElementById("length").value);
+    const height = parseFloat(document.getElementById("height").value);
 
-        // Structure + toiture (pour l'instant, même base selon mono/bi)
-        let structureBase =
-          area * (UNIT_PRICE_PER_M2[type] || UNIT_PRICE_PER_M2["mono"]);
+    const claddingChecked = document.querySelectorAll(
+      'input[name="claddingSide"]:checked'
+    );
+    const claddingCount = claddingChecked.length;
 
-        // Surcoût > 3 m de haut
-        if (height > 3) {
-          const extra = height - 3;
-          const stepCount = extra / 0.5;
-          const increaseFactor = 1 + stepCount * 0.1;
-          structureBase *= increaseFactor;
-        }
+    const roofColor = document.querySelector(
+      'input[name="roofColor"]:checked'
+    ).value;
+    const claddingColorInput = document.querySelector(
+      'input[name="claddingColor"]:checked'
+    );
+    const claddingColor = claddingColorInput
+      ? claddingColorInput.value
+      : "Non précisé";
 
-        // Bardage par façade (surface totale bardée)
-        let claddingArea = 0;
-        claddingChecked.forEach((el) => {
-          const code = el.value; // A, B, C ou D
-          if (code === "A" || code === "C") {
-            claddingArea += length * height;
-          } else if (code === "B" || code === "D") {
-            claddingArea += width * height;
-          }
-        });
-        const claddingPrice = claddingArea * BARDAGE_PRICE_PER_M2;
+    const roofTypeInput = document.querySelector(
+      'input[name="roofType"]:checked'
+    );
+    const roofType = roofTypeInput ? roofTypeInput.value : null;
 
-        // Options
-        let optionsPrice = 0;
+    const claddingTypeInput = document.querySelector(
+      'input[name="claddingType"]:checked'
+    );
+    const claddingType = claddingTypeInput ? claddingTypeInput.value : null;
 
-        const optFaitiereSolin =
-          document.getElementById("optFaitiereSolin").checked;
-        const optRiveSolin = document.getElementById("optRiveSolin").checked;
-        const optGrandeRive =
-          document.getElementById("optGrandeRive").checked;
-        const optAngles = document.getElementById("optAngles").checked;
-        const optRejetEau = document.getElementById("optRejetEau").checked;
-        const optFaitiereDouble =
-          document.getElementById("optFaitiereDouble").checked;
-        const optFaitiereSimple =
-          document.getElementById("optFaitiereSimple").checked;
-        const optInstall = document.getElementById("optInstall").checked;
+    const postalCode = document.getElementById("postalCode").value.trim();
+    const city = document.getElementById("city").value.trim();
 
-        const habillageSelected =
-          optFaitiereSolin ||
-          optRiveSolin ||
-          optGrandeRive ||
-          optAngles ||
-          optRejetEau ||
-          optFaitiereDouble ||
-          optFaitiereSimple;
+    if (!width || !length || !height) {
+      return;
+    }
 
-        if (habillageSelected) {
-          optionsPrice += area * OPTIONS_PRICES.finishingPerM2;
-        }
-        if (optInstall) {
-          optionsPrice += area * OPTIONS_PRICES.installPerM2;
-        }
+    const area = width * length;
 
-        // Frais de livraison
-        const deliveryHT = getDeliveryPrice(postalCode);
+    // --- PRIX STRUCTURE PAR DIMENSION ---
+    const sizeKey = width + "x" + length;
+    const tableForType = STRUCTURE_PRICE_TABLE[type] || {};
+    let structureBase = 0;
 
-        // Total
-        let totalHT = structureBase + claddingPrice + optionsPrice + deliveryHT;
-        totalHT = Math.round(totalHT / 50) * 50;
+    if (sizeKey in tableForType) {
+      structureBase = tableForType[sizeKey];
+    } else {
+      console.warn(
+        "Aucun prix de structure défini pour",
+        type,
+        sizeKey,
+        "- structure mise à 0"
+      );
+      structureBase = 0;
+    }
 
-        const totalTTC = Math.round((totalHT * (1 + TVA_RATE)) / 10) * 10;
-        const pricePerM2 = totalHT / area;
+    // Majoration si hauteur > 3 m (sur structure uniquement)
+    if (height > 3) {
+      const extra = height - 3;
+      const stepCount = extra / 0.5;
+      const increaseFactor = 1 + stepCount * 0.1;
+      structureBase *= increaseFactor;
+    }
 
-        // Libellés
-        const typeLabel = type === "bi" ? "Abris bipente" : "Abris monopente";
+    // --- PRIX TOITURE (au m²) ---
+    const roofUnitPrice =
+      ROOF_PRICE_PER_M2[roofType] ?? ROOF_PRICE_PER_M2["bac_simple"];
+    const roofCost = area * roofUnitPrice;
 
-        let claddingLabel;
-        if (claddingCount === 0) {
-          claddingLabel =
-            "Abris ouvert (sans bardage) – 0 m² de bardage calculé";
-        } else {
-          const codes = Array.from(claddingChecked).map((el) => el.value);
-          const sides = codes.map(
-            (code) => FACADE_LABELS[code] || "Façade " + code
-          );
-          claddingLabel =
-            claddingCount +
-            " façade(s) bardée(s) : " +
-            sides.join(", ") +
-            " – env. " +
-            claddingArea.toFixed(1) +
-            " m² de bardage";
-        }
+    // Structure + toiture
+    let structurePlusRoof = structureBase + roofCost;
 
-        const selectedOptions = [];
-        if (habillageSelected) selectedOptions.push("Habillages et finitions");
-
-        if (optFaitiereSolin) selectedOptions.push("Faitière en solin");
-        if (optRiveSolin) selectedOptions.push("Rive en solin");
-        if (optGrandeRive) selectedOptions.push("Grande rive");
-        if (optAngles) selectedOptions.push("Angles");
-        if (optRejetEau) selectedOptions.push("Rejet d'eau");
-        if (optFaitiereDouble) selectedOptions.push("Faitière double");
-        if (optFaitiereSimple) selectedOptions.push("Faitière simple");
-        if (optInstall) selectedOptions.push("Pose par nos équipes");
-
-        const addressText = postalCode
-          ? postalCode + (city ? " " + city : "")
-          : "Non renseignée";
-
-        // Mise à jour du récap
-        document.getElementById("typeDisplay").textContent = typeLabel;
-        document.getElementById("dimensionsDisplay").textContent =
-          width.toString().replace(".", ",") +
-          " m x " +
-          length.toString().replace(".", ",") +
-          " m, hauteur " +
-          height.toString().replace(".", ",") +
-          " m";
-        document.getElementById("surfaceDisplay").textContent =
-          area.toFixed(1) + " m²";
-
-        document.getElementById("roofTypeDisplay").textContent =
-          ROOF_TYPE_LABELS[roofType] || "Non précisé";
-        document.getElementById("roofColorDisplay").textContent = roofColor;
-
-        document.getElementById("claddingTypeDisplay").textContent =
-          CLADDING_TYPE_LABELS[claddingType] || "Non précisé";
-        document.getElementById("claddingDisplay").textContent =
-          claddingLabel;
-        document.getElementById("claddingColorDisplay").textContent =
-          claddingColor;
-
-        document.getElementById("optionsDisplay").textContent =
-          selectedOptions.length > 0
-            ? selectedOptions.join(", ")
-            : "Aucune option";
-        document.getElementById("addressDisplay").textContent = addressText;
-        document.getElementById("deliveryDisplay").textContent = deliveryHT
-          ? formatCurrency(deliveryHT) + " HT"
-          : "À définir";
-
-        document.getElementById("priceHT").textContent =
-          formatCurrency(totalHT);
-        document.getElementById("priceTTC").textContent =
-          formatCurrency(totalTTC);
-        document.getElementById("pricePerM2").textContent = pricePerM2
-          ? formatCurrency(pricePerM2)
-          : "–";
-
-        document.getElementById("summarySentence").textContent =
-          typeLabel +
-          " de " +
-          width.toString().replace(".", ",") +
-          " m x " +
-          length.toString().replace(".", ",") +
-          " m, hauteur " +
-          height.toString().replace(".", ",") +
-          " m, " +
-          claddingLabel.toLowerCase() +
-          ", toiture " +
-          (ROOF_TYPE_LABELS[roofType] || "") +
-          " " +
-          roofColor +
-          ", bardage " +
-          (CLADDING_TYPE_LABELS[claddingType] || "") +
-          " " +
-          claddingColor +
-          ". Prix estimatif : " +
-          formatCurrency(totalHT) +
-          " HT (dont livraison env. " +
-          formatCurrency(deliveryHT) +
-          ").";
-
-        // Mise à jour visuelle 3D
-        updateBardage3DView();
+    // --- BARDAGE PAR FAÇADE ---
+    let claddingArea = 0;
+    claddingChecked.forEach((el) => {
+      const code = el.value;
+      if (code === "A" || code === "C") {
+        claddingArea += length * height;
+      } else if (code === "B" || code === "D") {
+        claddingArea += width * height;
       }
+    });
 
-      document.addEventListener("DOMContentLoaded", () => {
-        populateDimensions();
+    const claddingUnitPrice =
+      CLADDING_PRICE_PER_M2[claddingType] !== undefined
+        ? CLADDING_PRICE_PER_M2[claddingType]
+        : 0;
 
-        document
-          .querySelectorAll('input[name="slopeType"]')
-          .forEach((el) =>
-            el.addEventListener("change", () => {
-              populateDimensions();
-              calculatePrice();
-            })
-          );
+    const claddingPrice = claddingArea * claddingUnitPrice;
 
-        const idsToWatch = [
-          "width",
-          "length",
-          "height",
-          "optFaitiereSolin",
-          "optRiveSolin",
-          "optGrandeRive",
-          "optAngles",
-          "optRejetEau",
-          "optFaitiereDouble",
-          "optFaitiereSimple",
-          "optInstall",
-          "city",
-        ];
-        idsToWatch.forEach((id) => {
-          const el = document.getElementById(id);
-          if (!el) return;
-          el.addEventListener("change", calculatePrice);
-        });
+    // --- OPTIONS ---
+    let optionsPrice = 0;
 
-        // code postal : mise à jour villes + recalcul
-        const postalInput = document.getElementById("postalCode");
-        if (postalInput) {
-          postalInput.addEventListener("input", () => {
-            updateCityOptions();
-            calculatePrice();
-          });
-        }
+    const optFaitiereSolin =
+      document.getElementById("optFaitiereSolin").checked;
+    const optRiveSolin = document.getElementById("optRiveSolin").checked;
+    const optGrandeRive = document.getElementById("optGrandeRive").checked;
+    const optAngles = document.getElementById("optAngles").checked;
+    const optRejetEau = document.getElementById("optRejetEau").checked;
+    const optFaitiereDouble =
+      document.getElementById("optFaitiereDouble").checked;
+    const optFaitiereSimple =
+      document.getElementById("optFaitiereSimple").checked;
+    const optInstall = document.getElementById("optInstall").checked;
 
-        // Toiture : type + couleur
-        document
-          .querySelectorAll('input[name="roofType"]')
-          .forEach((el) =>
-            el.addEventListener("change", () => {
-              calculatePrice();
-            })
-          );
+    const habillageSelected =
+      optFaitiereSolin ||
+      optRiveSolin ||
+      optGrandeRive ||
+      optAngles ||
+      optRejetEau ||
+      optFaitiereDouble ||
+      optFaitiereSimple;
 
-        document
-          .querySelectorAll('input[name="roofColor"]')
-          .forEach((el) =>
-            el.addEventListener("change", () => {
-              updateRoofColor3D();
-              calculatePrice();
-            })
-          );
+    if (habillageSelected) {
+      optionsPrice += area * OPTIONS_PRICES.finishingPerM2;
+    }
+    if (optInstall) {
+      optionsPrice += area * OPTIONS_PRICES.installPerM2;
+    }
 
-        // Bardage : type + couleur + façades
-        document
-          .querySelectorAll('input[name="claddingType"]')
-          .forEach((el) =>
-            el.addEventListener("change", () => {
-              calculatePrice();
-            })
-          );
+    // --- LIVRAISON ---
+    const deliveryHT = getDeliveryPrice(postalCode);
 
-        document
-          .querySelectorAll('input[name="claddingColor"]')
-          .forEach((el) =>
-            el.addEventListener("change", () => {
-              updateCladdingColor3D();
-              calculatePrice();
-            })
-          );
+    // --- TOTAL ---
+    let totalHT = structurePlusRoof + claddingPrice + optionsPrice + deliveryHT;
+    totalHT = Math.round(totalHT / 50) * 50;
 
-        document
-          .querySelectorAll('input[name="claddingSide"]')
-          .forEach((el) =>
-            el.addEventListener("change", () => {
-              calculatePrice();
-              updateBardage3DView(); // garantit que décocher enlève bien la façade sur le 3D
-            })
-          );
+    const totalTTC = Math.round((totalHT * (1 + TVA_RATE)) / 10) * 10;
+    const pricePerM2 = totalHT / area;
 
-        // Interaction clic sur le dessin + pastilles A/B/C/D
-        document
-          .querySelectorAll(".shed-face, .facade-label")
-          .forEach((el) => {
-            const side = el.dataset.side;
-            if (!side) return;
-            const cb = document.querySelector(
-              'input[name="claddingSide"][value="' + side + '"]'
-            );
-            if (!cb) return;
+    const typeLabel = type === "bi" ? "Abris bipente" : "Abris monopente";
 
-            el.addEventListener("click", () => {
-              cb.checked = !cb.checked;
-              cb.dispatchEvent(new Event("change", { bubbles: true }));
-            });
-          });
+    let claddingLabel;
+    if (claddingCount === 0) {
+      claddingLabel =
+        "Abris ouvert (sans bardage) – 0 m² de bardage calculé";
+    } else {
+      const codes = Array.from(claddingChecked).map((el) => el.value);
+      const sides = codes.map(
+        (code) => FACADE_LABELS[code] || "Façade " + code
+      );
+      claddingLabel =
+        claddingCount +
+        " façade(s) bardée(s) : " +
+        sides.join(", ") +
+        " – env. " +
+        claddingArea.toFixed(1) +
+        " m² de bardage";
+    }
 
-        document
-          .getElementById("btnCalculate")
-          .addEventListener("click", calculatePrice);
+    const selectedOptions = [];
+    if (habillageSelected) selectedOptions.push("Habillages et finitions");
+    if (optFaitiereSolin) selectedOptions.push("Faitière en solin");
+    if (optRiveSolin) selectedOptions.push("Rive en solin");
+    if (optGrandeRive) selectedOptions.push("Grande rive");
+    if (optAngles) selectedOptions.push("Angles");
+    if (optRejetEau) selectedOptions.push("Rejet d'eau");
+    if (optFaitiereDouble) selectedOptions.push("Faitière double");
+    if (optFaitiereSimple) selectedOptions.push("Faitière simple");
+    if (optInstall) selectedOptions.push("Pose par nos équipes");
 
-        // Init vue 3D + couleurs + CP + prix
+    const addressText = postalCode
+      ? postalCode + (city ? " " + city : "")
+      : "Non renseignée";
+
+    document.getElementById("typeDisplay").textContent = typeLabel;
+    document.getElementById("dimensionsDisplay").textContent =
+      width.toString().replace(".", ",") +
+      " m x " +
+      length.toString().replace(".", ",") +
+      " m, hauteur " +
+      height.toString().replace(".", ",") +
+      " m";
+    document.getElementById("surfaceDisplay").textContent =
+      area.toFixed(1) + " m²";
+
+    document.getElementById("roofTypeDisplay").textContent =
+      ROOF_TYPE_LABELS[roofType] || "Non précisé";
+    document.getElementById("roofColorDisplay").textContent = roofColor;
+
+    document.getElementById("claddingTypeDisplay").textContent =
+      CLADDING_TYPE_LABELS[claddingType] || "Non précisé";
+    document.getElementById("claddingDisplay").textContent = claddingLabel;
+    document.getElementById("claddingColorDisplay").textContent =
+      claddingColor;
+
+    document.getElementById("optionsDisplay").textContent =
+      selectedOptions.length > 0
+        ? selectedOptions.join(", ")
+        : "Aucune option";
+    document.getElementById("addressDisplay").textContent = addressText;
+    document.getElementById("deliveryDisplay").textContent = deliveryHT
+      ? formatCurrency(deliveryHT) + " HT"
+      : "À définir";
+
+    document.getElementById("priceHT").textContent =
+      formatCurrency(totalHT);
+    document.getElementById("priceTTC").textContent =
+      formatCurrency(totalTTC);
+    document.getElementById("pricePerM2").textContent = pricePerM2
+      ? formatCurrency(pricePerM2)
+      : "–";
+
+    document.getElementById("summarySentence").textContent =
+      typeLabel +
+      " de " +
+      width.toString().replace(".", ",") +
+      " m x " +
+      length.toString().replace(".", ",") +
+      " m, hauteur " +
+      height.toString().replace(".", ",") +
+      " m, " +
+      claddingLabel.toLowerCase() +
+      ", toiture " +
+      (ROOF_TYPE_LABELS[roofType] || "") +
+      " " +
+      roofColor +
+      ", bardage " +
+      (CLADDING_TYPE_LABELS[claddingType] || "") +
+      " " +
+      claddingColor +
+      ". Prix estimatif : " +
+      formatCurrency(totalHT) +
+      " HT (dont livraison env. " +
+      formatCurrency(deliveryHT) +
+      ").";
+
+    updateBardage3DView();
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    populateDimensions();
+
+    document
+      .querySelectorAll('input[name="slopeType"]')
+      .forEach((el) =>
+        el.addEventListener("change", () => {
+          populateDimensions();
+          calculatePrice();
+        })
+      );
+
+    const idsToWatch = [
+      "width",
+      "length",
+      "height",
+      "optFaitiereSolin",
+      "optRiveSolin",
+      "optGrandeRive",
+      "optAngles",
+      "optRejetEau",
+      "optFaitiereDouble",
+      "optFaitiereSimple",
+      "optInstall",
+      "city",
+    ];
+    idsToWatch.forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("change", calculatePrice);
+    });
+
+    const postalInput = document.getElementById("postalCode");
+    if (postalInput) {
+      postalInput.addEventListener("input", () => {
         updateCityOptions();
-        updateRoofColor3D();
-        updateCladdingColor3D();
-        updateBardage3DView();
         calculatePrice();
       });
-    </script>
-  </body>
-</html>
+    }
 
+    document
+      .querySelectorAll('input[name="roofType"]')
+      .forEach((el) =>
+        el.addEventListener("change", () => {
+          calculatePrice();
+        })
+      );
+
+    document
+      .querySelectorAll('input[name="roofColor"]')
+      .forEach((el) =>
+        el.addEventListener("change", () => {
+          updateRoofColor3D();
+          calculatePrice();
+        })
+      );
+
+    document
+      .querySelectorAll('input[name="claddingType"]')
+      .forEach((el) =>
+        el.addEventListener("change", () => {
+          calculatePrice();
+        })
+      );
+
+    document
+      .querySelectorAll('input[name="claddingColor"]')
+      .forEach((el) =>
+        el.addEventListener("change", () => {
+          updateCladdingColor3D();
+          calculatePrice();
+        })
+      );
+
+    document
+      .querySelectorAll('input[name="claddingSide"]')
+      .forEach((el) =>
+        el.addEventListener("change", () => {
+          calculatePrice();
+          updateBardage3DView();
+        })
+      );
+
+    document
+      .querySelectorAll(".shed-face, .facade-label")
+      .forEach((el) => {
+        const side = el.dataset.side;
+        if (!side) return;
+        const cb = document.querySelector(
+          'input[name="claddingSide"][value="' + side + '"]'
+        );
+        if (!cb) return;
+
+        el.addEventListener("click", () => {
+          cb.checked = !cb.checked;
+          cb.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+      });
+
+    document
+      .getElementById("btnCalculate")
+      .addEventListener("click", calculatePrice);
+
+    updateCityOptions();
+    updateRoofColor3D();
+    updateCladdingColor3D();
+    updateBardage3DView();
+    calculatePrice();
+  });
+</script>
+
+    
