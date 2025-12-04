@@ -1290,10 +1290,19 @@
         }
       }
 
+       <script>
+      /* ... tout le code au-dessus (DIMENSIONS, calculatePrice, etc.) NE BOUGE PAS ... */
+
       document.addEventListener("DOMContentLoaded", () => {
+        // Initialisation
         populateDimensions();
         calculatePrice();
+        updateCityOptions();
+        updateRoofColor3D();
+        updateCladdingColor3D();
+        updateBardage3DView();
 
+        // 1. Type d’abri (mono / bi) : change les listes + la 3D
         document
           .querySelectorAll('input[name="slopeType"]')
           .forEach((el) =>
@@ -1302,10 +1311,14 @@
               calculatePrice();
               if (typeof updateModelScaleFromForm === "function") {
                 updateModelScaleFromForm();
+                if (typeof updateModelAppearanceFromForm === "function") {
+                  updateModelAppearanceFromForm();
+                }
               }
             })
           );
 
+        // 2. Dimensions & options qui influent sur le prix
         [
           "width",
           "length",
@@ -1321,16 +1334,24 @@
           "optFaitiereSimple",
         ].forEach((id) => {
           const el = document.getElementById(id);
-          el?.addEventListener("change", () => {
+          if (!el) return;
+
+          el.addEventListener("change", () => {
             calculatePrice();
+
+            // Si ce sont les dimensions, on resynchronise la charpente 3D
             if (["width", "length", "height"].includes(id)) {
               if (typeof updateModelScaleFromForm === "function") {
                 updateModelScaleFromForm();
+                if (typeof updateModelAppearanceFromForm === "function") {
+                  updateModelAppearanceFromForm();
+                }
               }
             }
           });
         });
 
+        // 3. Code postal -> villes + prix + 3D inchangée
         document
           .getElementById("postalCode")
           ?.addEventListener("input", () => {
@@ -1338,33 +1359,46 @@
             calculatePrice();
           });
 
+        // 4. Couleur de toiture : 2D + 3D toit
         document
           .querySelectorAll('input[name="roofColor"]')
           .forEach((el) =>
             el.addEventListener("change", () => {
               updateRoofColor3D();
               calculatePrice();
+              if (typeof updateModelAppearanceFromForm === "function") {
+                updateModelAppearanceFromForm();
+              }
             })
           );
 
+        // 5. Couleur de bardage : 2D + 3D bardage
         document
           .querySelectorAll('input[name="claddingColor"]')
           .forEach((el) =>
             el.addEventListener("change", () => {
               updateCladdingColor3D();
               calculatePrice();
+              if (typeof updateModelAppearanceFromForm === "function") {
+                updateModelAppearanceFromForm();
+              }
             })
           );
 
+        // 6. Façades bardées A/B/C/D : schéma 2D + 3D bardage
         document
           .querySelectorAll('input[name="claddingSide"]')
           .forEach((el) =>
             el.addEventListener("change", () => {
               calculatePrice();
               updateBardage3DView();
+              if (typeof updateModelAppearanceFromForm === "function") {
+                updateModelAppearanceFromForm();
+              }
             })
           );
 
+        // 7. Clic sur le schéma 2D pour cocher/décocher les façades
         document
           .querySelectorAll(".shed-face, .facade-label")
           .forEach((el) => {
@@ -1381,16 +1415,21 @@
             });
           });
 
+        // Bouton de calcul (optionnel, le prix se met déjà à jour à la volée)
         document
           .getElementById("btnCalculate")
-          .addEventListener("click", calculatePrice);
-
-        updateCityOptions();
-        updateRoofColor3D();
-        updateCladdingColor3D();
-        updateBardage3DView();
+          .addEventListener("click", () => {
+            calculatePrice();
+            if (typeof updateModelScaleFromForm === "function") {
+              updateModelScaleFromForm();
+              if (typeof updateModelAppearanceFromForm === "function") {
+                updateModelAppearanceFromForm();
+              }
+            }
+          });
       });
     </script>
+
 
     <    <!-- === THREE.JS POUR LA 3D === -->
     <script src="https://unpkg.com/three@0.146.0/build/three.min.js"></script>
