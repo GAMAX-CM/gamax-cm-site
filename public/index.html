@@ -6,290 +6,6 @@
     <title>GAMAX-CM – Abris métalliques sur-mesure</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-<script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
-<script>
-  // ----- 3D INTERACTIF (Three.js) -----
-  let threeScene, threeCamera, threeRenderer, threeControls;
-  let threeBuildingGroup, threeRoofMesh;
-  let threeWallMeshes = [];
-  let threePosts = [];
-
-  function initThreeDScene() {
-    const container = document.getElementById("viewer3d-container");
-    const canvas = document.getElementById("viewer3d");
-
-    if (!container || !canvas) return;
-    if (typeof THREE === "undefined") return;
-
-    const width = container.clientWidth || 400;
-    const height = container.clientHeight || (width * 3 / 4);
-
-    // Scène & caméra
-    threeScene = new THREE.Scene();
-    threeScene.background = new THREE.Color(0xf5f5f5);
-
-    threeCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    threeCamera.position.set(10, 8, 10);
-
-    // Renderer
-    threeRenderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    threeRenderer.setSize(width, height);
-    threeRenderer.setPixelRatio(window.devicePixelRatio || 1);
-
-    // Lumières
-    const ambient = new THREE.AmbientLight(0xffffff, 0.7);
-    threeScene.add(ambient);
-
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
-    dirLight.position.set(10, 20, 10);
-    threeScene.add(dirLight);
-
-    // Sol
-    const groundGeo = new THREE.PlaneGeometry(50, 50);
-    const groundMat = new THREE.MeshPhongMaterial({
-      color: 0xe0e0e0,
-      side: THREE.DoubleSide,
-    });
-    const ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = 0;
-    threeScene.add(ground);
-
-    // Groupe bâtiment
-    threeBuildingGroup = new THREE.Group();
-    threeScene.add(threeBuildingGroup);
-
-    // Poteaux de structure
-    const postGeo = new THREE.BoxGeometry(0.15, 1, 0.15);
-    const postMat = new THREE.MeshPhongMaterial({ color: 0x555555 });
-    const postPositions = [
-      [-1, 0.5, -1], // arrière gauche
-      [ 1, 0.5, -1], // arrière droit
-      [-1, 0.5,  1], // avant gauche
-      [ 1, 0.5,  1], // avant droit
-    ];
-    postPositions.forEach((p) => {
-      const post = new THREE.Mesh(postGeo, postMat);
-      post.position.set(p[0], p[1], p[2]);
-      threeBuildingGroup.add(post);
-      threePosts.push(post);
-    });
-
-    // Toiture (plaque, qu'on incline/ou non selon mono/bi-pente)
-    const roofGeo = new THREE.BoxGeometry(2.2, 0.05, 2.2);
-    const roofMat = new THREE.MeshPhongMaterial({ color: 0x999999 });
-    threeRoofMesh = new THREE.Mesh(roofGeo, roofMat);
-    threeRoofMesh.position.y = 1.6;
-    threeRoofMesh.rotation.x = -Math.PI * 5 / 180; // pente par défaut
-    threeBuildingGroup.add(threeRoofMesh);
-
-    // Panneaux de bardage (A, C = longs pans ; B, D = pignons)
-    const wallMat = new THREE.MeshPhongMaterial({
-      color: 0xbbbbbb,
-      transparent: true,
-      opacity: 0.9,
-    });
-
-    const frontBackGeo = new THREE.BoxGeometry(2.0, 1.4, 0.04);  // A, C
-    const sideGeo      = new THREE.BoxGeometry(0.04, 1.4, 2.0);  // B, D
-
-    // A – long pan avant
-    const wallA = new THREE.Mesh(frontBackGeo, wallMat.clone());
-    threeBuildingGroup.add(wallA);
-    threeWallMeshes.push(wallA);
-
-    // C – long pan arrière
-    const wallC = new THREE.Mesh(frontBackGeo, wallMat.clone());
-    threeBuildingGroup.add(wallC);
-    threeWallMeshes.push(wallC);
-
-    // B – pignon gauche
-    const wallB = new THREE.Mesh(sideGeo, wallMat.clone());
-    threeBuildingGroup.add(wallB);
-    threeWallMeshes.push(wallB);
-
-    // D – pignon droit
-    const wallD = new THREE.Mesh(sideGeo, wallMat.clone());
-    threeBuildingGroup.add(wallD);
-    threeWallMeshes.push(wallD);
-
-    // Contrôles caméra
-    threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
-    threeControls.enableDamping = true;
-    threeControls.dampingFactor = 0.1;
-    threeControls.target.set(0, 0.8, 0);
-
-    window.addEventListener("resize", onWindowResize3D);
-
-    animate3D();
-  }
-
-  function onWindowResize3D() {
-    const container = document.getElementById("viewer3d-container");
-    if (!container || !threeRenderer || !threeCamera) return;
-
-    const width = container.clientWidth || 400;
-    const height = container.clientHeight || (width * 3 / 4);
-
-    threeCamera.aspect = width / height;
-    threeCamera.updateProjectionMatrix();
-    threeRenderer.setSize(width, height);
-  }
-
-  function animate3D() {
-    requestAnimationFrame(animate3D);
-    if (!threeRenderer || !threeScene || !threeCamera) return;
-    if (threeControls) threeControls.update();
-    threeRenderer.render(threeScene, threeCamera);
-  }
-
-  // Récupération des valeurs du configurateur pour la 3D
-  function getFormConfig3D() {
-    const type = typeof getSelectedType === "function"
-      ? getSelectedType()
-      : "mono";
-
-    const widthEl  = document.getElementById("width");
-    const lengthEl = document.getElementById("length");
-    const heightEl = document.getElementById("height");
-
-    const width  = widthEl  ? parseFloat(widthEl.value)  || 3   : 3;
-    const length = lengthEl ? parseFloat(lengthEl.value) || 3   : 3;
-    const height = heightEl ? parseFloat(heightEl.value) || 2.7 : 2.7;
-
-    // Couleur toiture (on lit la couleur de la pastille RAL)
-    let roofColorCss = "#999999";
-    const roofRadio = document.querySelector('input[name="roofColor"]:checked');
-    if (roofRadio) {
-      const box = roofRadio.closest(".ral-choice")?.querySelector(".ral-box");
-      if (box) {
-        roofColorCss = window.getComputedStyle(box).backgroundColor;
-      }
-    }
-
-    // Couleur bardage
-    let claddingColorCss = "#bbbbbb";
-    const cladRadio = document.querySelector('input[name="claddingColor"]:checked');
-    if (cladRadio) {
-      const box = cladRadio.closest(".ral-choice")?.querySelector(".ral-box");
-      if (box) {
-        claddingColorCss = window.getComputedStyle(box).backgroundColor;
-      }
-    }
-
-    // Côtés bardés : A / B / C / D
-    const claddingSides = [];
-    document
-      .querySelectorAll('input[name="claddingSide"]:checked')
-      .forEach((el) => claddingSides.push(el.value));
-
-    return { type, width, length, height, roofColorCss, claddingColorCss, claddingSides };
-  }
-
-  function updateThreeDFromForm() {
-    if (!threeBuildingGroup || !threeRoofMesh) return;
-
-    const {
-      type,
-      width,
-      length,
-      height,
-      roofColorCss,
-      claddingColorCss,
-      claddingSides,
-    } = getFormConfig3D();
-
-    // 1 unité 3D ≈ 0,5 m
-    const scale = 0.5;
-    const w = width * scale;
-    const l = length * scale;
-    const h = height * scale;
-
-    // Poteaux aux 4 coins
-    threePosts.forEach((post, idx) => {
-      const isRight = idx === 1 || idx === 3;
-      const isFront = idx === 2 || idx === 3;
-
-      post.scale.set(1, h / 1, 1);
-      post.position.y = h / 2;
-      post.position.x = isRight ? w / 2 : -w / 2;
-      post.position.z = isFront ? l / 2 : -l / 2;
-    });
-
-    // Toiture
-    threeRoofMesh.scale.set(w / 2.2, 1, l / 2.2);
-    threeRoofMesh.position.y = h + 0.05;
-    threeRoofMesh.rotation.x = type === "mono" ? -Math.PI * 5 / 180 : 0;
-    threeRoofMesh.material.color = new THREE.Color(roofColorCss);
-
-    // Bardage (A, C, B, D)
-    const hWalls = h * 0.9;
-
-    // A – long pan avant
-    const hasA = claddingSides.includes("A");
-    const wallA = threeWallMeshes[0];
-    wallA.visible = hasA;
-    wallA.scale.set(w / 2.0, hWalls / 1.4, 1);
-    wallA.position.set(0, hWalls / 2, l / 2 + 0.02);
-
-    // C – long pan arrière
-    const hasC = claddingSides.includes("C");
-    const wallC = threeWallMeshes[1];
-    wallC.visible = hasC;
-    wallC.scale.set(w / 2.0, hWalls / 1.4, 1);
-    wallC.position.set(0, hWalls / 2, -l / 2 - 0.02);
-
-    // B – pignon gauche
-    const hasB = claddingSides.includes("B");
-    const wallB = threeWallMeshes[2];
-    wallB.visible = hasB;
-    wallB.scale.set(1, hWalls / 1.4, l / 2.0);
-    wallB.position.set(-w / 2 - 0.02, hWalls / 2, 0);
-
-    // D – pignon droit
-    const hasD = claddingSides.includes("D");
-    const wallD = threeWallMeshes[3];
-    wallD.visible = hasD;
-    wallD.scale.set(1, hWalls / 1.4, l / 2.0);
-    wallD.position.set(w / 2 + 0.02, hWalls / 2, 0);
-
-    // Couleur bardage
-    threeWallMeshes.forEach((mesh) => {
-      mesh.material.color = new THREE.Color(claddingColorCss);
-    });
-  }
-
-  function bindThreeDFormEvents() {
-    // Dimensions
-    ["width", "length", "height"].forEach((id) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.addEventListener("change", updateThreeDFromForm);
-      el.addEventListener("input", updateThreeDFromForm);
-    });
-
-    // Type d’abri (mono / bi)
-    document
-      .querySelectorAll('input[name="slopeType"]')
-      .forEach((el) => el.addEventListener("change", updateThreeDFromForm));
-
-    // Couleurs toiture / bardage
-    document
-      .querySelectorAll('input[name="roofColor"], input[name="claddingColor"]')
-      .forEach((el) => el.addEventListener("change", updateThreeDFromForm));
-
-    // Côtés bardés A/B/C/D
-    document
-      .querySelectorAll('input[name="claddingSide"]')
-      .forEach((el) => el.addEventListener("change", updateThreeDFromForm));
-  }
-
-  // Comme le script est chargé en bas de page, on peut tout initialiser directement
-  initThreeDScene();
-  bindThreeDFormEvents();
-  updateThreeDFromForm();
-</script>
 
   <body>
     <!-- HEADER -->
@@ -406,22 +122,6 @@
               </label>
             </div>
 
-            <aside class="config-summary">
-  <!-- VUE 3D INTERACTIVE -->
-  <div class="summary-3d">
-    <h3>Vue 3D de votre abri</h3>
-    <p class="hint">
-      Faites glisser pour tourner, utilisez la molette pour zoomer.
-    </p>
-    <div id="viewer3d-container">
-      <canvas id="viewer3d"></canvas>
-    </div>
-  </div>
-
-  <!-- RÉCAP PRIX -->
-  <div class="summary-box">
-
-
             <!-- 2. DIMENSIONS -->
             <h3>2. Dimensions de l’abri</h3>
             <div class="form-grid">
@@ -443,59 +143,58 @@
 
             <!-- 3. TOITURE -->
             <h3>3. Toiture</h3>
-          <!-- 3.1 Type de toiture -->
-<div class="field">
-  <label>Type de couverture</label>
-  <div class="bardage-grid">
-    <label class="bardage-choice">
-      <input
-        type="radio"
-        name="roofType"
-        value="bac_simple"
-        checked
-      />
-      <div class="bardage-card type-card">
-        <span class="bardage-label-main">Bac acier simple</span>
-        <span class="bardage-label-sub">
-          Tôle nervurée standard, économique.
-        </span>
-      </div>
-    </label>
+            <!-- 3.1 Type de toiture -->
+            <div class="field">
+              <label>Type de couverture</label>
+              <div class="bardage-grid">
+                <label class="bardage-choice">
+                  <input
+                    type="radio"
+                    name="roofType"
+                    value="bac_simple"
+                    checked
+                  />
+                  <div class="bardage-card type-card">
+                    <span class="bardage-label-main">Bac acier simple</span>
+                    <span class="bardage-label-sub">
+                      Tôle nervurée standard, économique.
+                    </span>
+                  </div>
+                </label>
 
-    <label class="bardage-choice">
-      <input
-        type="radio"
-        name="roofType"
-        value="bac_regul"
-      />
-      <div class="bardage-card type-card">
-        <span class="bardage-label-main">
-          Bac acier avec régulateur de condensation
-        </span>
-        <span class="bardage-label-sub">
-          Recommandé si l’abri est bardé (limite la condensation).
-        </span>
-      </div>
-    </label>
+                <label class="bardage-choice">
+                  <input
+                    type="radio"
+                    name="roofType"
+                    value="bac_regul"
+                  />
+                  <div class="bardage-card type-card">
+                    <span class="bardage-label-main">
+                      Bac acier avec régulateur de condensation
+                    </span>
+                    <span class="bardage-label-sub">
+                      Recommandé si l’abri est bardé (limite la condensation).
+                    </span>
+                  </div>
+                </label>
 
-    <label class="bardage-choice">
-      <input
-        type="radio"
-        name="roofType"
-        value="sandwich40"
-      />
-      <div class="bardage-card type-card">
-        <span class="bardage-label-main">
-          Panneau sandwich ép. 40&nbsp;mm
-        </span>
-        <span class="bardage-label-sub">
-          Meilleure isolation thermique, intérieur plus confortable.
-        </span>
-      </div>
-    </label>
-  </div>
-</div>
-
+                <label class="bardage-choice">
+                  <input
+                    type="radio"
+                    name="roofType"
+                    value="sandwich40"
+                  />
+                  <div class="bardage-card type-card">
+                    <span class="bardage-label-main">
+                      Panneau sandwich ép. 40&nbsp;mm
+                    </span>
+                    <span class="bardage-label-sub">
+                      Meilleure isolation thermique, intérieur plus confortable.
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
 
             <!-- 3.2 Couleur toiture -->
             <div class="field">
@@ -591,193 +290,191 @@
             <!-- 4. BARDAGE -->
             <h3>4. Bardage</h3>
 
-     <!-- 4.1 Type de bardage -->
-<div class="field">
-  <label>Type de bardage</label>
-  <div class="bardage-grid">
-    <label class="bardage-choice">
-      <input
-        type="radio"
-        name="claddingType"
-        value="bac_simple"
-        checked
-      />
-      <div class="bardage-card type-card">
-        <span class="bardage-label-main">Bac acier simple</span>
-        <span class="bardage-label-sub">
-          Bardage simple peau, économique.
-        </span>
-      </div>
-    </label>
+            <!-- 4.1 Type de bardage -->
+            <div class="field">
+              <label>Type de bardage</label>
+              <div class="bardage-grid">
+                <label class="bardage-choice">
+                  <input
+                    type="radio"
+                    name="claddingType"
+                    value="bac_simple"
+                    checked
+                  />
+                  <div class="bardage-card type-card">
+                    <span class="bardage-label-main">Bac acier simple</span>
+                    <span class="bardage-label-sub">
+                      Bardage simple peau, économique.
+                    </span>
+                  </div>
+                </label>
 
-    <label class="bardage-choice">
-      <input
-        type="radio"
-        name="claddingType"
-        value="sandwich40"
-      />
-      <div class="bardage-card type-card">
-        <span class="bardage-label-main">
-          Panneau sandwich ép. 40&nbsp;mm
-        </span>
-        <span class="bardage-label-sub">
-          Bardage isolé pour un confort intérieur amélioré.
-        </span>
-      </div>
-    </label>
-  </div>
-</div>
-      
+                <label class="bardage-choice">
+                  <input
+                    type="radio"
+                    name="claddingType"
+                    value="sandwich40"
+                  />
+                  <div class="bardage-card type-card">
+                    <span class="bardage-label-main">
+                      Panneau sandwich ép. 40&nbsp;mm
+                    </span>
+                    <span class="bardage-label-sub">
+                      Bardage isolé pour un confort intérieur amélioré.
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
 
-           <!-- 4.2 Couleur bardage -->
-<div class="field">
-  <label>Couleur bardage (RAL)</label>
-  <div class="ral-grid">
-    <label class="ral-choice">
-      <input
-        type="radio"
-        name="claddingColor"
-        value="RAL 5008"
-        checked
-      />
-      <div class="ral-box" style="background:#2f3b49">5008</div>
-    </label>
+            <!-- 4.2 Couleur bardage -->
+            <div class="field">
+              <label>Couleur bardage (RAL)</label>
+              <div class="ral-grid">
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="claddingColor"
+                    value="RAL 5008"
+                    checked
+                  />
+                  <div class="ral-box" style="background:#2f3b49">5008</div>
+                </label>
 
-    <label class="ral-choice">
-      <input
-        type="radio"
-        name="claddingColor"
-        value="RAL 8012"
-      />
-      <div class="ral-box" style="background:#5a1f1b">8012</div>
-    </label>
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="claddingColor"
+                    value="RAL 8012"
+                  />
+                  <div class="ral-box" style="background:#5a1f1b">8012</div>
+                </label>
 
-    <label class="ral-choice">
-      <input
-        type="radio"
-        name="claddingColor"
-        value="RAL 6011"
-      />
-      <div class="ral-box" style="background:#6c7f46">6011</div>
-    </label>
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="claddingColor"
+                    value="RAL 6011"
+                  />
+                  <div class="ral-box" style="background:#6c7f46">6011</div>
+                </label>
 
-    <label class="ral-choice">
-      <input
-        type="radio"
-        name="claddingColor"
-        value="RAL 6021"
-      />
-      <div class="ral-box" style="background:#8ba870">6021</div>
-    </label>
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="claddingColor"
+                    value="RAL 6021"
+                  />
+                  <div class="ral-box" style="background:#8ba870">6021</div>
+                </label>
 
-    <label class="ral-choice">
-      <input
-        type="radio"
-        name="claddingColor"
-        value="RAL 6005"
-      />
-      <div class="ral-box" style="background:#0c2d1f">6005</div>
-    </label>
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="claddingColor"
+                    value="RAL 6005"
+                  />
+                  <div class="ral-box" style="background:#0c2d1f">6005</div>
+                </label>
 
-    <label class="ral-choice">
-      <input
-        type="radio"
-        name="claddingColor"
-        value="RAL 7022"
-      />
-      <div class="ral-box" style="background:#4e4c48">7022</div>
-    </label>
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="claddingColor"
+                    value="RAL 7022"
+                  />
+                  <div class="ral-box" style="background:#4e4c48">7022</div>
+                </label>
 
-    <label class="ral-choice">
-      <input
-        type="radio"
-        name="claddingColor"
-        value="RAL 7006"
-      />
-      <div class="ral-box" style="background:#756b60">7006</div>
-    </label>
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="claddingColor"
+                    value="RAL 7006"
+                  />
+                  <div class="ral-box" style="background:#756b60">7006</div>
+                </label>
 
-    <label class="ral-choice">
-      <input
-        type="radio"
-        name="claddingColor"
-        value="RAL 8024"
-      />
-      <div class="ral-box" style="background:#6f3c2b">8024</div>
-    </label>
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="claddingColor"
+                    value="RAL 8024"
+                  />
+                  <div class="ral-box" style="background:#6f3c2b">8024</div>
+                </label>
 
-    <label class="ral-choice">
-      <input
-        type="radio"
-        name="claddingColor"
-        value="RAL 1019"
-      />
-      <div class="ral-box" style="background:#a1927b">1019</div>
-    </label>
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="claddingColor"
+                    value="RAL 1019"
+                  />
+                  <div class="ral-box" style="background:#a1927b">1019</div>
+                </label>
 
-    <label class="ral-choice">
-      <input
-        type="radio"
-        name="claddingColor"
-        value="RAL 1015"
-      />
-      <div class="ral-box" style="background:#e8d9b5">1015</div>
-    </label>
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="claddingColor"
+                    value="RAL 1015"
+                  />
+                  <div class="ral-box" style="background:#e8d9b5">1015</div>
+                </label>
 
-    <label class="ral-choice">
-      <input
-        type="radio"
-        name="claddingColor"
-        value="RAL 9002"
-      />
-      <div class="ral-box" style="background:#dcdcd3">9002</div>
-    </label>
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="claddingColor"
+                    value="RAL 9002"
+                  />
+                  <div class="ral-box" style="background:#dcdcd3">9002</div>
+                </label>
 
-    <label class="ral-choice">
-      <input
-        type="radio"
-        name="claddingColor"
-        value="RAL 9010"
-      />
-      <div
-        class="ral-box"
-        style="background:#f4f4f2;color:#222"
-      >
-        9010
-      </div>
-    </label>
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="claddingColor"
+                    value="RAL 9010"
+                  />
+                  <div
+                    class="ral-box"
+                    style="background:#f4f4f2;color:#222"
+                  >
+                    9010
+                  </div>
+                </label>
 
-    <label class="ral-choice">
-      <input
-        type="radio"
-        name="claddingColor"
-        value="RAL 9006"
-      />
-      <div class="ral-box" style="background:#a5a9ad">9006</div>
-    </label>
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="claddingColor"
+                    value="RAL 9006"
+                  />
+                  <div class="ral-box" style="background:#a5a9ad">9006</div>
+                </label>
 
-    <label class="ral-choice">
-      <input
-        type="radio"
-        name="claddingColor"
-        value="RAL 7015"
-      />
-      <div class="ral-box" style="background:#51565c">7015</div>
-    </label>
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="claddingColor"
+                    value="RAL 7015"
+                  />
+                  <div class="ral-box" style="background:#51565c">7015</div>
+                </label>
 
-    <label class="ral-choice">
-      <input
-        type="radio"
-        name="claddingColor"
-        value="RAL 7016"
-      />
-      <div class="ral-box" style="background:#383e42">7016</div>
-    </label>
-  </div>
-</div>
+                <label class="ral-choice">
+                  <input
+                    type="radio"
+                    name="claddingColor"
+                    value="RAL 7016"
+                  />
+                  <div class="ral-box" style="background:#383e42">7016</div>
+                </label>
+              </div>
+            </div>
 
-
-            <!-- 4.3 Côtés bardés + 3D -->
+            <!-- 4.3 Côtés bardés + schéma 2D -->
             <div class="field">
               <p class="field-help">
                 Choisissez les côtés à fermer en bardage. Vous pouvez cliquer
@@ -1064,16 +761,27 @@
             </button>
           </div>
 
-          <!-- RÉCAPITULATIF -->
+          <!-- RÉCAPITULATIF + VUE 3D -->
           <aside class="config-summary">
+            <!-- VUE 3D -->
+            <div class="summary-3d">
+              <h3>Vue 3D de votre abri</h3>
+              <p class="hint">
+                Faites glisser pour tourner, utilisez la molette pour zoomer.
+              </p>
+              <div id="viewer3d-container">
+                <canvas id="viewer3d"></canvas>
+              </div>
+            </div>
+
+            <!-- PRIX -->
             <div class="summary-box">
               <p class="summary-label">
                 Prix estimatif HT (structure + options + livraison)
               </p>
               <p id="priceHT" class="summary-main">–</p>
               <p id="priceTTC" class="summary-sub">
-                Prix TTC (20 %) : –
-              </p>
+                Prix TTC (20 %) : –</p>
               <p class="summary-sub">
                 Prix moyen :
                 <span id="pricePerM2">–</span> / m²
@@ -1138,6 +846,7 @@
         </div>
       </div>
     </section>
+
 <script>
   // ---- DIMENSIONS AUTORISÉES ----
   const DIMENSIONS = {
@@ -1172,11 +881,8 @@
   };
 
   // ---- TARIFS STRUCTURE PAR DIMENSION ----
-  // Clé = "largeur x longueur" (en mètres), valeur = prix HT structure seule (sans toiture, sans bardage)
-  // ⚠️ À REMPLIR AVEC TES PRIX RÉELS
   const STRUCTURE_PRICE_TABLE = {
     mono: {
-      // EXEMPLES — à modifier :
       "3x3": 740,
       "3x4": 790,
       "3x5": 840,
@@ -1233,106 +939,8 @@
       "6x25": 3640,
       "6x30": 3880,
     },
-    bi: {
-      // EXEMPLES — à modifier :
-      "4x3": 0,
-      "4x4": 0,
-      "4x5": 0,
-      "4x6": 0,
-      "4x8": 0,
-      "4x10": 0,
-      "4x12": 0,
-      "4x15": 0,
-      "4x18": 0,
-      "4x20": 0,
-      "4x24": 0,
-      "4x25": 0,
-      "4x30": 0,
 
-      "5x3": 0,
-      "5x4": 0,
-      "5x5": 0,
-      "5x6": 0,
-      "5x8": 0,
-      "5x10": 0,
-      "5x12": 0,
-      "5x15": 0,
-      "5x18": 0,
-      "5x20": 0,
-      "5x24": 0,
-      "5x25": 0,
-      "5x30": 0,
-
-      "6x3": 0,
-      "6x4": 0,
-      "6x5": 0,
-      "6x6": 0,
-      "6x8": 0,
-      "6x10": 0,
-      "6x12": 0,
-      "6x15": 0,
-      "6x18": 0,
-      "6x20": 0,
-      "6x24": 0,
-      "6x25": 0,
-      "6x30": 0,
-
-      "7x3": 0,
-      "7x4": 0,
-      "7x5": 0,
-      "7x6": 0,
-      "7x8": 0,
-      "7x10": 0,
-      "7x12": 0,
-      "7x15": 0,
-      "7x18": 0,
-      "7x20": 0,
-      "7x24": 0,
-      "7x25": 0,
-      "7x30": 0,
-
-      "8x3": 0,
-      "8x4": 0,
-      "8x5": 0,
-      "8x6": 0,
-      "8x8": 0,
-      "8x10": 0,
-      "8x12": 0,
-      "8x15": 0,
-      "8x18": 0,
-      "8x20": 0,
-      "8x24": 0,
-      "8x25": 0,
-      "8x30": 0,
-
-      "10x3": 0,
-      "10x4": 0,
-      "10x5": 0,
-      "10x6": 0,
-      "10x8": 0,
-      "10x10": 0,
-      "10x12": 0,
-      "10x15": 0,
-      "10x18": 0,
-      "10x20": 0,
-      "10x24": 0,
-      "10x25": 0,
-      "10x30": 0,
-
-      "12x3": 0,
-      "12x4": 0,
-      "12x5": 0,
-      "12x6": 0,
-      "12x8": 0,
-      "12x10": 0,
-      "12x12": 0,
-      "12x15": 0,
-      "12x18": 0,
-      "12x20": 0,
-      "12x24": 0,
-      "12x25": 0,
-      "12x30": 0,
-    },
+    bi: {}
   };
 
   // ---- PRIX COUVERTURE & BARDAGE (€/m²) ----
@@ -1347,7 +955,6 @@
     sandwich40: 36.0,
   };
 
-  // Options
   const OPTIONS_PRICES = {
     finishingPerM2: 8,
     installPerM2: 35,
@@ -1383,30 +990,21 @@
     const type = getSelectedType();
     const config = DIMENSIONS[type];
 
-    const widthSelect = document.getElementById("width");
-    const lengthSelect = document.getElementById("length");
-    const heightSelect = document.getElementById("height");
-
-    populateSelect(widthSelect, config.widths);
-    populateSelect(lengthSelect, config.lengths);
-    populateSelect(heightSelect, config.heights);
+    populateSelect(document.getElementById("width"), config.widths);
+    populateSelect(document.getElementById("length"), config.lengths);
+    populateSelect(document.getElementById("height"), config.heights);
   }
 
-  // Frais de livraison par département
   function getDeliveryPrice(postalCode) {
     if (!postalCode || postalCode.length !== 5) return 0;
     const dep = parseInt(postalCode.slice(0, 2), 10);
-    if (isNaN(dep)) return 0;
-
     if (dep === 47) return 150;
     if ([40, 33, 24, 46].includes(dep)) return 250;
     return 350;
   }
 
-  // API IGN : récupération des villes par code postal
   async function fetchCitiesFromAPI(postalCode) {
     if (!postalCode || postalCode.length !== 5) return [];
-
     try {
       const response = await fetch(
         "https://apicarto.ign.fr/api/codes-postaux/communes/" + postalCode
@@ -1414,74 +1012,58 @@
       if (!response.ok) return [];
       const data = await response.json();
       return data.map((item) => item.nomCommune);
-    } catch (e) {
-      console.error("Erreur API communes", e);
+    } catch {
       return [];
     }
   }
 
   async function updateCityOptions() {
-    const postalInput = document.getElementById("postalCode");
-    const citySelect = document.getElementById("city");
-    const cp = postalInput.value.trim();
-
-    citySelect.innerHTML = "";
+    const cp = document.getElementById("postalCode").value.trim();
+    const select = document.getElementById("city");
+    select.innerHTML = "";
 
     if (cp.length !== 5) {
-      const opt = document.createElement("option");
-      opt.value = "";
-      opt.textContent =
-        "Sélectionnez votre ville après saisie du code postal";
-      citySelect.appendChild(opt);
+      select.innerHTML =
+        "<option value=''>Sélectionnez votre ville après saisie du code postal</option>";
       return;
     }
 
     const cities = await fetchCitiesFromAPI(cp);
 
-    if (!cities || cities.length === 0) {
-      const opt = document.createElement("option");
-      opt.value = "";
-      opt.textContent =
-        "Aucune ville trouvée, précisez la ville dans votre message";
-      citySelect.appendChild(opt);
+    if (cities.length === 0) {
+      select.innerHTML =
+        "<option value=''>Aucune ville trouvée</option>";
       return;
     }
 
-    cities.forEach((name) => {
+    cities.forEach((c) => {
       const opt = document.createElement("option");
-      opt.value = name;
-      opt.textContent = name;
-      citySelect.appendChild(opt);
+      opt.value = c;
+      opt.textContent = c;
+      select.appendChild(opt);
     });
 
-    if (cities.length === 1) {
-      citySelect.value = cities[0];
-    }
+    if (cities.length === 1) select.value = cities[0];
   }
 
-  // 3D : pastilles + façades bardées
   function updateBardage3DView() {
     ["A", "B", "C", "D"].forEach((side) => {
-      const checkbox = document.querySelector(
+      const cb = document.querySelector(
         'input[name="claddingSide"][value="' + side + '"]'
       );
-      const active = checkbox && checkbox.checked;
+      const active = cb && cb.checked;
 
       const label = document.querySelector(
         '.facade-label[data-side="' + side + '"]'
       );
-      if (label) {
-        label.classList.toggle("active", active);
-      }
+      if (label) label.classList.toggle("active", active);
 
       const face = document.querySelector(
         '.shed-face[data-side="' + side + '"]'
       );
       if (face) {
         face.classList.toggle("bardee", active);
-        if (!active) {
-          face.style.fill = "none";
-        }
+        if (!active) face.style.fill = "none";
       }
     });
 
@@ -1489,33 +1071,25 @@
   }
 
   function updateRoofColor3D() {
-    const selected = document.querySelector(
-      'input[name="roofColor"]:checked'
-    );
-    if (!selected) return;
+    const sel = document.querySelector('input[name="roofColor"]:checked');
+    if (!sel) return;
 
-    const ralBox = selected.closest(".ral-choice")?.querySelector(".ral-box");
-    if (!ralBox) return;
+    const box = sel.closest(".ral-choice").querySelector(".ral-box");
+    const color = window.getComputedStyle(box).backgroundColor;
 
-    const bgColor = window.getComputedStyle(ralBox).backgroundColor;
     const roof = document.getElementById("shedRoof");
-    if (roof) {
-      roof.style.fill = bgColor;
-    }
+    if (roof) roof.style.fill = color;
   }
 
   function updateCladdingColor3D() {
-    const selected = document.querySelector(
-      'input[name="claddingColor"]:checked'
-    );
-    if (!selected) return;
+    const sel = document.querySelector('input[name="claddingColor"]:checked');
+    if (!sel) return;
 
-    const ralBox = selected.closest(".ral-choice")?.querySelector(".ral-box");
-    if (!ralBox) return;
+    const box = sel.closest(".ral-choice").querySelector(".ral-box");
+    const color = window.getComputedStyle(box).backgroundColor;
 
-    const bgColor = window.getComputedStyle(ralBox).backgroundColor;
     document.querySelectorAll(".shed-face.bardee").forEach((face) => {
-      face.style.fill = bgColor;
+      face.style.fill = color;
     });
   }
 
@@ -1525,293 +1099,122 @@
     const length = parseFloat(document.getElementById("length").value);
     const height = parseFloat(document.getElementById("height").value);
 
-    const claddingChecked = document.querySelectorAll(
-      'input[name="claddingSide"]:checked'
-    );
-    const claddingCount = claddingChecked.length;
-
-    const roofColor = document.querySelector(
-      'input[name="roofColor"]:checked'
-    ).value;
-    const claddingColorInput = document.querySelector(
-      'input[name="claddingColor"]:checked'
-    );
-    const claddingColor = claddingColorInput
-      ? claddingColorInput.value
-      : "Non précisé";
-
-    const roofTypeInput = document.querySelector(
-      'input[name="roofType"]:checked'
-    );
-    const roofType = roofTypeInput ? roofTypeInput.value : null;
-
-    const claddingTypeInput = document.querySelector(
-      'input[name="claddingType"]:checked'
-    );
-    const claddingType = claddingTypeInput ? claddingTypeInput.value : null;
-
-    const postalCode = document.getElementById("postalCode").value.trim();
-    const city = document.getElementById("city").value.trim();
-
-    if (!width || !length || !height) {
-      return;
-    }
-
     const area = width * length;
+    const optFaitiereSolin  = document.getElementById("optFaitiereSolin");
+    const optRiveSolin      = document.getElementById("optRiveSolin");
+    const optGrandeRive     = document.getElementById("optGrandeRive");
+    const optAngles         = document.getElementById("optAngles");
+    const optRejetEau       = document.getElementById("optRejetEau");
+    const optFaitiereDouble = document.getElementById("optFaitiereDouble");
+    const optFaitiereSimple = document.getElementById("optFaitiereSimple");
+    const optInstall        = document.getElementById("optInstall");
 
-    // --- PRIX STRUCTURE PAR DIMENSION ---
+
     const sizeKey = width + "x" + length;
-    const tableForType = STRUCTURE_PRICE_TABLE[type] || {};
-    let structureBase = 0;
+    let structureBase =
+      STRUCTURE_PRICE_TABLE[type]?.[sizeKey] ?? 0;
 
-    if (sizeKey in tableForType) {
-      structureBase = tableForType[sizeKey];
-    } else {
-      console.warn(
-        "Aucun prix de structure défini pour",
-        type,
-        sizeKey,
-        "- structure mise à 0"
-      );
-      structureBase = 0;
-    }
-
-    // Majoration si hauteur > 3 m (sur structure uniquement)
     if (height > 3) {
       const extra = height - 3;
-      const stepCount = extra / 0.5;
-      const increaseFactor = 1 + stepCount * 0.1;
-      structureBase *= increaseFactor;
+      const steps = extra / 0.5;
+      structureBase *= 1 + steps * 0.1;
     }
 
-    // --- PRIX TOITURE (au m²) ---
-    const roofUnitPrice =
-      ROOF_PRICE_PER_M2[roofType] ?? ROOF_PRICE_PER_M2["bac_simple"];
-    const roofCost = area * roofUnitPrice;
+    const roofType = document.querySelector('input[name="roofType"]:checked')
+      ?.value;
+    const roofUnit = ROOF_PRICE_PER_M2[roofType] ?? 0;
+    const roofCost = area * roofUnit;
 
-    // Structure + toiture
-    let structurePlusRoof = structureBase + roofCost;
-
-    // --- BARDAGE PAR FAÇADE ---
     let claddingArea = 0;
-    claddingChecked.forEach((el) => {
-      const code = el.value;
-      if (code === "A" || code === "C") {
-        claddingArea += length * height;
-      } else if (code === "B" || code === "D") {
-        claddingArea += width * height;
-      }
+    const claddings = document.querySelectorAll(
+      'input[name="claddingSide"]:checked'
+    );
+    claddings.forEach((el) => {
+      if (el.value === "A" || el.value === "C") claddingArea += length * height;
+      else claddingArea += width * height;
     });
 
-    const claddingUnitPrice =
-      CLADDING_PRICE_PER_M2[claddingType] !== undefined
-        ? CLADDING_PRICE_PER_M2[claddingType]
-        : 0;
+    const claddingType =
+      document.querySelector('input[name="claddingType"]:checked')?.value;
+    const cladUnit = CLADDING_PRICE_PER_M2[claddingType] ?? 0;
+    const claddingCost = claddingArea * cladUnit;
 
-    const claddingPrice = claddingArea * claddingUnitPrice;
-
-    // --- OPTIONS ---
     let optionsPrice = 0;
+    const areaOptions = area;
+    const finishingSelected =
+      optFaitiereSolin.checked ||
+      optRiveSolin.checked ||
+      optGrandeRive.checked ||
+      optAngles.checked ||
+      optRejetEau.checked ||
+      optFaitiereDouble.checked ||
+      optFaitiereSimple.checked;
 
-    const optFaitiereSolin =
-      document.getElementById("optFaitiereSolin").checked;
-    const optRiveSolin = document.getElementById("optRiveSolin").checked;
-    const optGrandeRive = document.getElementById("optGrandeRive").checked;
-    const optAngles = document.getElementById("optAngles").checked;
-    const optRejetEau = document.getElementById("optRejetEau").checked;
-    const optFaitiereDouble =
-      document.getElementById("optFaitiereDouble").checked;
-    const optFaitiereSimple =
-      document.getElementById("optFaitiereSimple").checked;
-    const optInstall = document.getElementById("optInstall").checked;
+    if (finishingSelected)
+      optionsPrice += areaOptions * OPTIONS_PRICES.finishingPerM2;
+    if (optInstall.checked)
+      optionsPrice += areaOptions * OPTIONS_PRICES.installPerM2;
 
-    const habillageSelected =
-      optFaitiereSolin ||
-      optRiveSolin ||
-      optGrandeRive ||
-      optAngles ||
-      optRejetEau ||
-      optFaitiereDouble ||
-      optFaitiereSimple;
+    const postalCode = document.getElementById("postalCode").value.trim();
+    const delivery = getDeliveryPrice(postalCode);
 
-    if (habillageSelected) {
-      optionsPrice += area * OPTIONS_PRICES.finishingPerM2;
-    }
-    if (optInstall) {
-      optionsPrice += area * OPTIONS_PRICES.installPerM2;
-    }
+    let totalHT =
+      structureBase + roofCost + claddingCost + optionsPrice + delivery;
 
-    // --- LIVRAISON ---
-    const deliveryHT = getDeliveryPrice(postalCode);
-
-    // --- TOTAL ---
-    let totalHT = structurePlusRoof + claddingPrice + optionsPrice + deliveryHT;
     totalHT = Math.round(totalHT / 50) * 50;
+    const totalTTC = Math.round((totalHT * 1.2) / 10) * 10;
 
-    const totalTTC = Math.round((totalHT * (1 + TVA_RATE)) / 10) * 10;
-    const pricePerM2 = totalHT / area;
-
-    const typeLabel = type === "bi" ? "Abris bipente" : "Abris monopente";
-
-    let claddingLabel;
-    if (claddingCount === 0) {
-      claddingLabel =
-        "Abris ouvert (sans bardage) – 0 m² de bardage calculé";
-    } else {
-      const codes = Array.from(claddingChecked).map((el) => el.value);
-      const sides = codes.map(
-        (code) => FACADE_LABELS[code] || "Façade " + code
-      );
-      claddingLabel =
-        claddingCount +
-        " façade(s) bardée(s) : " +
-        sides.join(", ") +
-        " – env. " +
-        claddingArea.toFixed(1) +
-        " m² de bardage";
-    }
-
-    const selectedOptions = [];
-    if (habillageSelected) selectedOptions.push("Habillages et finitions");
-    if (optFaitiereSolin) selectedOptions.push("Faitière en solin");
-    if (optRiveSolin) selectedOptions.push("Rive en solin");
-    if (optGrandeRive) selectedOptions.push("Grande rive");
-    if (optAngles) selectedOptions.push("Angles");
-    if (optRejetEau) selectedOptions.push("Rejet d'eau");
-    if (optFaitiereDouble) selectedOptions.push("Faitière double");
-    if (optFaitiereSimple) selectedOptions.push("Faitière simple");
-    if (optInstall) selectedOptions.push("Pose par nos équipes");
-
-    const addressText = postalCode
-      ? postalCode + (city ? " " + city : "")
-      : "Non renseignée";
-
-    document.getElementById("typeDisplay").textContent = typeLabel;
-    document.getElementById("dimensionsDisplay").textContent =
-      width.toString().replace(".", ",") +
-      " m x " +
-      length.toString().replace(".", ",") +
-      " m, hauteur " +
-      height.toString().replace(".", ",") +
-      " m";
-    document.getElementById("surfaceDisplay").textContent =
-      area.toFixed(1) + " m²";
-
-    document.getElementById("roofTypeDisplay").textContent =
-      ROOF_TYPE_LABELS[roofType] || "Non précisé";
-    document.getElementById("roofColorDisplay").textContent = roofColor;
-
-    document.getElementById("claddingTypeDisplay").textContent =
-      CLADDING_TYPE_LABELS[claddingType] || "Non précisé";
-    document.getElementById("claddingDisplay").textContent = claddingLabel;
-    document.getElementById("claddingColorDisplay").textContent =
-      claddingColor;
-
-    document.getElementById("optionsDisplay").textContent =
-      selectedOptions.length > 0
-        ? selectedOptions.join(", ")
-        : "Aucune option";
-    document.getElementById("addressDisplay").textContent = addressText;
-    document.getElementById("deliveryDisplay").textContent = deliveryHT
-      ? formatCurrency(deliveryHT) + " HT"
-      : "À définir";
-
-    document.getElementById("priceHT").textContent =
-      formatCurrency(totalHT);
+    document.getElementById("priceHT").textContent = formatCurrency(totalHT);
     document.getElementById("priceTTC").textContent =
       formatCurrency(totalTTC);
-    document.getElementById("pricePerM2").textContent = pricePerM2
-      ? formatCurrency(pricePerM2)
-      : "–";
-
-    document.getElementById("summarySentence").textContent =
-      typeLabel +
-      " de " +
-      width.toString().replace(".", ",") +
-      " m x " +
-      length.toString().replace(".", ",") +
-      " m, hauteur " +
-      height.toString().replace(".", ",") +
-      " m, " +
-      claddingLabel.toLowerCase() +
-      ", toiture " +
-      (ROOF_TYPE_LABELS[roofType] || "") +
-      " " +
-      roofColor +
-      ", bardage " +
-      (CLADDING_TYPE_LABELS[claddingType] || "") +
-      " " +
-      claddingColor +
-      ". Prix estimatif : " +
-      formatCurrency(totalHT) +
-      " HT (dont livraison env. " +
-      formatCurrency(deliveryHT) +
-      ").";
+    document.getElementById("pricePerM2").textContent = formatCurrency(
+      totalHT / area
+    );
 
     updateBardage3DView();
   }
 
   document.addEventListener("DOMContentLoaded", () => {
     populateDimensions();
+    calculatePrice();
 
     document
       .querySelectorAll('input[name="slopeType"]')
-      .forEach((el) =>
-        el.addEventListener("change", () => {
-          populateDimensions();
-          calculatePrice();
-        })
-      );
+      .forEach((el) => el.addEventListener("change", () => {
+        populateDimensions();
+        calculatePrice();
+      }));
 
-    const idsToWatch = [
+    [
       "width",
       "length",
       "height",
+      "city",
+      "optInstall",
       "optFaitiereSolin",
       "optRiveSolin",
       "optGrandeRive",
       "optAngles",
       "optRejetEau",
       "optFaitiereDouble",
-      "optFaitiereSimple",
-      "optInstall",
-      "city",
-    ];
-    idsToWatch.forEach((id) => {
+      "optFaitiereSimple"
+    ].forEach((id) => {
       const el = document.getElementById(id);
-      if (!el) return;
-      el.addEventListener("change", calculatePrice);
+      el?.addEventListener("change", calculatePrice);
     });
 
-    const postalInput = document.getElementById("postalCode");
-    if (postalInput) {
-      postalInput.addEventListener("input", () => {
+    document
+      .getElementById("postalCode")
+      ?.addEventListener("input", () => {
         updateCityOptions();
         calculatePrice();
       });
-    }
-
-    document
-      .querySelectorAll('input[name="roofType"]')
-      .forEach((el) =>
-        el.addEventListener("change", () => {
-          calculatePrice();
-        })
-      );
 
     document
       .querySelectorAll('input[name="roofColor"]')
       .forEach((el) =>
         el.addEventListener("change", () => {
           updateRoofColor3D();
-          calculatePrice();
-        })
-      );
-
-    document
-      .querySelectorAll('input[name="claddingType"]')
-      .forEach((el) =>
-        el.addEventListener("change", () => {
           calculatePrice();
         })
       );
@@ -1835,31 +1238,295 @@
       );
 
     document
-      .querySelectorAll(".shed-face, .facade-label")
-      .forEach((el) => {
-        const side = el.dataset.side;
-        if (!side) return;
-        const cb = document.querySelector(
-          'input[name="claddingSide"][value="' + side + '"]'
-        );
-        if (!cb) return;
-
-        el.addEventListener("click", () => {
-          cb.checked = !cb.checked;
-          cb.dispatchEvent(new Event("change", { bubbles: true }));
-        });
-      });
-
-    document
       .getElementById("btnCalculate")
       .addEventListener("click", calculatePrice);
-
-    updateCityOptions();
-    updateRoofColor3D();
-    updateCladdingColor3D();
-    updateBardage3DView();
-    calculatePrice();
   });
 </script>
+<!-- === THREE.JS POUR LA 3D === -->
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
 
-    
+<script>
+  // ----- 3D INTERACTIF (Three.js) -----
+  let threeScene, threeCamera, threeRenderer, threeControls;
+  let threeBuildingGroup, threeRoofMesh;
+  let threeWallMeshes = [];
+  let threePosts = [];
+
+  function initThreeDScene() {
+    const container = document.getElementById("viewer3d-container");
+    const canvas = document.getElementById("viewer3d");
+
+    if (!container || !canvas) return;
+    if (typeof THREE === "undefined") return;
+
+    const width = container.clientWidth || 400;
+    const height = container.clientHeight || (width * 3 / 4);
+
+    // Scène & caméra
+    threeScene = new THREE.Scene();
+    threeScene.background = new THREE.Color(0xf5f5f5);
+
+    threeCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    threeCamera.position.set(10, 8, 10);
+
+    // Renderer
+    threeRenderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    threeRenderer.setSize(width, height);
+    threeRenderer.setPixelRatio(window.devicePixelRatio || 1);
+
+    // Lumières
+    const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+    threeScene.add(ambient);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+    dirLight.position.set(10, 20, 10);
+    threeScene.add(dirLight);
+
+    // Sol
+    const groundGeo = new THREE.PlaneGeometry(50, 50);
+    const groundMat = new THREE.MeshPhongMaterial({
+      color: 0xe0e0e0,
+      side: THREE.DoubleSide,
+    });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = 0;
+    threeScene.add(ground);
+
+    // Groupe bâtiment
+    threeBuildingGroup = new THREE.Group();
+    threeScene.add(threeBuildingGroup);
+
+    // Poteaux (4 coins)
+    const postGeo = new THREE.BoxGeometry(0.15, 1, 0.15);
+    const postMat = new THREE.MeshPhongMaterial({ color: 0x555555 });
+    const postPositions = [
+      [-1, 0.5, -1], // arrière gauche
+      [ 1, 0.5, -1], // arrière droit
+      [-1, 0.5,  1], // avant gauche
+      [ 1, 0.5,  1], // avant droit
+    ];
+    postPositions.forEach((p) => {
+      const post = new THREE.Mesh(postGeo, postMat);
+      post.position.set(p[0], p[1], p[2]);
+      threeBuildingGroup.add(post);
+      threePosts.push(post);
+    });
+
+    // Toiture
+    const roofGeo = new THREE.BoxGeometry(2.2, 0.05, 2.2);
+    const roofMat = new THREE.MeshPhongMaterial({ color: 0x999999 });
+    threeRoofMesh = new THREE.Mesh(roofGeo, roofMat);
+    threeRoofMesh.position.y = 1.6;
+    threeRoofMesh.rotation.x = -Math.PI * 5 / 180; // pente par défaut
+    threeBuildingGroup.add(threeRoofMesh);
+
+    // Panneaux de bardage (A, C = longs pans ; B, D = pignons)
+    const wallMat = new THREE.MeshPhongMaterial({
+      color: 0xbbbbbb,
+      transparent: true,
+      opacity: 0.9,
+    });
+
+    const frontBackGeo = new THREE.BoxGeometry(2.0, 1.4, 0.04);  // A, C
+    const sideGeo      = new THREE.BoxGeometry(0.04, 1.4, 2.0);  // B, D
+
+    // A – long pan avant
+    const wallA = new THREE.Mesh(frontBackGeo, wallMat.clone());
+    threeBuildingGroup.add(wallA);
+    threeWallMeshes.push(wallA);
+
+    // C – long pan arrière
+    const wallC = new THREE.Mesh(frontBackGeo, wallMat.clone());
+    threeBuildingGroup.add(wallC);
+    threeWallMeshes.push(wallC);
+
+    // B – pignon gauche
+    const wallB = new THREE.Mesh(sideGeo, wallMat.clone());
+    threeBuildingGroup.add(wallB);
+    threeWallMeshes.push(wallB);
+
+    // D – pignon droit
+    const wallD = new THREE.Mesh(sideGeo, wallMat.clone());
+    threeBuildingGroup.add(wallD);
+    threeWallMeshes.push(wallD);
+
+    // Contrôles caméra
+    threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
+    threeControls.enableDamping = true;
+    threeControls.dampingFactor = 0.1;
+    threeControls.target.set(0, 0.8, 0);
+
+    window.addEventListener("resize", onWindowResize3D);
+
+    animate3D();
+  }
+
+  function onWindowResize3D() {
+    const container = document.getElementById("viewer3d-container");
+    if (!container || !threeRenderer || !threeCamera) return;
+
+    const width = container.clientWidth || 400;
+    const height = container.clientHeight || (width * 3 / 4);
+
+    threeCamera.aspect = width / height;
+    threeCamera.updateProjectionMatrix();
+    threeRenderer.setSize(width, height);
+  }
+
+  function animate3D() {
+    requestAnimationFrame(animate3D);
+    if (!threeRenderer || !threeScene || !threeCamera) return;
+    if (threeControls) threeControls.update();
+    threeRenderer.render(threeScene, threeCamera);
+  }
+
+  function getFormConfig3D() {
+    const type =
+      typeof getSelectedType === "function" ? getSelectedType() : "mono";
+
+    const widthEl  = document.getElementById("width");
+    const lengthEl = document.getElementById("length");
+    const heightEl = document.getElementById("height");
+
+    const width  = widthEl  ? parseFloat(widthEl.value)  || 3   : 3;
+    const length = lengthEl ? parseFloat(lengthEl.value) || 3   : 3;
+    const height = heightEl ? parseFloat(heightEl.value) || 2.7 : 2.7;
+
+    // Couleur toiture
+    let roofColorCss = "#999999";
+    const roofRadio = document.querySelector('input[name="roofColor"]:checked');
+    if (roofRadio) {
+      const box = roofRadio.closest(".ral-choice")?.querySelector(".ral-box");
+      if (box) roofColorCss = window.getComputedStyle(box).backgroundColor;
+    }
+
+    // Couleur bardage
+    let claddingColorCss = "#bbbbbb";
+    const cladRadio = document.querySelector(
+      'input[name="claddingColor"]:checked'
+    );
+    if (cladRadio) {
+      const box = cladRadio.closest(".ral-choice")?.querySelector(".ral-box");
+      if (box) claddingColorCss = window.getComputedStyle(box).backgroundColor;
+    }
+
+    // Côtés bardés A/B/C/D
+    const claddingSides = [];
+    document
+      .querySelectorAll('input[name="claddingSide"]:checked')
+      .forEach((el) => claddingSides.push(el.value));
+
+    return { type, width, length, height, roofColorCss, claddingColorCss, claddingSides };
+  }
+
+  function updateThreeDFromForm() {
+    if (!threeBuildingGroup || !threeRoofMesh) return;
+
+    const {
+      type,
+      width,
+      length,
+      height,
+      roofColorCss,
+      claddingColorCss,
+      claddingSides,
+    } = getFormConfig3D();
+
+    const scale = 0.5; // 1 unité ≈ 0,5 m
+    const w = width * scale;
+    const l = length * scale;
+    const h = height * scale;
+
+    // Poteaux
+    threePosts.forEach((post, idx) => {
+      const isRight = idx === 1 || idx === 3;
+      const isFront = idx === 2 || idx === 3;
+
+      post.scale.set(1, h / 1, 1);
+      post.position.y = h / 2;
+      post.position.x = isRight ? w / 2 : -w / 2;
+      post.position.z = isFront ? l / 2 : -l / 2;
+    });
+
+    // Toiture
+    threeRoofMesh.scale.set(w / 2.2, 1, l / 2.2);
+    threeRoofMesh.position.y = h + 0.05;
+    threeRoofMesh.rotation.x = type === "mono" ? -Math.PI * 5 / 180 : 0;
+    threeRoofMesh.material.color = new THREE.Color(roofColorCss);
+
+    // Bardage (ordre : A, C, B, D)
+    const hWalls = h * 0.9;
+
+    const hasA = claddingSides.includes("A");
+    const wallA = threeWallMeshes[0];
+    wallA.visible = hasA;
+    wallA.scale.set(w / 2.0, hWalls / 1.4, 1);
+    wallA.position.set(0, hWalls / 2, l / 2 + 0.02);
+
+    const hasC = claddingSides.includes("C");
+    const wallC = threeWallMeshes[1];
+    wallC.visible = hasC;
+    wallC.scale.set(w / 2.0, hWalls / 1.4, 1);
+    wallC.position.set(0, hWalls / 2, -l / 2 - 0.02);
+
+    const hasB = claddingSides.includes("B");
+    const wallB = threeWallMeshes[2];
+    wallB.visible = hasB;
+    wallB.scale.set(1, hWalls / 1.4, l / 2.0);
+    wallB.position.set(-w / 2 - 0.02, hWalls / 2, 0);
+
+    const hasD = claddingSides.includes("D");
+    const wallD = threeWallMeshes[3];
+    wallD.visible = hasD;
+    wallD.scale.set(1, hWalls / 1.4, l / 2.0);
+    wallD.position.set(w / 2 + 0.02, hWalls / 2, 0);
+
+    threeWallMeshes.forEach((mesh) => {
+      mesh.material.color = new THREE.Color(claddingColorCss);
+    });
+  }
+
+  function bindThreeDFormEvents() {
+    ["width", "length", "height"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("change", updateThreeDFromForm);
+      el.addEventListener("input", updateThreeDFromForm);
+    });
+
+    document
+      .querySelectorAll('input[name="slopeType"]')
+      .forEach((el) =>
+        el.addEventListener("change", updateThreeDFromForm)
+      );
+
+    document
+      .querySelectorAll('input[name="roofColor"], input[name="claddingColor"]')
+      .forEach((el) =>
+        el.addEventListener("change", updateThreeDFromForm)
+      );
+
+    document
+      .querySelectorAll('input[name="claddingSide"]')
+      .forEach((el) =>
+        el.addEventListener("change", updateThreeDFromForm)
+      );
+  }
+
+  function initThreeD() {
+    if (!document.getElementById("viewer3d-container")) return;
+    initThreeDScene();
+    bindThreeDFormEvents();
+    updateThreeDFromForm();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initThreeD);
+  } else {
+    initThreeD();
+  }
+</script>
+  </body>
+</html>
