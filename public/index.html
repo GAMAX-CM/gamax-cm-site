@@ -1376,109 +1376,141 @@
       });
     </script>
 
-    <!-- === THREE.JS POUR LA 3D === -->
+       <!-- === THREE.JS POUR LA 3D === -->
     <script src="https://unpkg.com/three@0.146.0/build/three.min.js"></script>
     <script src="https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://unpkg.com/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
 
     <script>
-      // ---------- CONFIG 3D ----------
-      const MODEL_PATH = "assets/abri-monopente-3x5m.gltf"; // modèle 3 x 5 m
+      // -------------------------------------------------------
+      // 3D ABRI – structure + couverture + bardage
+      // -------------------------------------------------------
+      const MODEL_PATH = "assets/abri-monopente-3x5m.gltf";
 
-      const ROOF_THICKNESS = 0.03;
-      const CLADDING_THICKNESS = 0.03;
+      const ROOF_THICKNESS = 0.05;
+      const CLADDING_THICKNESS = 0.04;
 
-      let threeScene,
-        threeCamera,
-        threeRenderer,
-        threeControls;
-      let structureTemplate = null; // GLB de base
-      let structureRoot = null; // groupe qui contient toutes les travées
-      let baseSize = null; // dimensions du modèle de base (X = longueur, Y = largeur, Z = hauteur)
+      let threeScene, threeCamera, threeRenderer, threeControls;
+      let groundMesh;
 
-      let roofMesh = null;
-      let wallMeshes = { A: null, B: null, C: null, D: null };
-      let groundMesh = null;
+      let baseModel = null;       // modèle GLTF de base (3x5m)
+      let baseSize = null;        // dimensions d'origine (x = longueur, y = largeur, z = hauteur)
 
-      function getRALThreeColor(name, fallbackHex) {
-        const radio = document.querySelector(`input[name="${name}"]:checked`);
-        if (!radio) return new THREE.Color(fallbackHex);
+      let structureRoot = null;   // groupe contenant toutes les travées
+      let roofMesh = null;        // couverture
+      const wallMeshes = { A: null, B: null, C: null, D: null }; // bardages
+
+      // -------- Helpers RAL -> couleur THREE ----------
+      function getRALThreeColor(inputName, defaultHex) {
+        const radio = document.querySelector('input[name="' + inputName + '"]:checked');
+        if (!radio) return new THREE.Color(defaultHex);
+
         const box = radio.closest(".ral-choice")?.querySelector(".ral-box");
-        if (!box) return new THREE.Color(fallbackHex);
-        const css = window.getComputedStyle(box).backgroundColor;
-        return new THREE.Color(css);
+        if (!box) return new THREE.Color(defaultHex);
+
+        const cssColor = window.getComputedStyle(box).backgroundColor;
+        const c = new THREE.Color();
+        c.setStyle(cssColor);
+        return c;
       }
 
-      function getFormDimensions3D() {
-        const widthEl = document.getElementById("width");
-        const lengthEl = document.getElementById("length");
-        const heightEl = document.getElementById("height");
-        const width = widthEl ? parseFloat(widthEl.value) || 3 : 3;
-        const length = lengthEl ? parseFloat(lengthEl.value) || 5 : 5;
-        const height = heightEl ? parseFloat(heightEl.value) || 2.5 : 2.5;
-        return { width, length, height };
+      // -------- Init scène 3D ----------
+      function initThreeScene() {
+        const canvas = document.getElementById("viewer3d");
+        if (!canvas) return;
+
+        const width = canvas.clientWidth || 400;
+        const height = canvas.clientHeight || width * 0.75;
+
+        threeScene = new THREE.Scene();
+        threeScene.background = new THREE.Color(0xf5f5f5);
+
+        threeCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+        threeCamera.position.set(10, -10, 6);
+
+        threeRenderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        threeRenderer.setSize(width, height);
+        threeRenderer.setPixelRatio(window.devicePixelRatio || 1);
+
+        const amb = new THREE.AmbientLight(0xffffff, 0.7);
+        threeScene.add(amb);
+
+        const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+        dir.position.set(15, -10, 20);
+        threeScene.add(dir);
+
+        const groundGeo = new THREE.PlaneGeometry(80, 80);
+        const groundMat = new THREE.MeshPhongMaterial({
+          color: 0xe8e8e8,
+          side: THREE.DoubleSide,
+        });
+        groundMesh = new THREE.Mesh(groundGeo, groundMat);
+        groundMesh.rotation.x = -Math.PI / 2;
+        groundMesh.position.z = 0;
+        threeScene.add(groundMesh);
+
+        threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
+        threeControls.enableDamping = true;
+        threeControls.dampingFactor = 0.08;
+        threeControls.target.set(5, 2, 2);
+
+        window.addEventListener("resize", onThreeResize);
+        animateThree();
       }
 
-      function computeBayCount(length) {
-        if (length <= 6) return 1;
-        if (length <= 12) return 2;
-        if (length <= 18) return 3;
-        if (length <= 24) return 4;
-        return 6; // 25 à 30 m
+      function onThreeResize() {
+        const canvas = document.getElementById("viewer3d");
+        if (!canvas || !threeRenderer || !threeCamera) return;
+
+        const width = canvas.clientWidth || 400;
+        const height = canvas.clientHeight || width * 0.75;
+
+        threeCamera.aspect = width / height;
+        threeCamera.updateProjectionMatrix();
+        threeRenderer.setSize(width, height);
       }
 
-      function clearGroup(group) {
-        if (!group) return;
-        while (group.children.length > 0) {
-          const child = group.children.pop();
-          child.traverse((obj) => {
-            if (obj.isMesh) {
-              if (obj.geometry) obj.geometry.dispose();
-              if (obj.material) {
-                if (Array.isArray(obj.material)) {
-                  obj.material.forEach((m) => m.dispose && m.dispose());
-                } else {
-                  obj.material.dispose && obj.material.dispose();
-                }
-              }
-            }
-          });
+      function animateThree() {
+        requestAnimationFrame(animateThree);
+        if (threeControls) threeControls.update();
+        if (threeRenderer && threeScene && threeCamera) {
+          threeRenderer.render(threeScene, threeCamera);
         }
       }
 
-      function rebuildStructureFromForm() {
-        if (!structureTemplate || !baseSize || !structureRoot) return;
+      // -------- Chargement GLTF de base ----------
+      function loadBaseModel() {
+        const loader = new THREE.GLTFLoader();
+        loader.load(
+          MODEL_PATH,
+          (gltf) => {
+            baseModel = gltf.scene;
 
-        const { width, length, height } = getFormDimensions3D();
+            // dimensions d'origine
+            const box = new THREE.Box3().setFromObject(baseModel);
+            const size = new THREE.Vector3();
+            box.getSize(size);
+            baseSize = size; // x = longueur 5m, y = largeur 3m, z = hauteur
 
-        clearGroup(structureRoot);
+            rebuildStructureFromForm();   // première construction
+          },
+          undefined,
+          (err) => {
+            console.error("Erreur chargement GLTF", err);
+          }
+        );
+      }
 
-        const bayCount = computeBayCount(length);
-        const bayLength = length / bayCount;
+      // -------- Nombre de travées suivant la longueur ----------
+      function getBayCount(length) {
+        if (length <= 7) return 1;           // 3–6 m
+        if (length <= 12) return 2;          // 8–12 m
+        if (length <= 18) return 3;          // 15–18 m
+        if (length <= 24) return 4;          // 20–24 m
+        return 6;                            // 25–30 m
+      }
 
-        for (let i = 0; i < bayCount; i++) {
-          const seg = structureTemplate.clone(true);
-
-          const sx = bayLength / baseSize.x; // X = longueur
-          const sy = width / baseSize.y; // Y = largeur
-          const sz = height / baseSize.z; // Z = hauteur
-
-          seg.scale.set(sx, sy, sz);
-          seg.position.set(i * bayLength, 0, 0); // origine 0,0,0 sur un angle au sol
-          structureRoot.add(seg);
-        }
-
-         // Adapter le sol (on garde les dimensions du formulaire)
-        if (groundMesh) {
-          groundMesh.scale.set(length / 10, width / 10, 1);
-          groundMesh.position.set(length / 2, width / 2, 0);
-        }
-
-        // Met à jour toiture + bardage avec la structure reconstruite
-        updateCoverAndCladding();
-
-        }
-      // Retourne la bounding box de la structure (toutes les travées)
+      // -------- Bounding box structure ----------
       function getStructureBounds() {
         if (!structureRoot || structureRoot.children.length === 0) return null;
         const box = new THREE.Box3().setFromObject(structureRoot);
@@ -1487,27 +1519,105 @@
         return { box, size };
       }
 
-        updateCoverAndCladding(width, length, height);
+      // -------- Reconstruction structure à partir du formulaire ----------
+      function rebuildStructureFromForm() {
+        if (!threeScene || !baseModel || !baseSize) return;
+
+        const widthSelect = document.getElementById("width");
+        const lengthSelect = document.getElementById("length");
+        const heightSelect = document.getElementById("height");
+
+        const width = parseFloat(widthSelect?.value) || 3;
+        const length = parseFloat(lengthSelect?.value) || 5;
+        const height = parseFloat(heightSelect?.value) || 2.15;
+
+        const bayCount = getBayCount(length);
+        const bayLength = length / bayCount;
+
+        // nettoyage ancien modèle
+        if (structureRoot) {
+          threeScene.remove(structureRoot);
+        }
+        structureRoot = new THREE.Group();
+
+        // dimensions d'origine du modèle de base
+        const baseLen = baseSize.x || 5;
+        const baseWid = baseSize.y || 3;
+        const baseHei = baseSize.z || 2.5;
+
+        const scaleX = bayLength / baseLen;
+        const scaleY = width / baseWid;
+        const scaleZ = height / baseHei;
+
+        for (let i = 0; i < bayCount; i++) {
+          const clone = baseModel.clone(true);
+          clone.traverse((obj) => {
+            if (obj.isMesh) {
+              obj.castShadow = true;
+              obj.receiveShadow = true;
+            }
+          });
+
+          clone.scale.set(scaleX, scaleY, scaleZ);
+
+          const offsetX = i * bayLength;
+          clone.position.set(offsetX, 0, 0);
+
+          structureRoot.add(clone);
+        }
+
+        // On place tout de façon à ce que le coin (0,0,0) soit au sol,
+        // puis on recentre visuellement via la caméra & le sol.
+        threeScene.add(structureRoot);
+
+        updateCameraAndGround(length, width, height);
+        updateCoverAndCladding(); // toiture + bardage suivent la nouvelle structure
       }
 
-            function updateCoverAndCladding() {
+      // -------- Camera + sol suivant dimensions ----------
+      function updateCameraAndGround(length, width, height) {
+        const centerX = length / 2;
+        const centerY = width / 2;
+        const centerZ = height / 2;
+
+        if (threeControls) {
+          threeControls.target.set(centerX, centerY, centerZ);
+        }
+
+        if (threeCamera) {
+          threeCamera.position.set(
+            centerX + length * 0.9,
+            centerY - width * 1.4,
+            centerZ + height * 1.2
+          );
+          threeCamera.lookAt(centerX, centerY, centerZ);
+        }
+
+        if (groundMesh) {
+          groundMesh.scale.set(length / 5 + 4, width / 5 + 4, 1);
+          groundMesh.position.set(centerX, centerY, 0);
+        }
+      }
+
+      // -------- Couverture + bardage, basés sur la bounding box ----------
+      function updateCoverAndCladding() {
         if (!threeScene || !structureRoot) return;
 
         const bounds = getStructureBounds();
         if (!bounds) return;
 
         const { box, size } = bounds;
-        const length3 = size.x;   // longueur réelle dans la scène
-        const width3  = size.y;   // largeur réelle
-        const height3 = size.z;   // hauteur réelle
+        const length3 = size.x; // longueur réelle dans la scène
+        const width3 = size.y;  // largeur réelle
+        const height3 = size.z; // hauteur réelle
 
         const min = box.min;
         const max = box.max;
 
-        const roofColor      = getRALThreeColor("roofColor", 0x999999);
-        const claddingColor  = getRALThreeColor("claddingColor", 0x777777);
+        const roofColor = getRALThreeColor("roofColor", 0x999999);
+        const claddingColor = getRALThreeColor("claddingColor", 0x777777);
 
-        // ---------- COUVERTURE ----------
+        // ----- COUVERTURE -----
         if (!roofMesh) {
           const geo = new THREE.BoxGeometry(length3, width3, ROOF_THICKNESS);
           const mat = new THREE.MeshPhongMaterial({
@@ -1516,27 +1626,21 @@
             opacity: 0.9,
           });
           roofMesh = new THREE.Mesh(geo, mat);
-          roofMesh.castShadow = false;
-          roofMesh.receiveShadow = false;
           threeScene.add(roofMesh);
         } else {
           roofMesh.geometry.dispose();
-          roofMesh.geometry = new THREE.BoxGeometry(
-            length3,
-            width3,
-            ROOF_THICKNESS
-          );
+          roofMesh.geometry = new THREE.BoxGeometry(length3, width3, ROOF_THICKNESS);
           roofMesh.material.color = roofColor;
         }
 
-        const roofZ = max.z + ROOF_THICKNESS / 2; // juste au-dessus de la structure
+        const roofZ = max.z + ROOF_THICKNESS / 2;
         roofMesh.position.set(
           (min.x + max.x) / 2,
           (min.y + max.y) / 2,
           roofZ
         );
 
-        // ---------- BARDAGE ----------
+        // ----- BARDAGE -----
         const claddingType = document.querySelector(
           'input[name="claddingType"]:checked'
         )?.value;
@@ -1566,29 +1670,27 @@
               opacity: 0.9,
             });
             mesh = new THREE.Mesh(geo, mat);
-            mesh.castShadow = false;
-            mesh.receiveShadow = false;
-            threeScene.add(mesh);
             wallMeshes[side] = mesh;
+            threeScene.add(mesh);
           } else {
             mesh.geometry.dispose();
             mesh.geometry = new THREE.BoxGeometry(geomX, geomY, geomZ);
             mesh.material.color = claddingColor;
           }
 
-          // Position en fonction de la façade
+          // position suivant la façade
           let x = (min.x + max.x) / 2;
           let y = (min.y + max.y) / 2;
           const z = min.z + geomZ / 2;
 
           if (side === "A") {
-            y = min.y - CLADDING_THICKNESS / 2;   // long pan avant
+            y = min.y - CLADDING_THICKNESS / 2; // long pan avant
           } else if (side === "C") {
-            y = max.y + CLADDING_THICKNESS / 2;   // long pan arrière
+            y = max.y + CLADDING_THICKNESS / 2; // long pan arrière
           } else if (side === "B") {
-            x = min.x - CLADDING_THICKNESS / 2;   // pignon gauche
+            x = min.x - CLADDING_THICKNESS / 2; // pignon gauche
           } else if (side === "D") {
-            x = max.x + CLADDING_THICKNESS / 2;   // pignon droit
+            x = max.x + CLADDING_THICKNESS / 2; // pignon droit
           }
 
           mesh.position.set(x, y, z);
@@ -1596,117 +1698,47 @@
         });
       }
 
-
-      function updateThreeDFromForm() {
-        if (!threeScene || !structureTemplate || !baseSize) return;
-        rebuildStructureFromForm();
-      }
-
-      function initThree() {
-        const canvas = document.getElementById("viewer3d");
-        if (!canvas) return;
-
-        const width = canvas.clientWidth || 400;
-        const height = canvas.clientHeight || (width * 3) / 4;
-
-        threeScene = new THREE.Scene();
-        threeScene.background = new THREE.Color(0xf5f5f5);
-
-        threeCamera = new THREE.PerspectiveCamera(
-          45,
-          width / height,
-          0.1,
-          1000
-        );
-        threeCamera.position.set(10, 8, 14);
-
-        threeRenderer = new THREE.WebGLRenderer({
-          canvas,
-          antialias: true,
-        });
-        threeRenderer.setSize(width, height);
-        threeRenderer.setPixelRatio(window.devicePixelRatio || 1);
-
-        // Lumière
-        const ambient = new THREE.AmbientLight(0xffffff, 0.7);
-        threeScene.add(ambient);
-
-        const dir = new THREE.DirectionalLight(0xffffff, 0.7);
-        dir.position.set(15, 20, 10);
-        threeScene.add(dir);
-
-        // Sol
-        const groundGeo = new THREE.PlaneGeometry(60, 60);
-        const groundMat = new THREE.MeshPhongMaterial({
-          color: 0xe0e0e0,
-          side: THREE.DoubleSide,
-        });
-        groundMesh = new THREE.Mesh(groundGeo, groundMat);
-        groundMesh.rotation.x = -Math.PI / 2;
-        groundMesh.position.set(15, 15, 0);
-        threeScene.add(groundMesh);
-
-        // Groupe structure
-        structureRoot = new THREE.Group();
-        threeScene.add(structureRoot);
-
-        // Contrôles
-        threeControls = new THREE.OrbitControls(
-          threeCamera,
-          threeRenderer.domElement
-        );
-        threeControls.enableDamping = true;
-        threeControls.dampingFactor = 0.1;
-        threeControls.target.set(5, 3, 2);
-
-        // Chargement du modèle GLTF
-        const loader = new THREE.GLTFLoader();
-        loader.load(
-          MODEL_PATH,
-          (gltf) => {
-            structureTemplate = gltf.scene;
-            structureTemplate.position.set(0, 0, 0);
-
-            const box = new THREE.Box3().setFromObject(structureTemplate);
-            const size = new THREE.Vector3();
-            box.getSize(size);
-            // X = longueur, Y = largeur, Z = hauteur
-            baseSize = { x: size.x, y: size.y, z: size.z };
-
+      // -------- Liaison avec le formulaire ----------
+      function bindThreeFormEvents() {
+        const ids = ["width", "length", "height"];
+        ids.forEach((id) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.addEventListener("change", () => {
             rebuildStructureFromForm();
-          },
-          undefined,
-          (error) => {
-            console.error("Erreur chargement GLTF :", error);
-          }
-        );
+          });
+        });
 
-        window.addEventListener("resize", onResizeThree);
-        animateThree();
+        // changement de type d'abri (mono/bi) – on reconstruit avec les mêmes dimensions
+        document.querySelectorAll('input[name="slopeType"]').forEach((el) => {
+          el.addEventListener("change", () => {
+            rebuildStructureFromForm();
+          });
+        });
+
+        // couleurs / bardages
+        document
+          .querySelectorAll(
+            'input[name="roofColor"], input[name="claddingColor"], input[name="claddingType"], input[name="claddingSide"]'
+          )
+          .forEach((el) => {
+            el.addEventListener("change", () => {
+              updateCoverAndCladding();
+            });
+          });
       }
 
-      function onResizeThree() {
-        const canvas = document.getElementById("viewer3d");
-        if (!canvas || !threeRenderer || !threeCamera) return;
-        const width = canvas.clientWidth || 400;
-        const height = canvas.clientHeight || (width * 3) / 4;
-        threeCamera.aspect = width / height;
-        threeCamera.updateProjectionMatrix();
-        threeRenderer.setSize(width, height);
-      }
-
-      function animateThree() {
-        requestAnimationFrame(animateThree);
-        if (threeControls) threeControls.update();
-        if (threeRenderer && threeScene && threeCamera) {
-          threeRenderer.render(threeScene, threeCamera);
-        }
+      // -------- Initialisation globale ----------
+      function initThreeModule() {
+        initThreeScene();
+        loadBaseModel();
+        bindThreeFormEvents();
       }
 
       if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initThree);
+        document.addEventListener("DOMContentLoaded", initThreeModule);
       } else {
-        initThree();
+        initThreeModule();
       }
     </script>
   </body>
