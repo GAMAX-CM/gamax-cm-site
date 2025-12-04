@@ -232,70 +232,136 @@
               </div>
             </div>
 
-            <!-- 4. BARDAGE -->
-            <h3>4. Bardage</h3>
-            <div class="field">
-              <label>Côtés bardés</label>
+           <!-- 4. BARDAGE -->
+<h3>4. Bardage</h3>
+<div class="field">
+  <p class="field-help">
+    Choisissez les côtés à fermer en bardage. Vous pouvez cliquer sur le dessin
+    ou cocher les façades A, B, C, D.
+  </p>
 
-              <!-- Schéma vue 3D / façade A-B-C-D -->
-              <div class="facade-diagram">
-                <div class="facade-diagram-inner">
-                  <div class="facade-label facade-a" data-facade="A">A</div>
-                  <div class="facade-label facade-b" data-facade="B">B</div>
-                  <div class="facade-label facade-c" data-facade="C">C</div>
-                  <div class="facade-label facade-d" data-facade="D">D</div>
-                </div>
-                <div class="facade-caption">
-                  Vue schématique de l’abri – façades A, B, C, D.
-                </div>
-              </div>
+  <!-- Schéma 3D + pastilles A/B/C/D -->
+  <div class="facade-diagram">
+    <div class="facade-diagram-inner">
+      <!-- SVG pseudo 3D -->
+      <svg viewBox="0 0 200 130" class="shed-svg">
+        <!-- Toiture -->
+        <polygon
+          id="shedRoof"
+          class="shed-roof"
+          points="55,35 115,20 170,30 110,45"
+        ></polygon>
 
-              <ul class="facade-legend-list">
-                <li><strong>Façade A</strong> : long pan avant</li>
-                <li><strong>Façade B</strong> : pignon gauche</li>
-                <li><strong>Façade C</strong> : long pan arrière</li>
-                <li><strong>Façade D</strong> : pignon droit</li>
-              </ul>
+        <!-- Façade A (avant) -->
+        <polygon
+          class="shed-face shed-face-a"
+          data-side="A"
+          points="55,35 110,45 110,100 55,85"
+        ></polygon>
 
-              <p class="field-help">
-                Cliquez sur les façades de l’abri que vous souhaitez fermer en
-                bardage.
-              </p>
+        <!-- Façade D (pignon droit) -->
+        <polygon
+          class="shed-face shed-face-d"
+          data-side="D"
+          points="110,45 170,30 170,85 110,100"
+        ></polygon>
 
-              <div class="bardage-grid">
-                <label class="bardage-choice">
-                  <input type="checkbox" name="claddingSide" value="A" />
-                  <div class="bardage-card">
-                    <span class="bardage-label-main">Façade A</span>
-                    <span class="bardage-label-sub">Long pan avant</span>
-                  </div>
-                </label>
+        <!-- Façade C suggérée (arrière, bande en haut) -->
+        <polygon
+          class="shed-face shed-face-c"
+          data-side="C"
+          points="55,35 115,20 170,30 110,45"
+          opacity="0"
+        ></polygon>
+      </svg>
 
-                <label class="bardage-choice">
-                  <input type="checkbox" name="claddingSide" value="B" />
-                  <div class="bardage-card">
-                    <span class="bardage-label-main">Façade B</span>
-                    <span class="bardage-label-sub">Pignon gauche</span>
-                  </div>
-                </label>
+      <!-- Pastilles A / B / C / D (légende interactive) -->
+      <span class="facade-label facade-a" data-side="A">A</span>
+      <span class="facade-label facade-b" data-side="B">B</span>
+      <span class="facade-label facade-c" data-side="C">C</span>
+      <span class="facade-label facade-d" data-side="D">D</span>
+    </div>
 
-                <label class="bardage-choice">
-                  <input type="checkbox" name="claddingSide" value="C" />
-                  <div class="bardage-card">
-                    <span class="bardage-label-main">Façade C</span>
-                    <span class="bardage-label-sub">Long pan arrière</span>
-                  </div>
-                </label>
+    <p class="facade-caption">
+      Cliquez sur les pastilles A / B / C / D ou cochez les cartes de bardage
+      ci-dessous.
+    </p>
+  </div>
 
-                <label class="bardage-choice">
-                  <input type="checkbox" name="claddingSide" value="D" />
-                  <div class="bardage-card">
-                    <span class="bardage-label-main">Façade D</span>
-                    <span class="bardage-label-sub">Pignon droit</span>
-                  </div>
-                </label>
-              </div>
-            </div>
+  <!-- Légende façades -->
+  <ul class="facade-legend-list">
+    <li><strong>Façade A</strong> : Long pan avant</li>
+    <li><strong>Façade B</strong> : Pignon gauche</li>
+    <li><strong>Façade C</strong> : Long pan arrière</li>
+    <li><strong>Façade D</strong> : Pignon droit</li>
+  </ul>
+
+  <!-- Cartes de sélection des côtés bardés -->
+  <p class="field-help">Sélectionnez les côtés à barder :</p>
+
+  <div class="bardage-grid">
+    <label class="bardage-choice">
+      <input
+        type="checkbox"
+        class="bardage-side"
+        data-side="A"
+        id="bardageA"
+      />
+      <div class="bardage-card">
+        <span class="bardage-label-main">Façade A – Long pan avant</span>
+        <span class="bardage-label-sub">
+          Bardage sur toute la longueur avant de l’abri.
+        </span>
+      </div>
+    </label>
+
+    <label class="bardage-choice">
+      <input
+        type="checkbox"
+        class="bardage-side"
+        data-side="B"
+        id="bardageB"
+      />
+      <div class="bardage-card">
+        <span class="bardage-label-main">Façade B – Pignon gauche</span>
+        <span class="bardage-label-sub">
+          Bardage sur le pignon gauche (côté A-B).
+        </span>
+      </div>
+    </label>
+
+    <label class="bardage-choice">
+      <input
+        type="checkbox"
+        class="bardage-side"
+        data-side="C"
+        id="bardageC"
+      />
+      <div class="bardage-card">
+        <span class="bardage-label-main">Façade C – Long pan arrière</span>
+        <span class="bardage-label-sub">
+          Bardage sur toute la longueur arrière de l’abri.
+        </span>
+      </div>
+    </label>
+
+    <label class="bardage-choice">
+      <input
+        type="checkbox"
+        class="bardage-side"
+        data-side="D"
+        id="bardageD"
+      />
+      <div class="bardage-card">
+        <span class="bardage-label-main">Façade D – Pignon droit</span>
+        <span class="bardage-label-sub">
+          Bardage sur le pignon droit (côté C-D).
+        </span>
+      </div>
+    </label>
+  </div>
+</div>
+
 
             <!-- 5. OPTIONS COMPLÉMENTAIRES -->
             <h3>5. Options complémentaires</h3>
