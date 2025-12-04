@@ -507,6 +507,11 @@ body {
   gap: 0.2rem;
   transition: var(--transition);
 }
+/* Cartes type toiture / bardage : hauteur harmonisée */
+.bardage-card.type-card {
+  min-height: 120px; /* ajuste plus ou moins selon le rendu que tu veux */
+}
+
 .bardage-label-main {
   font-weight: 600;
 }
