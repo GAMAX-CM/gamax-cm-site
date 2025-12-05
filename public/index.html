@@ -1314,31 +1314,51 @@
     dir.position.set(10, 20, 10);
     scene.add(dir);
 
-           // --- Plateau "sol" élégant sous le bâtiment ---
-    // grand disque beige, un peu en dessous de l'abri
-    const groundGeo = new THREE.CircleGeometry(12, 72);
-    const groundMat = new THREE.MeshPhongMaterial({
-      color: 0xdfd3c2,      // beige chaud
-      side: THREE.DoubleSide,
-      shininess: 10
-    });
-    const ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -3;  // bien en dessous de la structure
-    scene.add(ground);
+               // --- JARDIN MODERNE ---
 
-    // Ombre douce sous l'abri
-    const shadowGeo = new THREE.CircleGeometry(9, 64);
+    // Grande pelouse
+    const grassGeo = new THREE.PlaneGeometry(60, 60);
+    const grassMat = new THREE.MeshPhongMaterial({
+      color: 0x7ba05b,       // vert pelouse
+      side: THREE.DoubleSide
+    });
+    const grass = new THREE.Mesh(grassGeo, grassMat);
+    grass.rotation.x = -Math.PI / 2;
+    grass.position.y = -0.05; // très légèrement sous les poteaux
+    scene.add(grass);
+
+    // Dalle béton sous l’abri
+    const terraceGeo = new THREE.PlaneGeometry(12, 8);
+    const terraceMat = new THREE.MeshPhongMaterial({
+      color: 0xe3dfd8,       // gris-beige béton clair
+      side: THREE.DoubleSide,
+      shininess: 30
+    });
+    const terrace = new THREE.Mesh(terraceGeo, terraceMat);
+    terrace.rotation.x = -Math.PI / 2;
+    terrace.position.set(0, -0.01, 0);
+    scene.add(terrace);
+
+    // Ombre douce sur la dalle
+    const shadowGeo = new THREE.PlaneGeometry(10, 6);
     const shadowMat = new THREE.MeshBasicMaterial({
       color: 0x000000,
       transparent: true,
-      opacity: 0.15
+      opacity: 0.12
     });
     const shadow = new THREE.Mesh(shadowGeo, shadowMat);
     shadow.rotation.x = -Math.PI / 2;
-    shadow.position.y = -2.9;   // juste au-dessus du sol
+    shadow.position.set(0, -0.009, 0);
     scene.add(shadow);
 
+    // Muret au fond du jardin
+    const wallGeo = new THREE.BoxGeometry(60, 1.5, 0.4);
+    const wallMat = new THREE.MeshLambertMaterial({
+      color: 0xf2efe9      // beige très clair
+    });
+    const backWall = new THREE.Mesh(wallGeo, wallMat);
+    backWall.position.set(0, 0.75, -25);
+    scene.add(backWall);
 
     // Ombre douce sous l'abri
     const shadowGeo = new THREE.CircleGeometry(9, 64);
