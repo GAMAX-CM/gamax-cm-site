@@ -1314,15 +1314,31 @@
     dir.position.set(10, 20, 10);
     scene.add(dir);
 
-    const groundGeo = new THREE.PlaneGeometry(50, 50);
+        // --- Plateau "sol" élégant sous le bâtiment ---
+    // grand disque beige, un peu en dessous de l'abri
+    const groundGeo = new THREE.CircleGeometry(12, 72);
     const groundMat = new THREE.MeshPhongMaterial({
-      color: 0xe0e0e0,
-      side: THREE.DoubleSide
+      color: 0xdfd3c2,      // beige chaud
+      side: THREE.DoubleSide,
+      shininess: 10
     });
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -10.5;
+    ground.position.y = -10.5;  // bien en dessous de la structure
     scene.add(ground);
+
+    // Ombre douce sous l'abri
+    const shadowGeo = new THREE.CircleGeometry(9, 64);
+    const shadowMat = new THREE.MeshBasicMaterial({
+      color: 0x000000,
+      transparent: true,
+      opacity: 0.15
+    });
+    const shadow = new THREE.Mesh(shadowGeo, shadowMat);
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.y = -10;   // juste au-dessus du sol
+    scene.add(shadow);
+
 
     // petit cube de secours si le modèle ne charge pas
     const debugGeo = new THREE.BoxGeometry(1, 1, 1);
