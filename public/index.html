@@ -1235,7 +1235,6 @@
     <script src="https://unpkg.com/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
 
    <script>
-  // ---------- CONFIG GLOBALE 3D ----------
   const MODEL_PATH = "assets/abri-monopente-3x5m.gltf";
 
   let scene, camera, renderer, controls;
@@ -1246,7 +1245,7 @@
   let roofMesh = null;
   const facadeMeshes = { A: null, B: null, C: null, D: null };
 
-  // ---------- OUTILS ----------
+  // ---------- OUTILS COULEURS ----------
 
   function cssColorToHex(rgbString) {
     if (!rgbString) return 0x666666;
@@ -1274,6 +1273,8 @@
     return cssColorToHex(color);
   }
 
+  // ---------- LECTURE DIMENSIONS FORMULAIRE ----------
+
   function readDimsFromForm() {
     const w = parseFloat(document.getElementById("width")?.value || "3");
     const L = parseFloat(document.getElementById("length")?.value || "5");
@@ -1289,7 +1290,7 @@
     return 6; // 25 à 30 m
   }
 
-  // ---------- INITIALISATION THREE ----------
+  // ---------- INIT THREE.JS ----------
 
   function initThree() {
     const canvas = document.getElementById("viewer3d");
@@ -1302,42 +1303,42 @@
     scene.background = new THREE.Color(0xf5f5f5);
 
     camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.set(10, 6, 10);
+    // vue de 3/4
+    camera.position.set(10, 8, 10);
 
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio || 1);
 
-    const ambient = new THREE.AmbientLight(0xffffff, 0.7);
-    scene.add(ambient);
-
-    const dir = new THREE.DirectionalLight(0xffffff, 0.8);
-    dir.position.set(10, 20, 10);
-    scene.add(dir);
-
+    // Sol (dans le plan XY, Z = hauteur)
     const groundGeo = new THREE.PlaneGeometry(100, 100);
     const groundMat = new THREE.MeshPhongMaterial({
       color: 0xe0e0e0,
       side: THREE.DoubleSide,
     });
     const ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.rotation.x = -Math.PI / 2;
     ground.position.z = 0;
     scene.add(ground);
+
+    const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambient);
+
+    const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+    dir.position.set(20, 20, 30);
+    scene.add(dir);
 
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
-    controls.target.set(0, 1.5, 0);
+    controls.target.set(0, 0, 2);
 
-    // Chargement du modèle GLTF de base
+    // Chargement du module de base
     const loader = new THREE.GLTFLoader();
     loader.load(
       MODEL_PATH,
       (gltf) => {
         baseModule = gltf.scene;
 
-        // centre le modèle sur l'origine
         const box = new THREE.Box3().setFromObject(baseModule);
         const center = box.getCenter(new THREE.Vector3());
         baseModule.position.sub(center);
@@ -1408,9 +1409,10 @@
     for (let i = 0; i < bayCount; i++) {
       const module = baseModule.clone(true);
 
-      const scaleX = bayLength / baseSize.x; // longueur
-      const scaleY = width / baseSize.y;     // largeur
-      const scaleZ = height / baseSize.z;    // hauteur
+      // correspondance : X = longueur, Y = largeur, Z = hauteur
+      const scaleX = bayLength / baseSize.x;
+      const scaleY = width / baseSize.y;
+      const scaleZ = height / baseSize.z;
       module.scale.set(scaleX, scaleY, scaleZ);
 
       const offsetX = (i - (bayCount - 1) / 2) * bayLength;
@@ -1424,7 +1426,7 @@
     rebuildRoofAndCladdingFromForm();
   }
 
-  // ---------- TOITURE & BARDAGE 3D ----------
+  // ---------- TOITURE & BARDAGE ----------
 
   function clearRoofAndCladding() {
     if (roofMesh) {
@@ -1454,11 +1456,12 @@
     const size = bbox.getSize(new THREE.Vector3()); // x = longueur, y = largeur, z = hauteur
     const min = bbox.min;
     const max = bbox.max;
+    const center = bbox.getCenter(new THREE.Vector3());
 
     const roofColor = getRoofColorHex();
     const claddingColor = getCladdingColorHex();
 
-    // ---- TOITURE (toujours présente, couleur = toiture) ----
+    // ---- TOITURE ----
     const roofGeo = new THREE.PlaneGeometry(size.x, size.y);
     const roofMat = new THREE.MeshPhongMaterial({
       color: roofColor,
@@ -1468,48 +1471,50 @@
     });
     roofMesh = new THREE.Mesh(roofGeo, roofMat);
 
-    // légère pente dans le sens de la largeur (axe Y)
-    roofMesh.rotation.x = -Math.PI / 9;
-    roofMesh.position.set(
-      (min.x + max.x) / 2,
-      (min.y + max.y) / 2,
-      max.z + 0.02 * size.z
-    );
+    // plan XY, on met une petite pente dans le sens de la largeur (Y)
+    roofMesh.position.set(center.x, center.y, max.z + 0.02 * size.z);
+    roofMesh.rotation.x = -Math.PI / 15; // légère pente
     scene.add(roofMesh);
 
-    // ---- PANNEAUX DE BARDAGE (A, B, C, D) ----
+    // ---- BARDAGE : A / B / C / D ----
     function createFacade(side) {
       let geo;
       const pos = new THREE.Vector3();
-      const rot = new THREE.Euler();
+      const rot = new THREE.Euler(0, 0, 0);
 
       if (side === "A" || side === "C") {
-        // long pans avant (A) et arrière (C) : longueur X, hauteur Z
+        // Façades longues (A = avant / C = arrière)
+        // plan XZ : longueur X, hauteur Z
         geo = new THREE.PlaneGeometry(size.x, size.z);
-        pos.x = (min.x + max.x) / 2;
-        pos.z = (min.z + max.z) / 2;
+
+        pos.x = center.x;
+        pos.z = center.z;
 
         if (side === "A") {
-          // façade avant = Y min
+          // Avant : Y min, face vers -Y
           pos.y = min.y - 0.01 * size.y;
-          rot.y = Math.PI; // regarde vers l'extérieur
+          rot.x = Math.PI / 2; // XY -> XZ, normal vers -Y
         } else {
-          // façade arrière = Y max
+          // Arrière : Y max, face vers +Y
           pos.y = max.y + 0.01 * size.y;
-          rot.y = 0;
+          rot.x = -Math.PI / 2; // XY -> XZ, normal vers +Y
         }
       } else {
-        // pignons B (X min) et D (X max) : largeur Y, hauteur Z
+        // Pignons B (gauche) et D (droit)
+        // plan YZ : largeur Y, hauteur Z
         geo = new THREE.PlaneGeometry(size.y, size.z);
-        pos.y = (min.y + max.y) / 2;
-        pos.z = (min.z + max.z) / 2;
+
+        pos.y = center.y;
+        pos.z = center.z;
 
         if (side === "B") {
+          // Gauche : X min, face vers -X
           pos.x = min.x - 0.01 * size.x;
-          rot.y = -Math.PI / 2;
+          rot.y = -Math.PI / 2; // XY -> YZ, normal vers -X
         } else {
+          // Droit : X max, face vers +X
           pos.x = max.x + 0.01 * size.x;
-          rot.y = Math.PI / 2;
+          rot.y = Math.PI / 2; // normal vers +X
         }
       }
 
@@ -1529,16 +1534,18 @@
 
     ["A", "B", "C", "D"].forEach(createFacade);
 
-    updateCladdingVisibilityFromForm(); // visibilité selon les cases cochées
+    updateCladdingVisibilityFromForm();
   }
 
   function updateCladdingVisibilityFromForm() {
     const active = { A: false, B: false, C: false, D: false };
+
     document
       .querySelectorAll('input[name="claddingSide"]')
       .forEach((cb) => {
-        if (cb.checked && active.hasOwnProperty(cb.value)) {
-          active[cb.value] = true;
+        const side = cb.value;
+        if (cb.checked && active.hasOwnProperty(side)) {
+          active[side] = true;
         }
       });
 
