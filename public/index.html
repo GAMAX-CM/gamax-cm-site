@@ -1244,17 +1244,53 @@
   const cladMeshes = { A: null, B: null, C: null, D: null };
   const MODEL_PATH = "assets/abri-monopente-3x5m.gltf";
 
-  // module de base (3x5 m)
-  const BASE_LENGTH_M = 5;   // X
-  const BASE_WIDTH_M  = 3;   // Z
-  const BASE_HEIGHT_M = 2.15; // Y (approché)
+  // module de base 3 x 5 m
+  const BASE_LENGTH_M = 5;    // axe X
+  const BASE_WIDTH_M  = 3;    // axe Z
+  const BASE_HEIGHT_M = 2.15; // axe Y (hauteur avant)
 
-  // ===== INIT SCÈNE THREE =====
+  // ========= OUTILS COULEURS =========
+  function getRALColorFromRadio(name) {
+    const input = document.querySelector(`input[name="${name}"]:checked`);
+    if (!input) return "#666666";
+    const box = input.closest(".ral-choice")?.querySelector(".ral-box");
+    if (!box) return "#666666";
+    return window.getComputedStyle(box).backgroundColor;
+  }
+
+  function getRoofColor3D() {
+    return getRALColorFromRadio("roofColor");
+  }
+
+  function getCladdingColor3D() {
+    return getRALColorFromRadio("claddingColor");
+  }
+
+  // ========= DIMENSIONS COURANTES =========
+  function getCurrentDimensions() {
+    const widthSel  = document.getElementById("width");
+    const lengthSel = document.getElementById("length");
+    const heightSel = document.getElementById("height");
+
+    const width  = parseFloat(widthSel?.value  || "3");
+    const length = parseFloat(lengthSel?.value || "3");
+    const height = parseFloat(heightSel?.value || "2.15");
+    return { width, length, height };
+  }
+
+  function getBayCount(length) {
+    if (length <= 6)  return 1;
+    if (length <= 12) return 2;
+    if (length <= 18) return 3;
+    if (length <= 24) return 4;
+    return 6;
+  }
+
+  // ========= INIT SCÈNE THREE =========
   function initThree() {
-    console.log("initThree()");
     const canvas = document.getElementById("viewer3d");
     if (!canvas) {
-      console.warn("Canvas viewer3d introuvable");
+      console.warn("Canvas #viewer3d introuvable");
       return;
     }
 
@@ -1288,7 +1324,7 @@
     ground.position.y = -0.01;
     scene.add(ground);
 
-    // petit cube de secours, au cas où le modèle ne charge pas
+    // petit cube de secours si le modèle ne charge pas
     const debugGeo = new THREE.BoxGeometry(1, 1, 1);
     const debugMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
     const debugCube = new THREE.Mesh(debugGeo, debugMat);
@@ -1304,17 +1340,18 @@
     loader.load(
       MODEL_PATH,
       (gltf) => {
-        console.log("GLTF chargé :", MODEL_PATH);
+        console.log("Modèle GLTF chargé :", MODEL_PATH);
         scene.remove(debugCube);
 
         baseModule = gltf.scene;
-        baseModule.traverse(obj => {
+        baseModule.traverse((obj) => {
           if (obj.isMesh) {
             obj.castShadow = true;
             obj.receiveShadow = true;
             obj.material = obj.material.clone();
           }
         });
+
         baseBBox = new THREE.Box3().setFromObject(baseModule);
         update3DFromConfig();
       },
@@ -1348,43 +1385,7 @@
     }
   }
 
-  // ========= COULEURS =========
-  function getRALColorFromRadio(name) {
-    const input = document.querySelector(`input[name="${name}"]:checked`);
-    if (!input) return "#666666";
-    const box = input.closest(".ral-choice")?.querySelector(".ral-box");
-    if (!box) return "#666666";
-    return window.getComputedStyle(box).backgroundColor;
-  }
-
-  function getRoofColor3D() {
-    return getRALColorFromRadio("roofColor");
-  }
-
-  function getCladdingColor3D() {
-    return getRALColorFromRadio("claddingColor");
-  }
-
   // ========= STRUCTURE =========
-  function getCurrentDimensions() {
-    const widthSel = document.getElementById("width");
-    const lengthSel = document.getElementById("length");
-    const heightSel = document.getElementById("height");
-
-    const width  = parseFloat(widthSel?.value || "3");
-    const length = parseFloat(lengthSel?.value || "3");
-    const height = parseFloat(heightSel?.value || "2.15");
-    return { width, length, height };
-  }
-
-  function getBayCount(length) {
-    if (length <= 6)  return 1;
-    if (length <= 12) return 2;
-    if (length <= 18) return 3;
-    if (length <= 24) return 4;
-    return 6;
-  }
-
   function buildStructureFromConfig() {
     if (!baseModule || !baseBBox) return null;
 
@@ -1422,10 +1423,10 @@
       currentX += segLength;
     }
 
-    // recentre tout autour de (0,0,0)
-    let bbox = new THREE.Box3().setFromObject(structureGroup);
-    const center = bbox.getCenter(new THREE.Vector3());
-    structureGroup.position.sub(center);
+    // recadrage autour de (0,0,0)
+    let bbox   = new THREE.Box3().setFromObject(structureGroup);
+    const ctr  = bbox.getCenter(new THREE.Vector3());
+    structureGroup.position.sub(ctr);
 
     bbox = new THREE.Box3().setFromObject(structureGroup);
     return bbox;
@@ -1457,14 +1458,14 @@
       side: THREE.DoubleSide
     });
 
-    const claddingMat = new THREE.MeshStandardMaterial({
+    const cladMat = new THREE.MeshStandardMaterial({
       color: getCladdingColor3D(),
       transparent: true,
       opacity: 0.55,
       side: THREE.DoubleSide
     });
 
-    // TOITURE
+    // TOITURE (plane au-dessus de la structure)
     const roofGeo = new THREE.PlaneGeometry(lenX, widthZ);
     roofMesh = new THREE.Mesh(roofGeo, roofMat);
     roofMesh.rotation.x = -Math.PI / 2;
@@ -1477,7 +1478,7 @@
 
     // LONG PAN A (z max)
     const geoLong = new THREE.PlaneGeometry(lenX, heightY);
-    cladMeshes.A = new THREE.Mesh(geoLong, claddingMat.clone());
+    cladMeshes.A = new THREE.Mesh(geoLong, cladMat.clone());
     cladMeshes.A.position.set(
       (min.x + max.x) / 2,
       (min.y + max.y) / 2,
@@ -1486,18 +1487,18 @@
     overlayGroup.add(cladMeshes.A);
 
     // LONG PAN C (z min)
-    cladMeshes.C = new THREE.Mesh(geoLong, claddingMat.clone());
+    cladMeshes.C = new THREE.Mesh(geoLong, cladMat.clone());
     cladMeshes.C.position.set(
       (min.x + max.x) / 2,
       (min.y + max.y) / 2,
       min.z - eps
     );
-    cladMeshes.C.rotation.y = Math.PI;
+    cladMeshes.C.rotation.y = Math.PI; // on tourne pour que la face regarde vers l'intérieur
     overlayGroup.add(cladMeshes.C);
 
     // PIGNON B (x min)
     const geoShort = new THREE.PlaneGeometry(widthZ, heightY);
-    cladMeshes.B = new THREE.Mesh(geoShort, claddingMat.clone());
+    cladMeshes.B = new THREE.Mesh(geoShort, cladMat.clone());
     cladMeshes.B.position.set(
       min.x - eps,
       (min.y + max.y) / 2,
@@ -1507,7 +1508,7 @@
     overlayGroup.add(cladMeshes.B);
 
     // PIGNON D (x max)
-    cladMeshes.D = new THREE.Mesh(geoShort, claddingMat.clone());
+    cladMeshes.D = new THREE.Mesh(geoShort, cladMat.clone());
     cladMeshes.D.position.set(
       max.x + eps,
       (min.y + max.y) / 2,
@@ -1545,33 +1546,46 @@
     rebuildOverlays(bbox);
   }
 
-  // ========= LIENS FORMULAIRE / 3D =========
-  document.addEventListener("DOMContentLoaded", () => {
-    initThree();
+  // ========= ATTENDRE QUE THREE SOIT PRÊT =========
+  function waitForThreeAndInit() {
+    if (window.THREE && window.THREE.Scene) {
+      initThree();
+      bindFormTo3D();
+    } else {
+      // three.js pas encore chargé => on réessaie
+      setTimeout(waitForThreeAndInit, 100);
+    }
+  }
 
+  function bindFormTo3D() {
+    // dimensions
     ["width", "length", "height"].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.addEventListener("change", update3DFromConfig);
     });
 
+    // type d'abri (mono / bi, pour plus tard)
     document
       .querySelectorAll('input[name="slopeType"]')
       .forEach((el) => el.addEventListener("change", update3DFromConfig));
 
+    // bardage ON/OFF
     document
       .querySelectorAll('input[name="claddingSide"]')
       .forEach((el) => el.addEventListener("change", updateOverlayStyles));
 
+    // couleurs
     document
       .querySelectorAll('input[name="roofColor"]')
       .forEach((el) => el.addEventListener("change", updateOverlayStyles));
-
     document
       .querySelectorAll('input[name="claddingColor"]')
       .forEach((el) => el.addEventListener("change", updateOverlayStyles));
-  });
+  }
+
+  // on lance l’attente après que le DOM soit prêt
+  document.addEventListener("DOMContentLoaded", waitForThreeAndInit);
 </script>
 
-    
   </body>
 </html>
