@@ -1314,7 +1314,7 @@
     dir.position.set(10, 20, 10);
     scene.add(dir);
 
-        // --- Plateau "sol" élégant sous le bâtiment ---
+           // --- Plateau "sol" élégant sous le bâtiment ---
     // grand disque beige, un peu en dessous de l'abri
     const groundGeo = new THREE.CircleGeometry(12, 72);
     const groundMat = new THREE.MeshPhongMaterial({
@@ -1324,8 +1324,21 @@
     });
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -1.5;  // bien en dessous de la structure
+    ground.position.y = -3;  // bien en dessous de la structure
     scene.add(ground);
+
+    // Ombre douce sous l'abri
+    const shadowGeo = new THREE.CircleGeometry(9, 64);
+    const shadowMat = new THREE.MeshBasicMaterial({
+      color: 0x000000,
+      transparent: true,
+      opacity: 0.15
+    });
+    const shadow = new THREE.Mesh(shadowGeo, shadowMat);
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.y = -2.9;   // juste au-dessus du sol
+    scene.add(shadow);
+
 
     // Ombre douce sous l'abri
     const shadowGeo = new THREE.CircleGeometry(9, 64);
