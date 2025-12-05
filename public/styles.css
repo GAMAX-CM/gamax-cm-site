@@ -322,6 +322,18 @@ body {
   background: var(--noir);
   color: #fff;
 }
+/* Hauteur uniformisée des cartes toiture */
+.roof-card-inner {
+  min-height: 130px !important;   /* réduit mais propre */
+  padding: 0.8rem;  
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.roof-img {
+  width: 70px !important;
+}
+
 .roof-img {
   width: 90px;
   height: auto;
@@ -380,8 +392,8 @@ body {
 .facade-diagram-inner {
   position: relative;
   width: 220px;
-  height: 140px;
-  border-radius: 14px;
+  height: 110px !important;
+  border-radius: 12px;
   border: 2px solid rgba(0, 0, 0, 0.2);
   background: radial-gradient(
     circle at top left,
@@ -548,6 +560,18 @@ body {
 
 .bardage-choice input:checked + .bardage-card .bardage-label-sub {
   color: var(--gris-moyen);
+}
+/* Harmonisation des cartes bardage */
+.bardage-card.type-card {
+  min-height: 130px !important; /* même hauteur sur une ligne */
+  display: flex;
+  justify-content: center;
+}
+/* Harmonisation des cartes bardage */
+.bardage-card.type-card {
+  min-height: 130px !important; /* même hauteur sur une ligne */
+  display: flex;
+  justify-content: center;
 }
 
 /* OPTIONS COMPLÉMENTAIRES */
