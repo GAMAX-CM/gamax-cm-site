@@ -1243,8 +1243,12 @@
   let roofMesh = null;
 
   // Décor
-  let groundDisc = null;      // disque noir
-  let padMesh = null;         // dalle blanche
+let groundDisc = null;      // disque
+let padMesh = null;         // dalle sous l'abri
+// ...
+
+const PAVE_TEXTURE_PATH = "assets/texture-pave-gris.jpg";
+
   let backgroundPlane = null; // image de fond
 
   const cladMeshes = { A: null, B: null, C: null, D: null };
@@ -1283,27 +1287,56 @@
     dir.position.set(10, 20, 10);
     scene.add(dir);
 
-    // === Disque noir (dimension corrigée plus tard) ===
-    const discGeo = new THREE.CircleGeometry(5, 64);
-    const discMat = new THREE.MeshPhongMaterial({
-      color: 0x222222,
-      side: THREE.DoubleSide,
-    });
-    groundDisc = new THREE.Mesh(discGeo, discMat);
-    groundDisc.rotation.x = -Math.PI / 2;
-    groundDisc.position.y = 0;
-    scene.add(groundDisc);
+    // === Disque du sol (recevra la texture pavée) ===
+const discGeo = new THREE.CircleGeometry(5, 64);
+const discMat = new THREE.MeshPhongMaterial({
+  color: 0xffffff,
+  side: THREE.DoubleSide,
+});
+groundDisc = new THREE.Mesh(discGeo, discMat);
+groundDisc.rotation.x = -Math.PI / 2;
+groundDisc.position.y = 0;
+scene.add(groundDisc);
 
-    // === Dalle blanche sous l’abri ===
-    const padGeo = new THREE.PlaneGeometry(4, 3);
-    const padMat = new THREE.MeshPhongMaterial({
-      color: 0xffffff,
-      side: THREE.DoubleSide,
-    });
-    padMesh = new THREE.Mesh(padGeo, padMat);
-    padMesh.rotation.x = -Math.PI / 2;
-    padMesh.position.y = 0.01;
-    scene.add(padMesh);
+// === Dalle sous l’abri (même texture) ===
+const padGeo = new THREE.PlaneGeometry(4, 3);
+const padMat = new THREE.MeshPhongMaterial({
+  color: 0xffffff,
+  side: THREE.DoubleSide,
+});
+padMesh = new THREE.Mesh(padGeo, padMat);
+padMesh.rotation.x = -Math.PI / 2;
+padMesh.position.y = 0.01;
+scene.add(padMesh);
+
+// === Texture pavée ===
+const paveLoader = new THREE.TextureLoader();
+paveLoader.load(
+  PAVE_TEXTURE_PATH,
+  (tex) => {
+    // On répète la texture pour éviter les gros pavés
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+
+    // Tu peux jouer sur ces chiffres pour ajuster la taille des pavés
+    tex.repeat.set(8, 8);
+
+    groundDisc.material.map = tex;
+    groundDisc.material.color.set(0xffffff);
+    groundDisc.material.needsUpdate = true;
+
+    // un peu moins répété sur la dalle pour plus de détail
+    const tex2 = tex.clone();
+    tex2.repeat.set(4, 4);
+    padMesh.material.map = tex2;
+    padMesh.material.color.set(0xffffff);
+    padMesh.material.needsUpdate = true;
+  },
+  undefined,
+  (err) => {
+    console.warn("Texture de pavés non chargée :", err);
+  }
+);
+
 
     // === Image de fond type jardin/mur ===
     const texLoader = new THREE.TextureLoader();
