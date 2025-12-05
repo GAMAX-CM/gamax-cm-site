@@ -523,11 +523,11 @@ body {
 .bardage-choice input:checked + .bardage-card {
   border-color: var(--noir);
   box-shadow: 0 0 0 2px var(--noir);
-  background: #111;
-  color: #fff;
+  background: var(--beige); /* garder le beige même sélectionné */
+  color: #111;
 }
 .bardage-choice input:checked + .bardage-card .bardage-label-sub {
-  color: #f3e9d9;
+  color: var(--gris-moyen);
 }
 
 /* OPTIONS COMPLÉMENTAIRES */
