@@ -573,6 +573,19 @@ body {
   display: flex;
   justify-content: center;
 }
+/* Réduction forte de la hauteur des encadrés façades */
+.bardage-choice .bardage-card {
+  min-height: 95px !important;      /* Hauteur réduite */
+  padding: 0.8rem 1rem !important;  /* Moins d'espace interne */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;          /* Centrer verticalement le texte */
+}
+
+/* Réduction de l'espace entre les lignes */
+.bardage-grid {
+  row-gap: 0.6rem !important;
+}
 
 /* OPTIONS COMPLÉMENTAIRES */
 .options-grid {
