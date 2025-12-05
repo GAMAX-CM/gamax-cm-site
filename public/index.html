@@ -1244,17 +1244,21 @@
   const cladMeshes = { A: null, B: null, C: null, D: null };
   const MODEL_PATH = "assets/abri-monopente-3x5m.gltf";
 
-  // Taille "réelle" du module de base en mètres
+  // module de base (3x5 m)
   const BASE_LENGTH_M = 5;   // X
   const BASE_WIDTH_M  = 3;   // Z
   const BASE_HEIGHT_M = 2.15; // Y (approché)
 
   // ===== INIT SCÈNE THREE =====
   function initThree() {
+    console.log("initThree()");
     const canvas = document.getElementById("viewer3d");
-    if (!canvas) return;
+    if (!canvas) {
+      console.warn("Canvas viewer3d introuvable");
+      return;
+    }
 
-    const width = canvas.clientWidth || 400;
+    const width  = canvas.clientWidth  || 400;
     const height = canvas.clientHeight || (width * 3 / 4);
 
     scene = new THREE.Scene();
@@ -1284,6 +1288,13 @@
     ground.position.y = -0.01;
     scene.add(ground);
 
+    // petit cube de secours, au cas où le modèle ne charge pas
+    const debugGeo = new THREE.BoxGeometry(1, 1, 1);
+    const debugMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
+    const debugCube = new THREE.Mesh(debugGeo, debugMat);
+    debugCube.position.set(0, 0.5, 0);
+    scene.add(debugCube);
+
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
@@ -1293,6 +1304,9 @@
     loader.load(
       MODEL_PATH,
       (gltf) => {
+        console.log("GLTF chargé :", MODEL_PATH);
+        scene.remove(debugCube);
+
         baseModule = gltf.scene;
         baseModule.traverse(obj => {
           if (obj.isMesh) {
@@ -1318,7 +1332,7 @@
     const canvas = document.getElementById("viewer3d");
     if (!canvas || !renderer || !camera) return;
 
-    const width = canvas.clientWidth || 400;
+    const width  = canvas.clientWidth  || 400;
     const height = canvas.clientHeight || (width * 3 / 4);
 
     camera.aspect = width / height;
@@ -1334,7 +1348,7 @@
     }
   }
 
-  // ========= UTILITAIRES FORMULAIRE -> COULEURS =========
+  // ========= COULEURS =========
   function getRALColorFromRadio(name) {
     const input = document.querySelector(`input[name="${name}"]:checked`);
     if (!input) return "#666666";
@@ -1351,25 +1365,20 @@
     return getRALColorFromRadio("claddingColor");
   }
 
-  // ========= CONSTRUCTION DE LA STRUCTURE =========
-  function getSelectedSlopeType() {
-    const input = document.querySelector('input[name="slopeType"]:checked');
-    return input ? input.value : "mono";
-  }
-
+  // ========= STRUCTURE =========
   function getCurrentDimensions() {
     const widthSel = document.getElementById("width");
     const lengthSel = document.getElementById("length");
     const heightSel = document.getElementById("height");
 
-    const width = parseFloat(widthSel?.value || "3");
+    const width  = parseFloat(widthSel?.value || "3");
     const length = parseFloat(lengthSel?.value || "3");
     const height = parseFloat(heightSel?.value || "2.15");
     return { width, length, height };
   }
 
   function getBayCount(length) {
-    if (length <= 6) return 1;
+    if (length <= 6)  return 1;
     if (length <= 12) return 2;
     if (length <= 18) return 3;
     if (length <= 24) return 4;
@@ -1391,11 +1400,11 @@
     const bayLengthM = length / bays;
 
     const scaleX = bayLengthM / BASE_LENGTH_M;
-    const scaleZ = width / BASE_WIDTH_M;
-    const scaleY = height / BASE_HEIGHT_M;
+    const scaleZ = width      / BASE_WIDTH_M;
+    const scaleY = height     / BASE_HEIGHT_M;
 
     const baseSize = new THREE.Vector3();
-    baseBBox.getSize(baseSize); // dimensions du module d'origine
+    baseBBox.getSize(baseSize);
 
     let currentX = 0;
 
@@ -1413,7 +1422,7 @@
       currentX += segLength;
     }
 
-    // Recentrage autour de l'origine
+    // recentre tout autour de (0,0,0)
     let bbox = new THREE.Box3().setFromObject(structureGroup);
     const center = bbox.getCenter(new THREE.Vector3());
     structureGroup.position.sub(center);
@@ -1422,7 +1431,7 @@
     return bbox;
   }
 
-  // ========= BARDAGE + TOITURE (SURFACES) =========
+  // ========= BARDAGE + TOITURE =========
   function rebuildOverlays(bbox) {
     if (!bbox) return;
 
@@ -1435,9 +1444,9 @@
     const min = bbox.min;
     const max = bbox.max;
 
-    const lenX = max.x - min.x; // longueur
-    const widthZ = max.z - min.z; // largeur
-    const heightY = max.y - min.y; // hauteur
+    const lenX    = max.x - min.x;
+    const widthZ  = max.z - min.z;
+    const heightY = max.y - min.y;
 
     const eps = 0.02 * Math.max(lenX, widthZ, heightY);
 
@@ -1455,10 +1464,10 @@
       side: THREE.DoubleSide
     });
 
-    // --- TOITURE (toujours visible) ---
+    // TOITURE
     const roofGeo = new THREE.PlaneGeometry(lenX, widthZ);
     roofMesh = new THREE.Mesh(roofGeo, roofMat);
-    roofMesh.rotation.x = -Math.PI / 2; // XY -> XZ (horizontal)
+    roofMesh.rotation.x = -Math.PI / 2;
     roofMesh.position.set(
       (min.x + max.x) / 2,
       max.y + eps,
@@ -1466,7 +1475,7 @@
     );
     overlayGroup.add(roofMesh);
 
-    // --- FAÇADE A (long pan avant, z max) ---
+    // LONG PAN A (z max)
     const geoLong = new THREE.PlaneGeometry(lenX, heightY);
     cladMeshes.A = new THREE.Mesh(geoLong, claddingMat.clone());
     cladMeshes.A.position.set(
@@ -1474,20 +1483,19 @@
       (min.y + max.y) / 2,
       max.z + eps
     );
-    // normal +Z, pas de rotation
     overlayGroup.add(cladMeshes.A);
 
-    // --- FAÇADE C (long pan arrière, z min) ---
+    // LONG PAN C (z min)
     cladMeshes.C = new THREE.Mesh(geoLong, claddingMat.clone());
     cladMeshes.C.position.set(
       (min.x + max.x) / 2,
       (min.y + max.y) / 2,
       min.z - eps
     );
-    cladMeshes.C.rotation.y = Math.PI; // normal -Z
+    cladMeshes.C.rotation.y = Math.PI;
     overlayGroup.add(cladMeshes.C);
 
-    // --- PIGNON B (x min) ---
+    // PIGNON B (x min)
     const geoShort = new THREE.PlaneGeometry(widthZ, heightY);
     cladMeshes.B = new THREE.Mesh(geoShort, claddingMat.clone());
     cladMeshes.B.position.set(
@@ -1498,7 +1506,7 @@
     cladMeshes.B.rotation.y = Math.PI / 2;
     overlayGroup.add(cladMeshes.B);
 
-    // --- PIGNON D (x max) ---
+    // PIGNON D (x max)
     cladMeshes.D = new THREE.Mesh(geoShort, claddingMat.clone());
     cladMeshes.D.position.set(
       max.x + eps,
@@ -1519,8 +1527,7 @@
       roofMesh.material.color.set(roofColor);
     }
 
-    const sides = ["A", "B", "C", "D"];
-    sides.forEach((side) => {
+    ["A", "B", "C", "D"].forEach((side) => {
       const cb = document.querySelector(
         `input[name="claddingSide"][value="${side}"]`
       );
@@ -1538,11 +1545,10 @@
     rebuildOverlays(bbox);
   }
 
-  // ========= LIENS AVEC LE FORMULAIRE =========
+  // ========= LIENS FORMULAIRE / 3D =========
   document.addEventListener("DOMContentLoaded", () => {
     initThree();
 
-    // dimensions & type d'abri
     ["width", "length", "height"].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.addEventListener("change", update3DFromConfig);
@@ -1552,12 +1558,10 @@
       .querySelectorAll('input[name="slopeType"]')
       .forEach((el) => el.addEventListener("change", update3DFromConfig));
 
-    // bardage ON/OFF
     document
       .querySelectorAll('input[name="claddingSide"]')
       .forEach((el) => el.addEventListener("change", updateOverlayStyles));
 
-    // couleurs toiture / bardage
     document
       .querySelectorAll('input[name="roofColor"]')
       .forEach((el) => el.addEventListener("change", updateOverlayStyles));
@@ -1567,6 +1571,7 @@
       .forEach((el) => el.addEventListener("change", updateOverlayStyles));
   });
 </script>
+
     
   </body>
 </html>
