@@ -501,18 +501,32 @@ body {
   display: none;
 }
 
-/* 🟫 Carte en beige clair identique au fond des images */
+/* Cartes avec le même beige que les images (#e8d9b5) */
 .bardage-card {
   padding: 0.75rem 0.9rem;
-  border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.16);
-  background: var(--beige); /* même beige que l'image */
+  border-radius: 18px;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  background: #e8d9b5 !important; /* même beige que les images */
   font-size: 0.9rem;
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
   transition: var(--transition);
-  min-height: 120px; /* pour uniformiser la hauteur */
+  min-height: 140px;
+}
+
+/* Au survol */
+.bardage-card:hover {
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+}
+
+/* Quand sélectionné */
+.bardage-choice input:checked + .bardage-card {
+  border-color: #111;
+  box-shadow: 0 0 0 2px #111;
+  background: #e8d9b5 !important;
+  color: #111;
 }
 
 .bardage-label-main {
