@@ -736,4 +736,13 @@ body {
   width: 100%;
   height: 100%;
 }
+/* ---- Taille des images des options (habillages + accessoires) ---- */
+.option-img {
+  width: 130px;          /* taille contrôlée */
+  height: auto;
+  display: block;
+  margin: 0 auto 10px;   /* centrage + espace sous l'image */
+  object-fit: contain;
+  border-radius: 6px;    /* léger arrondi */
+}
 
