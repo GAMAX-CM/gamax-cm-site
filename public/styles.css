@@ -745,4 +745,17 @@ body {
   object-fit: contain;
   border-radius: 6px;    /* léger arrondi */
 }
+/* Cartes d'habillages de finition en beige */
+.option-pill {
+  background: #e8d9b5;              /* beige chaud des icônes */
+  border-radius: 16px;
+  border: 1px solid #d4c4a0;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
+}
+
+/* L'image se fond dans le fond beige, sans "carré" plus clair */
+.option-pill img {
+  background: #e8d9b5;
+  box-shadow: none;
+}
 
