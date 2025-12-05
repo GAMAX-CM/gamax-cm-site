@@ -1228,58 +1228,144 @@
         updateBardage2DView();
       });
     </script>
+<!-- === THREE.JS POUR LA 3D === -->
+<script src="https://unpkg.com/three@0.146.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://unpkg.com/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
 
-    <!-- === THREE.JS POUR LA 3D === -->
-    <script src="https://unpkg.com/three@0.146.0/build/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://unpkg.com/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
-
-   <script>
+<script>
+  // ====== VARIABLES GLOBALES 3D ======
+  let scene, camera, renderer, controls;
+  let baseModule = null;
+  let baseBBox = null;
+  let structureGroup = null;
+  let overlayGroup = null;
+  let roofMesh = null;
+  const cladMeshes = { A: null, B: null, C: null, D: null };
   const MODEL_PATH = "assets/abri-monopente-3x5m.gltf";
 
-  let scene, camera, renderer, controls;
-  let baseModule = null;      // modèle GLTF de base (3 x 5 m)
-  let baseSize = null;        // dimensions du modèle de base
-  let structureGroup = null;  // tous les modules assemblés
+  // Taille "réelle" du module de base en mètres
+  const BASE_LENGTH_M = 5;   // X
+  const BASE_WIDTH_M  = 3;   // Z
+  const BASE_HEIGHT_M = 2.15; // Y (approché)
 
-  let roofMesh = null;
-  const facadeMeshes = { A: null, B: null, C: null, D: null };
+  // ===== INIT SCÈNE THREE =====
+  function initThree() {
+    const canvas = document.getElementById("viewer3d");
+    if (!canvas) return;
 
-  // ---------- OUTILS COULEURS ----------
+    const width = canvas.clientWidth || 400;
+    const height = canvas.clientHeight || (width * 3 / 4);
 
-  function cssColorToHex(rgbString) {
-    if (!rgbString) return 0x666666;
-    const m = rgbString.match(/rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
-    if (!m) return 0x666666;
-    const r = parseInt(m[1], 10);
-    const g = parseInt(m[2], 10);
-    const b = parseInt(m[3], 10);
-    return (r << 16) | (g << 8) | b;
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf5f5f5);
+
+    camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    camera.position.set(8, 6, 10);
+
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    renderer.setSize(width, height);
+
+    const amb = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(amb);
+
+    const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+    dir.position.set(10, 20, 10);
+    scene.add(dir);
+
+    const groundGeo = new THREE.PlaneGeometry(50, 50);
+    const groundMat = new THREE.MeshPhongMaterial({
+      color: 0xe0e0e0,
+      side: THREE.DoubleSide
+    });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.01;
+    scene.add(ground);
+
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.target.set(0, 1.5, 0);
+
+    const loader = new THREE.GLTFLoader();
+    loader.load(
+      MODEL_PATH,
+      (gltf) => {
+        baseModule = gltf.scene;
+        baseModule.traverse(obj => {
+          if (obj.isMesh) {
+            obj.castShadow = true;
+            obj.receiveShadow = true;
+            obj.material = obj.material.clone();
+          }
+        });
+        baseBBox = new THREE.Box3().setFromObject(baseModule);
+        update3DFromConfig();
+      },
+      undefined,
+      (error) => {
+        console.error("Erreur chargement GLTF :", error);
+      }
+    );
+
+    window.addEventListener("resize", onThreeResize);
+    animateThree();
   }
 
-  function getRoofColorHex() {
-    const sel = document.querySelector('input[name="roofColor"]:checked');
-    if (!sel) return 0x666666;
-    const box = sel.closest(".ral-choice").querySelector(".ral-box");
-    const color = getComputedStyle(box).backgroundColor;
-    return cssColorToHex(color);
+  function onThreeResize() {
+    const canvas = document.getElementById("viewer3d");
+    if (!canvas || !renderer || !camera) return;
+
+    const width = canvas.clientWidth || 400;
+    const height = canvas.clientHeight || (width * 3 / 4);
+
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    renderer.setSize(width, height);
   }
 
-  function getCladdingColorHex() {
-    const sel = document.querySelector('input[name="claddingColor"]:checked');
-    if (!sel) return 0x666666;
-    const box = sel.closest(".ral-choice").querySelector(".ral-box");
-    const color = getComputedStyle(box).backgroundColor;
-    return cssColorToHex(color);
+  function animateThree() {
+    requestAnimationFrame(animateThree);
+    if (controls) controls.update();
+    if (renderer && scene && camera) {
+      renderer.render(scene, camera);
+    }
   }
 
-  // ---------- LECTURE DIMENSIONS FORMULAIRE ----------
+  // ========= UTILITAIRES FORMULAIRE -> COULEURS =========
+  function getRALColorFromRadio(name) {
+    const input = document.querySelector(`input[name="${name}"]:checked`);
+    if (!input) return "#666666";
+    const box = input.closest(".ral-choice")?.querySelector(".ral-box");
+    if (!box) return "#666666";
+    return window.getComputedStyle(box).backgroundColor;
+  }
 
-  function readDimsFromForm() {
-    const w = parseFloat(document.getElementById("width")?.value || "3");
-    const L = parseFloat(document.getElementById("length")?.value || "5");
-    const h = parseFloat(document.getElementById("height")?.value || "2.15");
-    return { width: w, length: L, height: h };
+  function getRoofColor3D() {
+    return getRALColorFromRadio("roofColor");
+  }
+
+  function getCladdingColor3D() {
+    return getRALColorFromRadio("claddingColor");
+  }
+
+  // ========= CONSTRUCTION DE LA STRUCTURE =========
+  function getSelectedSlopeType() {
+    const input = document.querySelector('input[name="slopeType"]:checked');
+    return input ? input.value : "mono";
+  }
+
+  function getCurrentDimensions() {
+    const widthSel = document.getElementById("width");
+    const lengthSel = document.getElementById("length");
+    const heightSel = document.getElementById("height");
+
+    const width = parseFloat(widthSel?.value || "3");
+    const length = parseFloat(lengthSel?.value || "3");
+    const height = parseFloat(heightSel?.value || "2.15");
+    return { width, length, height };
   }
 
   function getBayCount(length) {
@@ -1287,315 +1373,200 @@
     if (length <= 12) return 2;
     if (length <= 18) return 3;
     if (length <= 24) return 4;
-    return 6; // 25 à 30 m
+    return 6;
   }
 
-  // ---------- INIT THREE.JS ----------
-
-  function initThree() {
-    const canvas = document.getElementById("viewer3d");
-    if (!canvas) return;
-
-    const width = canvas.clientWidth || 400;
-    const height = canvas.clientHeight || (width * 3) / 4;
-
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf5f5f5);
-
-    camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    // vue de 3/4
-    camera.position.set(10, 8, 10);
-
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(window.devicePixelRatio || 1);
-
-    // Sol (dans le plan XY, Z = hauteur)
-    const groundGeo = new THREE.PlaneGeometry(100, 100);
-    const groundMat = new THREE.MeshPhongMaterial({
-      color: 0xe0e0e0,
-      side: THREE.DoubleSide,
-    });
-    const ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.position.z = 0;
-    scene.add(ground);
-
-    const ambient = new THREE.AmbientLight(0xffffff, 0.7);
-    scene.add(ambient);
-
-    const dir = new THREE.DirectionalLight(0xffffff, 0.8);
-    dir.position.set(20, 20, 30);
-    scene.add(dir);
-
-    controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
-    controls.target.set(0, 0, 2);
-
-    // Chargement du module de base
-    const loader = new THREE.GLTFLoader();
-    loader.load(
-      MODEL_PATH,
-      (gltf) => {
-        baseModule = gltf.scene;
-
-        const box = new THREE.Box3().setFromObject(baseModule);
-        const center = box.getCenter(new THREE.Vector3());
-        baseModule.position.sub(center);
-        baseSize = box.getSize(new THREE.Vector3()); // x = longueur, y = largeur, z = hauteur
-
-        rebuildStructureFromForm();
-        attach3DFormListeners();
-      },
-      undefined,
-      (err) => console.error("Erreur chargement GLTF :", err)
-    );
-
-    window.addEventListener("resize", onWindowResize);
-    animate();
-  }
-
-  function onWindowResize() {
-    const canvas = document.getElementById("viewer3d");
-    if (!canvas || !renderer || !camera) return;
-
-    const width = canvas.clientWidth || 400;
-    const height = canvas.clientHeight || (width * 3) / 4;
-
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-    renderer.setSize(width, height);
-  }
-
-  function animate() {
-    requestAnimationFrame(animate);
-    if (controls) controls.update();
-    if (renderer && scene && camera) {
-      renderer.render(scene, camera);
-    }
-  }
-
-  // ---------- STRUCTURE (CHARPENTE) ----------
-
-  function disposeObject(obj) {
-    obj.traverse((child) => {
-      if (child.isMesh) {
-        child.geometry?.dispose();
-        if (Array.isArray(child.material)) {
-          child.material.forEach((m) => m.dispose && m.dispose());
-        } else {
-          child.material?.dispose && child.material.dispose();
-        }
-      }
-    });
-  }
-
-  function rebuildStructureFromForm() {
-    if (!baseModule || !baseSize) return;
-
-    const { width, length, height } = readDimsFromForm();
+  function buildStructureFromConfig() {
+    if (!baseModule || !baseBBox) return null;
 
     if (structureGroup) {
       scene.remove(structureGroup);
-      disposeObject(structureGroup);
-      structureGroup = null;
     }
-
-    const bayCount = getBayCount(length);
-    const bayLength = length / bayCount;
-
     structureGroup = new THREE.Group();
-
-    for (let i = 0; i < bayCount; i++) {
-      const module = baseModule.clone(true);
-
-      // correspondance : X = longueur, Y = largeur, Z = hauteur
-      const scaleX = bayLength / baseSize.x;
-      const scaleY = width / baseSize.y;
-      const scaleZ = height / baseSize.z;
-      module.scale.set(scaleX, scaleY, scaleZ);
-
-      const offsetX = (i - (bayCount - 1) / 2) * bayLength;
-      module.position.x = offsetX;
-
-      structureGroup.add(module);
-    }
-
     scene.add(structureGroup);
 
-    rebuildRoofAndCladdingFromForm();
-  }
+    const { width, length, height } = getCurrentDimensions();
+    const bays = getBayCount(length);
 
-  // ---------- TOITURE & BARDAGE ----------
+    const bayLengthM = length / bays;
 
-  function clearRoofAndCladding() {
-    if (roofMesh) {
-      scene.remove(roofMesh);
-      roofMesh.geometry.dispose();
-      roofMesh.material.dispose();
-      roofMesh = null;
+    const scaleX = bayLengthM / BASE_LENGTH_M;
+    const scaleZ = width / BASE_WIDTH_M;
+    const scaleY = height / BASE_HEIGHT_M;
+
+    const baseSize = new THREE.Vector3();
+    baseBBox.getSize(baseSize); // dimensions du module d'origine
+
+    let currentX = 0;
+
+    for (let i = 0; i < bays; i++) {
+      const clone = baseModule.clone(true);
+      clone.scale.set(scaleX, scaleY, scaleZ);
+
+      const minXScaled = baseBBox.min.x * scaleX;
+      const offsetX = currentX - minXScaled;
+
+      clone.position.set(offsetX, 0, 0);
+      structureGroup.add(clone);
+
+      const segLength = baseSize.x * scaleX;
+      currentX += segLength;
     }
 
-    ["A", "B", "C", "D"].forEach((side) => {
-      const m = facadeMeshes[side];
-      if (m) {
-        scene.remove(m);
-        m.geometry.dispose();
-        m.material.dispose();
-        facadeMeshes[side] = null;
-      }
-    });
+    // Recentrage autour de l'origine
+    let bbox = new THREE.Box3().setFromObject(structureGroup);
+    const center = bbox.getCenter(new THREE.Vector3());
+    structureGroup.position.sub(center);
+
+    bbox = new THREE.Box3().setFromObject(structureGroup);
+    return bbox;
   }
 
-  function rebuildRoofAndCladdingFromForm() {
-    if (!structureGroup) return;
+  // ========= BARDAGE + TOITURE (SURFACES) =========
+  function rebuildOverlays(bbox) {
+    if (!bbox) return;
 
-    clearRoofAndCladding();
+    if (overlayGroup) {
+      scene.remove(overlayGroup);
+    }
+    overlayGroup = new THREE.Group();
+    scene.add(overlayGroup);
 
-    const bbox = new THREE.Box3().setFromObject(structureGroup);
-    const size = bbox.getSize(new THREE.Vector3()); // x = longueur, y = largeur, z = hauteur
     const min = bbox.min;
     const max = bbox.max;
-    const center = bbox.getCenter(new THREE.Vector3());
 
-    const roofColor = getRoofColorHex();
-    const claddingColor = getCladdingColorHex();
+    const lenX = max.x - min.x; // longueur
+    const widthZ = max.z - min.z; // largeur
+    const heightY = max.y - min.y; // hauteur
 
-    // ---- TOITURE ----
-    const roofGeo = new THREE.PlaneGeometry(size.x, size.y);
-    const roofMat = new THREE.MeshPhongMaterial({
-      color: roofColor,
-      side: THREE.DoubleSide,
+    const eps = 0.02 * Math.max(lenX, widthZ, heightY);
+
+    const roofMat = new THREE.MeshStandardMaterial({
+      color: getRoofColor3D(),
       transparent: true,
-      opacity: 0.6,
+      opacity: 0.45,
+      side: THREE.DoubleSide
     });
+
+    const claddingMat = new THREE.MeshStandardMaterial({
+      color: getCladdingColor3D(),
+      transparent: true,
+      opacity: 0.55,
+      side: THREE.DoubleSide
+    });
+
+    // --- TOITURE (toujours visible) ---
+    const roofGeo = new THREE.PlaneGeometry(lenX, widthZ);
     roofMesh = new THREE.Mesh(roofGeo, roofMat);
+    roofMesh.rotation.x = -Math.PI / 2; // XY -> XZ (horizontal)
+    roofMesh.position.set(
+      (min.x + max.x) / 2,
+      max.y + eps,
+      (min.z + max.z) / 2
+    );
+    overlayGroup.add(roofMesh);
 
-    // plan XY, on met une petite pente dans le sens de la largeur (Y)
-    roofMesh.position.set(center.x, center.y, max.z + 0.02 * size.z);
-    roofMesh.rotation.x = -Math.PI / 15; // légère pente
-    scene.add(roofMesh);
+    // --- FAÇADE A (long pan avant, z max) ---
+    const geoLong = new THREE.PlaneGeometry(lenX, heightY);
+    cladMeshes.A = new THREE.Mesh(geoLong, claddingMat.clone());
+    cladMeshes.A.position.set(
+      (min.x + max.x) / 2,
+      (min.y + max.y) / 2,
+      max.z + eps
+    );
+    // normal +Z, pas de rotation
+    overlayGroup.add(cladMeshes.A);
 
-    // ---- BARDAGE : A / B / C / D ----
-    function createFacade(side) {
-      let geo;
-      const pos = new THREE.Vector3();
-      const rot = new THREE.Euler(0, 0, 0);
+    // --- FAÇADE C (long pan arrière, z min) ---
+    cladMeshes.C = new THREE.Mesh(geoLong, claddingMat.clone());
+    cladMeshes.C.position.set(
+      (min.x + max.x) / 2,
+      (min.y + max.y) / 2,
+      min.z - eps
+    );
+    cladMeshes.C.rotation.y = Math.PI; // normal -Z
+    overlayGroup.add(cladMeshes.C);
 
-      if (side === "A" || side === "C") {
-        // Façades longues (A = avant / C = arrière)
-        // plan XZ : longueur X, hauteur Z
-        geo = new THREE.PlaneGeometry(size.x, size.z);
+    // --- PIGNON B (x min) ---
+    const geoShort = new THREE.PlaneGeometry(widthZ, heightY);
+    cladMeshes.B = new THREE.Mesh(geoShort, claddingMat.clone());
+    cladMeshes.B.position.set(
+      min.x - eps,
+      (min.y + max.y) / 2,
+      (min.z + max.z) / 2
+    );
+    cladMeshes.B.rotation.y = Math.PI / 2;
+    overlayGroup.add(cladMeshes.B);
 
-        pos.x = center.x;
-        pos.z = center.z;
+    // --- PIGNON D (x max) ---
+    cladMeshes.D = new THREE.Mesh(geoShort, claddingMat.clone());
+    cladMeshes.D.position.set(
+      max.x + eps,
+      (min.y + max.y) / 2,
+      (min.z + max.z) / 2
+    );
+    cladMeshes.D.rotation.y = -Math.PI / 2;
+    overlayGroup.add(cladMeshes.D);
 
-        if (side === "A") {
-          // Avant : Y min, face vers -Y
-          pos.y = min.y - 0.01 * size.y;
-          rot.x = Math.PI / 2; // XY -> XZ, normal vers -Y
-        } else {
-          // Arrière : Y max, face vers +Y
-          pos.y = max.y + 0.01 * size.y;
-          rot.x = -Math.PI / 2; // XY -> XZ, normal vers +Y
-        }
-      } else {
-        // Pignons B (gauche) et D (droit)
-        // plan YZ : largeur Y, hauteur Z
-        geo = new THREE.PlaneGeometry(size.y, size.z);
+    updateOverlayStyles();
+  }
 
-        pos.y = center.y;
-        pos.z = center.z;
+  function updateOverlayStyles() {
+    const cladColor = getCladdingColor3D();
+    const roofColor = getRoofColor3D();
 
-        if (side === "B") {
-          // Gauche : X min, face vers -X
-          pos.x = min.x - 0.01 * size.x;
-          rot.y = -Math.PI / 2; // XY -> YZ, normal vers -X
-        } else {
-          // Droit : X max, face vers +X
-          pos.x = max.x + 0.01 * size.x;
-          rot.y = Math.PI / 2; // normal vers +X
-        }
-      }
-
-      const mat = new THREE.MeshPhongMaterial({
-        color: claddingColor,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.7,
-      });
-
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.position.copy(pos);
-      mesh.rotation.copy(rot);
-      scene.add(mesh);
-      facadeMeshes[side] = mesh;
+    if (roofMesh) {
+      roofMesh.material.color.set(roofColor);
     }
 
-    ["A", "B", "C", "D"].forEach(createFacade);
-
-    updateCladdingVisibilityFromForm();
+    const sides = ["A", "B", "C", "D"];
+    sides.forEach((side) => {
+      const cb = document.querySelector(
+        `input[name="claddingSide"][value="${side}"]`
+      );
+      const mesh = cladMeshes[side];
+      if (!mesh) return;
+      mesh.visible = !!(cb && cb.checked);
+      mesh.material.color.set(cladColor);
+    });
   }
 
-  function updateCladdingVisibilityFromForm() {
-    const active = { A: false, B: false, C: false, D: false };
+  // ========= MISE À JOUR GLOBALE =========
+  function update3DFromConfig() {
+    if (!baseModule) return;
+    const bbox = buildStructureFromConfig();
+    rebuildOverlays(bbox);
+  }
 
+  // ========= LIENS AVEC LE FORMULAIRE =========
+  document.addEventListener("DOMContentLoaded", () => {
+    initThree();
+
+    // dimensions & type d'abri
+    ["width", "length", "height"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("change", update3DFromConfig);
+    });
+
+    document
+      .querySelectorAll('input[name="slopeType"]')
+      .forEach((el) => el.addEventListener("change", update3DFromConfig));
+
+    // bardage ON/OFF
     document
       .querySelectorAll('input[name="claddingSide"]')
-      .forEach((cb) => {
-        const side = cb.value;
-        if (cb.checked && active.hasOwnProperty(side)) {
-          active[side] = true;
-        }
-      });
+      .forEach((el) => el.addEventListener("change", updateOverlayStyles));
 
-    ["A", "B", "C", "D"].forEach((side) => {
-      const mesh = facadeMeshes[side];
-      if (mesh) mesh.visible = !!active[side];
-    });
-  }
-
-  // ---------- LIENS FORMULAIRE / 3D ----------
-
-  function attach3DFormListeners() {
-    const widthSel = document.getElementById("width");
-    const lengthSel = document.getElementById("length");
-    const heightSel = document.getElementById("height");
-
-    [widthSel, lengthSel, heightSel].forEach((el) => {
-      el &&
-        el.addEventListener("change", () => {
-          rebuildStructureFromForm();
-        });
-    });
-
+    // couleurs toiture / bardage
     document
       .querySelectorAll('input[name="roofColor"]')
-      .forEach((el) =>
-        el.addEventListener("change", () => rebuildRoofAndCladdingFromForm())
-      );
+      .forEach((el) => el.addEventListener("change", updateOverlayStyles));
 
     document
       .querySelectorAll('input[name="claddingColor"]')
-      .forEach((el) =>
-        el.addEventListener("change", () => rebuildRoofAndCladdingFromForm())
-      );
-
-    document
-      .querySelectorAll('input[name="claddingSide"]')
-      .forEach((el) =>
-        el.addEventListener("change", () => updateCladdingVisibilityFromForm())
-      );
-  }
-
-  // ---------- LANCEMENT ----------
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initThree);
-  } else {
-    initThree();
-  }
+      .forEach((el) => el.addEventListener("change", updateOverlayStyles));
+  });
 </script>
-
+    
   </body>
 </html>
