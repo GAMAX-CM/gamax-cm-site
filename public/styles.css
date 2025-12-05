@@ -720,4 +720,20 @@ body {
   height: 100%;
   display: block;
 }
+/* Cadre du viewer 3D plus premium */
+#viewer3d-container {
+  background: radial-gradient(circle at 20% 0,
+    #fdfaf5 0%,
+    #efe5d6 50%,
+    #dfd0bd 100%);
+  border-radius: 18px;
+  padding: 12px;
+}
+
+/* Le canvas prend toute la place du conteneur */
+#viewer3d {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
 
