@@ -1,1 +1,446 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Commander mon abri – GAMAX-CM</title>
+  <style>
+    :root {
+      --beige: #f5f0e8;
+      --beige-dark: #dfd1b8;
+      --noir: #111111;
+      --accent: #c8a96a;
+      --accent-dark: #a5853e;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      background: var(--beige);
+      color: var(--noir);
+      line-height: 1.5;
+    }
+
+    header {
+      background: #111111;
+      color: #ffffff;
+      padding: 1.5rem 1rem;
+    }
+
+    header .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    header .logo {
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      font-size: 1.1rem;
+    }
+
+    header .subtitle {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 2rem auto;
+      padding: 0 1rem 3rem;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .intro {
+      margin-bottom: 1.5rem;
+      color: #333;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 800px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+      border: 1px solid var(--beige-dark);
+    }
+
+    .card h2 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+    }
+
+    .field {
+      margin-bottom: 1rem;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 0.3rem;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      padding: 0.55rem 0.7rem;
+      border-radius: 8px;
+      border: 1px solid var(--beige-dark);
+      font-size: 0.95rem;
+      background: #faf7f1;
+    }
+
+    .field textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .field-inline {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    @media (max-width: 600px) {
+      .field-inline {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .muted {
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.5rem;
+    }
+
+    .btn-primary {
+      display: inline-block;
+      padding: 0.75rem 1.4rem;
+      border-radius: 999px;
+      border: none;
+      background: var(--accent);
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: background 0.15s ease, transform 0.05s ease;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: default;
+      transform: none;
+    }
+
+    .status-message {
+      margin-top: 0.75rem;
+      font-size: 0.9rem;
+    }
+
+    .status-ok {
+      color: #1b7c3a;
+    }
+
+    .status-error {
+      color: #a62121;
+    }
+
+    .checkbox-line {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .checkbox-line input[type="checkbox"] {
+      margin-top: 0.15rem;
+    }
+
+    .contacts {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .contacts a {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px dashed rgba(0,0,0,0.3);
+    }
+
+    .contacts a:hover {
+      border-bottom-style: solid;
+    }
+
+    footer {
+      max-width: 1100px;
+      margin: 0 auto 2rem;
+      padding: 0 1rem;
+      font-size: 0.8rem;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div>
+        <div class="logo">GAMAX-CM</div>
+        <div class="subtitle">Abris métalliques &amp; structures sur mesure</div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <h1>Validation de votre commande d’abri métallique</h1>
+    <p class="intro">
+      Merci pour votre confiance. Veuillez vérifier les informations ci-dessous et compléter vos coordonnées
+      pour transformer votre devis en commande ferme.
+    </p>
+
+    <div class="grid">
+      <!-- Colonne gauche : formulaire client -->
+      <div class="card">
+        <span class="badge">Étape finale</span>
+        <h2>Vos coordonnées</h2>
+
+        <form id="orderForm" onsubmit="submitOrder(event)">
+          <div class="field">
+            <label for="civilite">Civilité</label>
+            <select id="civilite" name="civilite">
+              <option value="">-- Choisir --</option>
+              <option value="Mme">Mme</option>
+              <option value="M.">M.</option>
+            </select>
+          </div>
+
+          <div class="field field-inline">
+            <div>
+              <label for="prenom">Prénom *</label>
+              <input type="text" id="prenom" name="prenom" required />
+            </div>
+            <div>
+              <label for="nom">Nom *</label>
+              <input type="text" id="nom" name="nom" required />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="email">E-mail *</label>
+            <input type="email" id="email" name="email" required />
+          </div>
+
+          <div class="field">
+            <label for="telephone">Téléphone *</label>
+            <input type="tel" id="telephone" name="telephone" required />
+          </div>
+
+          <div class="field">
+            <label for="adresse">Adresse de facturation / livraison *</label>
+            <textarea id="adresse" name="adresse" required placeholder="Adresse complète, code postal, ville"></textarea>
+          </div>
+
+          <div class="field">
+            <label for="modeLivraison">Mode de livraison *</label>
+            <select id="modeLivraison" name="modeLivraison" required>
+              <option value="">-- Sélectionner --</option>
+              <option value="Livraison à domicile">Livraison à domicile</option>
+              <option value="Retrait atelier">Retrait atelier</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="commentaire">Commentaires ou précisions</label>
+            <textarea id="commentaire" name="commentaire" placeholder="Précisions sur l’accès chantier, souhaits particuliers…"></textarea>
+          </div>
+
+          <div class="checkbox-line">
+            <input type="checkbox" id="cgv" required />
+            <label for="cgv" class="muted">
+              J’atteste avoir pris connaissance et accepté les conditions de vente communiquées par GAMAX-CM.
+            </label>
+          </div>
+
+          <button type="submit" class="btn-primary" id="submitBtn">
+            Valider ma commande
+          </button>
+
+          <p id="statusMessage" class="status-message"></p>
+
+          <div class="contacts">
+            Une question avant de valider ?<br />
+            📩 <a href="mailto:contact@gamax-cm.fr">contact@gamax-cm.fr</a><br />
+            📞 <a href="tel:+33688047983">06&nbsp;88&nbsp;04&nbsp;79&nbsp;83</a>
+          </div>
+        </form>
+      </div>
+
+      <!-- Colonne droite : rappel devis -->
+      <div class="card">
+        <h2>Rappel de votre devis</h2>
+        <p class="muted" style="margin-bottom:0.5rem;">
+          Vérifiez les informations ci-dessous. Vous pouvez également les ajuster manuellement si besoin.
+        </p>
+
+        <div class="field">
+          <label for="recapDevis">Détail de l’abri et des options *</label>
+          <textarea id="recapDevis" required
+            placeholder="Exemple :
+- Abri métallique 6,00 x 5,00 m, hauteur 2,50 m
+- Toiture : bac acier avec régulateur
+- Bardage : bac acier simple 3 côtés
+- Accessoires : rives, solin, gouttières
+- Prix total TTC : 6 350,00 €"></textarea>
+        </div>
+
+        <p class="muted">
+          💡 Si vous arrivez depuis un devis généré sur le configurateur,
+          copiez-collez simplement le texte du devis dans ce cadre si ce n’est pas déjà rempli automatiquement.
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    GAMAX-CM – Conception et réalisation d’abris métalliques sur mesure.
+  </footer>
+
+  <!-- EmailJS -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <script>
+    // ⚠️ Remplace par ta vraie clé publique EmailJS
+    (function () {
+      emailjs.init("LWfHUK5uUilXoaBdG");
+    })();
+
+    // Optionnel : pré-remplir depuis localStorage si tu stockes le devis
+    (function preloadQuote() {
+      try {
+        var stored = localStorage.getItem("gamax_abri_devis_texte");
+        if (stored) {
+          var recap = document.getElementById("recapDevis");
+          if (recap && !recap.value.trim()) {
+            recap.value = stored;
+          }
+        }
+      } catch (e) {
+        console.warn("Impossible de précharger le devis :", e);
+      }
+    })();
+
+    function submitOrder(event) {
+      event.preventDefault();
+
+      var submitBtn = document.getElementById("submitBtn");
+      var statusEl = document.getElementById("statusMessage");
+
+      statusEl.textContent = "";
+      statusEl.className = "status-message";
+
+      var form = document.getElementById("orderForm");
+
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      var recap = document.getElementById("recapDevis").value.trim();
+      if (!recap) {
+        statusEl.textContent = "Merci de renseigner le détail de votre abri.";
+        statusEl.classList.add("status-error");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      statusEl.textContent = "Envoi de votre commande en cours...";
+      statusEl.classList.add("muted");
+
+      // Tes identifiants EmailJS
+      var serviceId = "service_m8eq1nd";
+      var templateId = "template_qn5bpin";
+
+      var civilite = document.getElementById("civilite").value;
+      var prenom = document.getElementById("prenom").value;
+      var nom = document.getElementById("nom").value;
+      var emailClient = document.getElementById("email").value;
+      var telephone = document.getElementById("telephone").value;
+      var adresse = document.getElementById("adresse").value;
+      var modeLivraison = document.getElementById("modeLivraison").value;
+      var commentaire = document.getElementById("commentaire").value;
+
+      var templateParams = {
+        to_email: "contact@gamax-cm.fr",
+        civilite: civilite,
+        prenom: prenom,
+        nom: nom,
+        email_client: emailClient,
+        telephone: telephone,
+        adresse: adresse,
+        mode_livraison: modeLivraison,
+        commentaire: commentaire,
+        recap_devis: recap
+      };
+
+      emailjs.send(serviceId, templateId, templateParams)
+        .then(function () {
+          statusEl.textContent = "Merci, votre commande a bien été envoyée. Nous vous recontactons rapidement pour la suite.";
+          statusEl.classList.remove("muted");
+          statusEl.classList.add("status-ok");
+          form.reset();
+          submitBtn.disabled = false;
+        })
+        .catch(function (error) {
+          console.error("Erreur EmailJS :", error);
+          statusEl.textContent = "Une erreur est survenue lors de l’envoi. Merci de réessayer ou de nous contacter directement.";
+          statusEl.classList.remove("muted");
+          statusEl.classList.add("status-error");
+          submitBtn.disabled = false;
+        });
+    }
+  </script>
+</body>
+</html>
 
