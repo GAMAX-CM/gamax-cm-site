@@ -798,6 +798,7 @@ Votre devis apparaîtra ici après configuration...
   </div>
 </section>
 
+
 <style>
   /* Layout des panneaux à droite du configurateur */
   .sidepanels {
@@ -808,60 +809,71 @@ Votre devis apparaîtra ici après configuration...
   }
 
   @media (max-width: 1024px) {
-    .sidepanels {
-      grid-template-columns: 1fr;
-    }
-  }
+/* Colonne droite : récap au-dessus, vue 3D en dessous */
+.sidepanels {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
 
-  .sidepanel {
-    background: #ffffff;
-    border-radius: 18px;
-    padding: 18px 18px 20px;
-    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.06);
-    border: 1px solid #dfd1b8; /* beige foncé du thème */
-    display: flex;
-    flex-direction: column;
-    min-height: 260px;
-  }
+/* Cartes à droite */
+.sidepanel {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 18px 18px 20px;
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.06);
+  border: 1px solid #dfd1b8; /* beige foncé du thème */
+  display: flex;
+  flex-direction: column;
+}
 
-  .sidepanel-title {
-    font-size: 1.1rem;
-    margin-bottom: 0.35rem;
-  }
+/* Titre + sous-titre */
+.sidepanel-title {
+  font-size: 1.1rem;
+  margin-bottom: 0.35rem;
+}
+.sidepanel-sub {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.9rem;
+}
 
-  .sidepanel-sub {
-    font-size: 0.9rem;
-    color: #666;
-    margin-bottom: 0.9rem;
-  }
+/* Bloc texte du devis */
+.recap-text {
+  background: #f5f0e8; /* beige clair */
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #dfd1b8;
+  flex: 1;
+  white-space: pre-wrap;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  overflow-y: auto;
+  max-height: 260px;
+}
 
-  .recap-text {
-    background: #f5f0e8; /* beige clair */
-    padding: 10px 12px;
-    border-radius: 10px;
-    border: 1px solid #dfd1b8;
-    flex: 1;
-    white-space: pre-wrap;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: 0.9rem;
-    line-height: 1.45;
-    overflow-y: auto;
-    max-height: 260px;
-  }
+/* Bouton commander */
+.sidepanel-btn {
+  margin-top: 12px;
+  align-self: flex-start;
+  padding-inline: 18px;
+}
 
-  .sidepanel-btn {
-    margin-top: 12px;
-    align-self: flex-start;
-    padding-inline: 18px;
-  }
+/* Vue 3D sticky à droite */
+.viewer-panel {
+  position: sticky;
+  top: 90px;          /* ajuste si besoin pour ne pas coller sous le header */
+  z-index: 1;
+}
 
-  .viewer-3d {
-    flex: 1;
-    border-radius: 12px;
-    border: 1px dashed #dfd1b8;
-    background: linear-gradient(135deg, #f5f0e8, #fdfaf4);
-    min-height: 220px;
-  }
+.viewer-3d {
+  border-radius: 12px;
+  border: 1px dashed #dfd1b8;
+  background: linear-gradient(135deg, #f5f0e8, #fdfaf4);
+  min-height: 260px;
+}
+
 </style>
 
 <script>
