@@ -233,6 +233,139 @@ function goToOrderPage(){
   updateRecapDevis();
   window.location.href = "commander.html";
 }
+// === RÉCAPITULATIF CONFIGURATEUR & LIEN VERS commander.html ===
+(function () {
+  const recapDevisEl = document.getElementById("recapDevis");
+  if (!recapDevisEl) return; // sécurité si la section n'est pas sur la page
+
+  const widthEl = document.getElementById("width");
+  const lengthEl = document.getElementById("length");
+  const heightEl = document.getElementById("height");
+
+  const slopeInputs = document.querySelectorAll('input[name="slopeType"]');
+  const roofTypeInputs = document.querySelectorAll('input[name="roofType"]');
+  const roofColorInputs = document.querySelectorAll('input[name="roofColor"]');
+  const claddingTypeInputs = document.querySelectorAll('input[name="claddingType"]');
+  const claddingColorInputs = document.querySelectorAll('input[name="claddingColor"]');
+  const claddingSideInputs = document.querySelectorAll(".bardage-side");
+
+  const roofTypeLabels = {
+    bac_simple: "Bac acier simple",
+    bac_regul: "Bac acier avec régulateur de condensation",
+    sandwich40: "Panneau sandwich ép. 40 mm"
+  };
+
+  const claddingTypeLabels = {
+    bac_simple: "Bac acier simple",
+    sandwich40: "Bardage panneau sandwich ép. 40 mm"
+  };
+
+  function getCheckedValue(nodeList) {
+    const el = Array.from(nodeList).find((n) => n.checked);
+    return el ? el.value : "";
+  }
+
+  function getCheckedText(nodeList) {
+    const el = Array.from(nodeList).find((n) => n.checked);
+    return el ? el.value : "";
+  }
+
+  function estimatePrice() {
+    const largeur = parseFloat(widthEl?.value || "0");
+    const longueur = parseFloat(lengthEl?.value || "0");
+    const hauteur = parseFloat(heightEl?.value || "0");
+
+    if (!largeur || !longueur || !hauteur) return 0;
+
+    const surface = largeur * longueur;
+
+    const roofType = getCheckedValue(roofTypeInputs);
+    const claddingType = getCheckedValue(claddingTypeInputs);
+    const bardageSides = Array.from(claddingSideInputs).filter((i) => i.checked).length;
+
+    let rate = 70; // base €/m² (à ajuster plus tard)
+
+    if (roofType === "bac_regul") rate += 5;
+    if (roofType === "sandwich40") rate += 25;
+    if (claddingType === "sandwich40") rate += 30;
+    rate += bardageSides * 3;
+
+    return Math.round(surface * rate);
+  }
+
+  function updateRecapDevis() {
+    const slopeVal = getCheckedValue(slopeInputs) || "mono";
+    const slopeLabel = slopeVal === "bi" ? "Abris bipente" : "Abris monopente";
+
+    const largeur = widthEl?.value || "-";
+    const longueur = lengthEl?.value || "-";
+    const hauteur = heightEl?.value || "-";
+
+    const roofTypeVal = getCheckedValue(roofTypeInputs);
+    const roofTypeLabel = roofTypeLabels[roofTypeVal] || "Non renseigné";
+    const roofColor = getCheckedText(roofColorInputs) || "Non renseignée";
+
+    const claddingTypeVal = getCheckedValue(claddingTypeInputs);
+    const claddingTypeLabel = claddingTypeLabels[claddingTypeVal] || "Non renseigné";
+    const claddingColor = getCheckedText(claddingColorInputs) || "Non renseignée";
+
+    const bardageSides = Array.from(claddingSideInputs)
+      .filter((i) => i.checked)
+      .map((i) => i.value)
+      .join(", ") || "Aucune façade bardée";
+
+    const price = estimatePrice();
+
+    let texte = "Devis abri métallique GAMAX-CM\n\n";
+
+    texte += `Type d'abri : ${slopeLabel}\n`;
+    texte += `Dimensions : ${largeur} m x ${longueur} m, hauteur avant ${hauteur} m\n\n`;
+
+    texte += `Toiture : ${roofTypeLabel}\n`;
+    texte += `Couleur de toiture (RAL) : ${roofColor}\n\n`;
+
+    texte += `Bardage : ${claddingTypeLabel}\n`;
+    texte += `Couleur de bardage (RAL) : ${claddingColor}\n`;
+    texte += `Façades bardées : ${bardageSides}\n\n`;
+
+    if (price > 0) {
+      texte += `Prix estimatif indicatif : ${price.toFixed(0)} € TTC\n\n`;
+    }
+
+    texte += "Ce devis est une estimation indicative. Un devis définitif vous sera transmis par GAMAX-CM.\n";
+
+    recapDevisEl.textContent = texte;
+    localStorage.setItem("gamax_abri_devis_texte", texte);
+  }
+
+  // Écouteurs sur tous les champs du configurateur
+  [
+    ...Array.from(slopeInputs),
+    widthEl,
+    lengthEl,
+    heightEl,
+    ...Array.from(roofTypeInputs),
+    ...Array.from(roofColorInputs),
+    ...Array.from(claddingTypeInputs),
+    ...Array.from(claddingColorInputs),
+    ...Array.from(claddingSideInputs),
+  ]
+    .filter(Boolean)
+    .forEach((el) => {
+      el.addEventListener("change", updateRecapDevis);
+      el.addEventListener("input", updateRecapDevis);
+    });
+
+  // Fonction globale pour le bouton "Commander cet abri"
+  function goToOrderPage() {
+    updateRecapDevis(); // on s'assure que le texte est bien à jour + stocké
+    window.location.href = "commander.html";
+  }
+  window.goToOrderPage = goToOrderPage;
+
+  // Première génération au chargement
+  updateRecapDevis();
+})();
 
 // Init
 (async () => {
