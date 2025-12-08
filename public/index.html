@@ -771,91 +771,115 @@
           </div>
 
 <!-- RÉCAPITULATIF + VUE 3D -->
-<section id="recap-section" class="recap-container">
-
-  <!-- Bloc récapitulatif -->
-  <div class="recap-box">
-    <h2>Récapitulatif de votre abri</h2>
+<section id="recap-section" class="sidepanels">
+  <!-- Panneau récap -->
+  <div class="sidepanel recap-panel">
+    <h2 class="sidepanel-title">Récapitulatif de votre abri</h2>
+    <p class="sidepanel-sub">
+      Vérifiez les éléments avant de passer à la commande.
+    </p>
 
     <pre id="recapDevis" class="recap-text">
 Votre devis apparaîtra ici après configuration...
     </pre>
 
-    <!-- Bouton pour commander -->
-    <button class="btn-primary" type="button" onclick="goToOrderPage()" style="margin-top: 15px;">
+    <button class="btn-primary sidepanel-btn" type="button" onclick="goToOrderPage()">
       Commander cet abri
     </button>
   </div>
 
-  <!-- Bloc Vue 3D (placeholder pour l’instant) -->
-  <div class="viewer-box">
-    <h2>Vue 3D</h2>
-    <div id="abriViewer3D" class="viewer-3d">
-      <!-- Ici tu mettras plus tard ton viewer 3D (canvas ou iframe) -->
-    </div>
+  <!-- Panneau Vue 3D -->
+  <div class="sidepanel viewer-panel">
+    <h2 class="sidepanel-title">Vue 3D</h2>
+    <p class="sidepanel-sub">
+      Visualisation simplifiée de votre abri (bientôt disponible).
+    </p>
+    <div id="abriViewer3D" class="viewer-3d"></div>
   </div>
-
 </section>
 
-
 <style>
-  .recap-container {
+  /* Layout des panneaux à droite du configurateur */
+  .sidepanels {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 25px;
-    margin-top: 40px;
+    grid-template-columns: minmax(260px, 320px) minmax(260px, 320px);
+    gap: 24px;
+    align-items: flex-start;
   }
 
-  .recap-box, .viewer-box {
+  @media (max-width: 1024px) {
+    .sidepanels {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .sidepanel {
     background: #ffffff;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-    border: 1px solid #ddd;
+    border-radius: 18px;
+    padding: 18px 18px 20px;
+    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.06);
+    border: 1px solid #dfd1b8; /* beige foncé du thème */
+    display: flex;
+    flex-direction: column;
+    min-height: 260px;
+  }
+
+  .sidepanel-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .sidepanel-sub {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 0.9rem;
   }
 
   .recap-text {
-    background: #f5f5f5;
-    padding: 12px;
-    border-radius: 8px;
-    min-height: 200px;
+    background: #f5f0e8; /* beige clair */
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #dfd1b8;
+    flex: 1;
     white-space: pre-wrap;
-    font-family: monospace;
-    line-height: 1.4;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    overflow-y: auto;
+    max-height: 260px;
+  }
+
+  .sidepanel-btn {
+    margin-top: 12px;
+    align-self: flex-start;
+    padding-inline: 18px;
   }
 
   .viewer-3d {
-    width: 100%;
-    height: 350px;
-    background: #e9e9e9;
-    border-radius: 8px;
-  }
-
-  @media(max-width: 900px) {
-    .recap-container {
-      grid-template-columns: 1fr;
-    }
+    flex: 1;
+    border-radius: 12px;
+    border: 1px dashed #dfd1b8;
+    background: linear-gradient(135deg, #f5f0e8, #fdfaf4);
+    min-height: 220px;
   }
 </style>
 
 <script>
-/* Fonction appelée après génération du devis */
-function afficherRecapitulatif(recapText) {
-  // Afficher dans l'interface
-  document.getElementById("recapDevis").innerText = recapText;
+  /* Affiche le texte du devis + enregistre pour commander.html */
+  function afficherRecapitulatif(recapText) {
+    const el = document.getElementById("recapDevis");
+    if (el) {
+      el.textContent = recapText;
+    }
+    localStorage.setItem("gamax_abri_devis_texte", recapText);
+  }
 
-  // Sauvegarder pour commander.html
-  localStorage.setItem("gamax_abri_devis_texte", recapText);
-}
-
-/* Bouton Commander */
-function goToOrderPage() {
-  window.location.href = "commander.html";
-}
+  /* Bouton "Commander cet abri" */
+  function goToOrderPage() {
+    // Le texte est déjà mis à jour par calculatePrice()
+    window.location.href = "commander.html";
+  }
 </script>
-
-    
-
      <!-- ==== SCRIPT CALCUL PRIX + 2D ==== -->
     <script>
       // ---- DIMENSIONS AUTORISÉES ----
