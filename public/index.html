@@ -770,34 +770,34 @@
             </button>
           </div>
 
-<!-- RÉCAPITULATIF + VUE 3D -->
-<section id="recap-section" class="sidepanels">
-  <!-- Panneau récap -->
-  <div class="sidepanel recap-panel">
-    <h2 class="sidepanel-title">Récapitulatif de votre abri</h2>
-    <p class="sidepanel-sub">
-      Vérifiez les éléments avant de passer à la commande.
-    </p>
+<!-- ============================
+     RÉCAPITULATIF + VUE 3D
+============================= -->
+<section id="recap-section" class="recap-wrapper">
 
-    <pre id="recapDevis" class="recap-text">
+    <!-- Bloc récap -->
+    <div class="recap-card">
+        <h2 class="recap-title">Récapitulatif de votre abri</h2>
+        <p class="recap-sub">Vérifiez les éléments avant de passer à la commande.</p>
+
+        <pre id="recapDevis" class="recap-content">
 Votre devis apparaîtra ici après configuration...
-    </pre>
+        </pre>
 
-    <button class="btn-primary sidepanel-btn" type="button" onclick="goToOrderPage()">
-      Commander cet abri
-    </button>
-  </div>
+        <button class="btn-primary recap-btn" onclick="goToOrderPage()">
+            Commander cet abri
+        </button>
+    </div>
 
-  <!-- Panneau Vue 3D -->
-  <div class="sidepanel viewer-panel">
-    <h2 class="sidepanel-title">Vue 3D</h2>
-    <p class="sidepanel-sub">
-      Visualisation simplifiée de votre abri (bientôt disponible).
-    </p>
-    <div id="abriViewer3D" class="viewer-3d"></div>
-  </div>
+    <!-- Bloc VUE 3D -->
+    <div class="viewer-card">
+        <h2 class="recap-title">Vue 3D</h2>
+        <p class="recap-sub">Visualisation simplifiée de votre abri (bientôt disponible).</p>
+
+        <div id="abriViewer3D" class="viewer-3d"></div>
+    </div>
+
 </section>
-
 
 <style>
   /* Layout des panneaux à droite du configurateur */
