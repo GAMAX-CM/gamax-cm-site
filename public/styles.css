@@ -246,6 +246,82 @@ body {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
   gap: 2.5rem;
+
+  /* --- Structure en colonnes --- */
+.recap-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 350px; /* Récap large + colonne droite fixe */
+    gap: 40px;
+    margin-top: 40px;
+    align-items: start;
+}
+
+/* --- CARDS --- */
+.recap-card,
+.viewer-card {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 22px;
+    border: 1px solid #dfd1b8;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+}
+
+/* --- TITRES --- */
+.recap-title {
+    font-size: 1.4rem;
+    margin-bottom: 6px;
+}
+
+.recap-sub {
+    margin-top: -4px;
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 14px;
+}
+
+/* --- TEXTE DU RÉCAP --- */
+.recap-content {
+    background: #f5f0e8;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #dfd1b8;
+    white-space: pre-wrap;
+    font-family: "Segoe UI", sans-serif;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+/* --- Bouton commander --- */
+.recap-btn {
+    margin-top: 14px;
+    padding: 10px 18px;
+}
+
+/* --- Vue 3D sticky --- */
+.viewer-card {
+    position: sticky;
+    top: 100px; /* Ajuste si ton header est plus haut */
+}
+
+.viewer-3d {
+    margin-top: 10px;
+    height: 340px;
+    border: 1px dashed #dfd1b8;
+    background: linear-gradient(135deg, #f5f0e8, #fdfaf4);
+    border-radius: 12px;
+}
+
+/* --- Responsive --- */
+@media(max-width: 1000px) {
+    .recap-wrapper {
+        grid-template-columns: 1fr;
+    }
+    .viewer-card {
+        position: relative;
+        top: unset;
+    }
 }
 
 /* FORMULAIRE */
