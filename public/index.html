@@ -1301,6 +1301,67 @@ function goToOrderPage() {
 
         // met à jour aussi le schéma 2D
         updateBardage2DView();
+             // ---- TEXTE DEVIS POUR RÉCAP + PAGE COMMANDE ----
+        let recapText = "Devis abri métallique GAMAX-CM\n\n";
+
+        recapText += "Type d'abri : " + typeLabel + "\n";
+        recapText +=
+          "Dimensions : " +
+          width.toString().replace(".", ",") +
+          " m x " +
+          length.toString().replace(".", ",") +
+          " m, hauteur " +
+          height.toString().replace(".", ",") +
+          " m\n\n";
+
+        recapText +=
+          "Toiture : " +
+          (ROOF_TYPE_LABELS[roofType] || "Non précisé") +
+          "\n";
+        recapText +=
+          "Couleur de toiture (RAL) : " +
+          (roofColor || "Non précisée") +
+          "\n\n";
+
+        recapText +=
+          "Bardage : " +
+          (CLADDING_TYPE_LABELS[claddingType] || "Non précisé") +
+          "\n";
+        recapText +=
+          "Couleur de bardage (RAL) : " +
+          claddingColor +
+          "\n";
+        recapText += "Façades bardées : " + claddingAreaText + "\n\n";
+
+        recapText +=
+          "Adresse de livraison estimée : " + addressText + "\n";
+        recapText +=
+          "Livraison estimative : " +
+          (delivery ? formatCurrency(delivery) + " HT" : "À définir") +
+          "\n\n";
+
+        recapText +=
+          "Prix estimatif : " +
+          formatCurrency(totalHT) +
+          " HT soit env. " +
+          formatCurrency(totalTTC) +
+          " TTC\n";
+        recapText +=
+          "Prix moyen : " + formatCurrency(pricePerM2) + " HT / m²\n\n";
+
+        recapText +=
+          "Options sélectionnées : " +
+          (selectedOptions.length > 0
+            ? selectedOptions.join(", ")
+            : "Aucune option") +
+          "\n\n";
+
+        recapText +=
+          "Ce devis est une estimation indicative. Un devis définitif vous sera transmis par GAMAX-CM.\n";
+
+        // Envoi vers le bloc récap + stockage pour commander.html
+        afficherRecapitulatif(recapText);
+
       }
 
       // --- INIT ---
