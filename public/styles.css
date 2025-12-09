@@ -372,3 +372,101 @@ img {
     margin-bottom: 12px;
   }
 }
+/* Layout général : formulaire à gauche, colonne droite à droite */
+.configurator-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2.3fr) minmax(320px, 1fr);
+  gap: 32px;
+  align-items: flex-start;
+  margin-top: 30px;
+}
+
+/* Colonne droite : pile récap + vue 3D */
+.sidepanels {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Cartes (récap + vue 3D) */
+.sidepanel {
+  border-radius: 18px;
+  padding: 18px 18px 20px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.10);
+  border: 1px solid #dfd1b8; /* beige foncé */
+}
+
+/* Carte récap noire */
+.recap-panel {
+  background: #111111;
+  color: #f5f0e8; /* beige clair */
+  border-color: #333;
+}
+
+.recap-panel h2 {
+  font-size: 1.1rem;
+  margin: 0 0 4px;
+}
+
+.recap-sub {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin: 0 0 10px;
+}
+
+/* Zone texte du devis */
+.recap-text {
+  background: #1b1b1b;
+  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1px solid #333;
+  white-space: pre-wrap;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+}
+
+/* Bouton dans le récap */
+.recap-panel .btn-primary {
+  margin-top: 12px;
+}
+
+/* Carte Vue 3D */
+.viewer-panel {
+  background: #f5f0e8; /* beige */
+  border-color: #dfd1b8;
+}
+
+/* Vue 3D sticky : reste visible au scroll */
+.viewer-panel {
+  position: sticky;
+  top: 100px; /* ajuste si besoin si ton header est plus ou moins haut */
+}
+
+/* Canvas 3D */
+.viewer-3d {
+  width: 100%;
+  height: 260px;
+  display: block;
+  border-radius: 12px;
+  background: radial-gradient(circle at 30% 10%, #ffffff, #e6dfd0);
+  border: 1px dashed #c8a96a;
+}
+
+/* Responsive : en dessous de 1024px, tout passe en colonne */
+@media (max-width: 1024px) {
+  .configurator-layout {
+    display: block;
+  }
+
+  .sidepanels {
+    margin-top: 24px;
+  }
+
+  .viewer-panel {
+    position: static;
+  }
+}
