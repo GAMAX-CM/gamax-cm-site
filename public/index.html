@@ -1635,6 +1635,20 @@ const claddingMat = new THREE.MeshStandardMaterial({
       }
 
       updateOverlayStyles();
+      
+     document.addEventListener("DOMContentLoaded", () => {
+  const canvas3d = document.getElementById("viewer3d");
+  const toggleBtn = document.getElementById("viewer3dToggle");
+  if (!canvas3d || !toggleBtn) return;
+
+  toggleBtn.addEventListener("click", () => {
+    const isFull = canvas3d.classList.toggle("fullscreen");
+    document.body.classList.toggle("no-scroll", isFull);
+    toggleBtn.textContent = isFull ? "Fermer la vue 3D" : "Agrandir la vue 3D";
+    onThreeResize();   // ajuste la caméra/rendu à la nouvelle taille
+  });
+});
+ 
     }
 
     function updateOverlayStyles() {
