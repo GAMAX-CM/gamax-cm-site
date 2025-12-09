@@ -1522,19 +1522,20 @@ Votre devis apparaîtra ici après configuration...
       const heightY = max.y - min.y;
       const eps = 0.02 * Math.max(lenX, widthZ, heightY);
 
-      const roofMat = new THREE.MeshStandardMaterial({
-        color: getRoofColor3D(),
-        transparent: true,
-        opacity: 0.45,
-        side: THREE.DoubleSide,
-      });
+     const roofMat = new THREE.MeshStandardMaterial({
+  color: getRoofColor3D(),
+  transparent: true,
+  opacity: 0.9,          // au lieu de ~0.45
+  side: THREE.DoubleSide,
+});
 
-      const claddingMat = new THREE.MeshStandardMaterial({
-        color: getCladdingColor3D(),
-        transparent: true,
-        opacity: 0.55,
-        side: THREE.DoubleSide,
-      });
+const claddingMat = new THREE.MeshStandardMaterial({
+  color: getCladdingColor3D(),
+  transparent: true,
+  opacity: 0.9,          // au lieu de ~0.55
+  side: THREE.DoubleSide,
+});
+
 
       // TOITURE
       const roofGeo = new THREE.PlaneGeometry(lenX, widthZ);
