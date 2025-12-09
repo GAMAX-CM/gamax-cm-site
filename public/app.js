@@ -1,431 +1,958 @@
-let API_BASE = "http://localhost:3000"; // fallback
-const FRONTEND_BASE = window.location.origin;
-let produits = [];
-let cart = JSON.parse(localStorage.getItem('gamax_cart') || "[]");
+/* ================================
+   CONFIGURATEUR GAMAX-CM – app.js
+   (index.html)
+================================== */
 
-const productListEl = document.getElementById('productList');
-const typeFilterEl = document.getElementById('typeFilter');
-const cartItemsEl = document.getElementById('cartItems');
-const cartTotalEl = document.getElementById('cartTotal');
-const payBtn = document.getElementById('payBtn');
+/* ---- DIMENSIONS AUTORISÉES ---- */
+const DIMENSIONS = {
+  mono: {
+    widths: [3, 4, 5, 6],
+    lengths: [3, 4, 5, 6, 8, 10, 12, 15, 18, 20, 24, 25, 30],
+    heights: [2.15, 3.5],
+  },
+  bi: {
+    widths: [4, 5, 6, 7, 8, 10, 12],
+    lengths: [3, 4, 5, 6, 8, 10, 12, 15, 18, 20, 24, 25, 30],
+    heights: [3],
+  },
+};
 
-// Configurator
-const typeEl = document.getElementById('type');
-const largeurEl = document.getElementById('largeur');
-const longueurEl = document.getElementById('longueur');
-const hauteurEl = document.getElementById('hauteur');
-const prixEl = document.getElementById('prix');
-const configAddBtn = document.getElementById('configAdd');
+const FACADE_LABELS = {
+  A: "Façade A – Long pan avant",
+  B: "Façade B – Pignon gauche",
+  C: "Façade C – Long pan arrière",
+  D: "Façade D – Pignon droit",
+};
 
-// Récap devis (section RÉCAPITULATIF + VUE 3D)
-const recapDevisEl = document.getElementById('recapDevis');
+/* ---- TARIFS (structure + couvertures + bardage) ---- */
+const STRUCTURE_PRICE_TABLE = {
+  mono: {
+    "3x3": 740,
+    "3x4": 790,
+    "3x5": 840,
+    "3x6": 890,
+    "3x8": 1360,
+    "3x10": 1460,
+    "3x12": 1560,
+    "3x15": 2050,
+    "3x18": 2190,
+    "3x20": 2630,
+    "3x24": 2830,
+    "3x25": 3220,
+    "3x30": 3470,
 
-// Charger config.json si présent
-async function loadConfig(){
-  try{
-    const res = await fetch('./config.json', { cache: 'no-store' });
-    if(res.ok){
-      const cfg = await res.json();
-      if(cfg.API_BASE){ API_BASE = cfg.API_BASE; }
-    }
-  }catch(e){ /* ignore */ }
+    "4x3": 780,
+    "4x4": 830,
+    "4x5": 880,
+    "4x6": 930,
+    "4x8": 1410,
+    "4x10": 1510,
+    "4x12": 1610,
+    "4x15": 2130,
+    "4x18": 2270,
+    "4x20": 2730,
+    "4x24": 2920,
+    "4x25": 3340,
+    "4x30": 3580,
+
+    "5x3": 900,
+    "5x4": 980,
+    "5x5": 1060,
+    "5x6": 1150,
+    "5x8": 1470,
+    "5x10": 1570,
+    "5x12": 1670,
+    "5x15": 2190,
+    "5x18": 2340,
+    "5x20": 2810,
+    "5x24": 3000,
+    "5x25": 3440,
+    "5x30": 3680,
+
+    "6x3": 950,
+    "6x4": 1030,
+    "6x5": 1110,
+    "6x6": 1190,
+    "6x8": 1560,
+    "6x10": 1660,
+    "6x12": 1750,
+    "6x15": 2330,
+    "6x18": 2480,
+    "6x20": 2980,
+    "6x24": 3180,
+    "6x25": 3640,
+    "6x30": 3880,
+  },
+  bi: {
+    // à remplir plus tard si besoin
+  },
+};
+
+const ROOF_PRICE_PER_M2 = {
+  bac_simple: 15.34,
+  bac_regul: 17.35,
+  sandwich40: 37.95,
+};
+
+const CLADDING_PRICE_PER_M2 = {
+  bac_simple: 13.09,
+  sandwich40: 36.0,
+};
+
+const OPTIONS_PRICES = {
+  finishingPerM2: 8,  // habillages, rejet d’eau, etc.
+  installPerM2: 35,   // pose
+};
+
+const TVA_RATE = 0.2;
+
+/* ---- LABELS ---- */
+const ROOF_TYPE_LABELS = {
+  bac_simple: "Bac acier simple",
+  bac_regul: "Bac acier avec régulateur de condensation",
+  sandwich40: "Panneau sandwich ép. 40 mm",
+};
+
+const CLADDING_TYPE_LABELS = {
+  bac_simple: "Bac acier simple",
+  sandwich40: "Bardage panneau sandwich ép. 40 mm",
+};
+
+/* =========================================
+   UTILITAIRES
+========================================= */
+function formatCurrency(value) {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  }).format(value);
 }
 
-// Fetch products from backend
-async function loadProducts(){
-  const res = await fetch(API_BASE + "/api/products");
-  produits = await res.json();
-  renderProducts();
+function getSelectedType() {
+  const input = document.querySelector('input[name="slopeType"]:checked');
+  return input ? input.value : "mono";
 }
 
-function renderProducts(list = produits){
-  if(!productListEl) return;
-  productListEl.innerHTML = "";
-  list.forEach(p => {
-    const div = document.createElement('div');
-    div.className = "product-card";
-    div.innerHTML = `
-      <img src="${p.image}" alt="${p.name}" onerror="this.style.background='#ddd'; this.src='';">
-      <h3>${p.name}</h3>
-      <p>Prix : ${p.price}€</p>
-      <button data-id="${p.id}">Ajouter au panier</button>
-    `;
-    div.querySelector('button').addEventListener('click', () =>
-      addToCart({id:p.id, name:p.name, price:p.price})
+function populateSelect(selectEl, values) {
+  if (!selectEl) return;
+  selectEl.innerHTML = "";
+  values.forEach((val, index) => {
+    const opt = document.createElement("option");
+    opt.value = val;
+    opt.textContent = val.toString().replace(".", ",") + " m";
+    if (index === 0) opt.selected = true;
+    selectEl.appendChild(opt);
+  });
+}
+
+function populateDimensions() {
+  const type = getSelectedType();
+  const cfg = DIMENSIONS[type];
+  if (!cfg) return;
+
+  populateSelect(document.getElementById("width"), cfg.widths);
+  populateSelect(document.getElementById("length"), cfg.lengths);
+  populateSelect(document.getElementById("height"), cfg.heights);
+}
+
+/* ====== LIVRAISON / VILLES ====== */
+
+function getDeliveryMode() {
+  const mode = document.querySelector('input[name="deliveryMode"]:checked');
+  return mode ? mode.value : "livraison";
+}
+
+function getDeliveryPrice(postalCode, mode) {
+  if (mode === "retrait") return 0; // retrait atelier = 0 €
+
+  if (!postalCode || postalCode.length !== 5) return 0;
+  const dep = parseInt(postalCode.slice(0, 2), 10);
+  if (dep === 47) return 150;
+  if ([40, 33, 24, 46].includes(dep)) return 250;
+  return 350;
+}
+
+async function fetchCitiesFromAPI(postalCode) {
+  if (!postalCode || postalCode.length !== 5) return [];
+  try {
+    const response = await fetch(
+      "https://apicarto.ign.fr/api/codes-postaux/communes/" + postalCode
     );
-    productListEl.appendChild(div);
-  });
-}
-
-if(typeFilterEl){
-  typeFilterEl.addEventListener('change', () => {
-    const val = typeFilterEl.value;
-    if(val === 'all') renderProducts();
-    else renderProducts(produits.filter(p => p.type === val));
-  });
-}
-
-function addToCart(item){
-  cart.push({...item, quantity:1});
-  persistCart();
-  renderCart();
-}
-function removeFromCart(index){
-  cart.splice(index,1);
-  persistCart();
-  renderCart();
-}
-function cartTotal(){
-  return cart.reduce((sum, i) => sum + i.price * (i.quantity || 1), 0);
-}
-function renderCart(){
-  if(!cartItemsEl) return;
-  cartItemsEl.innerHTML = "";
-  cart.forEach((i, idx) => {
-    const row = document.createElement('div');
-    row.className = "cart-item";
-    row.innerHTML = `${i.name} - ${(i.price).toFixed(0)}€ <button aria-label="Supprimer">X</button>`;
-    row.querySelector('button').addEventListener('click', () => removeFromCart(idx));
-    cartItemsEl.appendChild(row);
-  });
-  if(cartTotalEl){
-    cartTotalEl.textContent = cartTotal().toFixed(0);
+    if (!response.ok) return [];
+    const data = await response.json();
+    return data.map((item) => item.nomCommune);
+  } catch {
+    return [];
   }
-  // Met à jour le devis après modification du panier
-  updateRecapDevis();
-}
-function persistCart(){
-  localStorage.setItem('gamax_cart', JSON.stringify(cart));
 }
 
-/* ========= CONFIGURATEUR : PRIX + TEXTE DE DEVIS ========= */
+async function updateCityOptions() {
+  const cpInput = document.getElementById("postalCode");
+  const citySelect = document.getElementById("city");
+  if (!cpInput || !citySelect) return;
 
-// Calcule un prix estimatif en fonction du type + dimensions
-function updateConfigPrice(){
-  if(!typeEl || !largeurEl || !longueurEl || !hauteurEl || !prixEl){
-    return 0;
-  }
-  const type = typeEl.value;
-  const largeur = parseFloat(largeurEl.value) || 0;
-  const longueur = parseFloat(longueurEl.value) || 0;
-  const hauteur = parseFloat(hauteurEl.value) || 0;
+  const cp = cpInput.value.trim();
+  citySelect.innerHTML = "";
 
-  const base = type === 'abri'
-    ? 1500
-    : (type === 'hangar'
-      ? 2800
-      : 1200);
-
-  const price = base * Math.max(1, (largeur * longueur * hauteur) / 50);
-  prixEl.textContent = "Prix estimé : " + price.toFixed(0) + "€";
-
-  // À chaque recalcul de prix, on met à jour le devis
-  updateRecapDevis(price);
-
-  return Math.round(price);
-}
-
-// Construit le texte du devis à partir du configurateur + panier
-function buildDevisText(currentPrice){
-  if(!typeEl) return "";
-
-  const typeLabel = typeEl.options && typeEl.selectedIndex >= 0
-    ? typeEl.options[typeEl.selectedIndex].textContent
-    : typeEl.value;
-
-  const largeur = largeurEl ? (largeurEl.value || "-") : "-";
-  const longueur = longueurEl ? (longueurEl.value || "-") : "-";
-  const hauteur = hauteurEl ? (hauteurEl.value || "-") : "-";
-
-  const prixEstime = typeof currentPrice === "number"
-    ? currentPrice
-    : cartTotal() || 0;
-
-  let texte = "Devis abri métallique GAMAX-CM\n\n";
-
-  texte += `Type d'abri : ${typeLabel || "Non renseigné"}\n`;
-  texte += `Dimensions : ${largeur} m x ${longueur} m, hauteur ${hauteur} m\n\n`;
-
-  if(cart.length > 0){
-    texte += "Détail du panier :\n";
-    cart.forEach(i => {
-      texte += `- ${i.name} : ${i.price.toFixed(0)} €\n`;
-    });
-    texte += `\nTotal estimé panier : ${cartTotal().toFixed(0)} €\n\n`;
+  if (cp.length !== 5) {
+    citySelect.innerHTML =
+      "<option value=''>Sélectionnez votre ville après saisie du code postal</option>";
+    return;
   }
 
-  if(prixEstime){
-    texte += `Prix estimé configurateur : ${prixEstime.toFixed(0)} € TTC\n`;
+  const cities = await fetchCitiesFromAPI(cp);
+  if (cities.length === 0) {
+    citySelect.innerHTML = "<option value=''>Aucune ville trouvée</option>";
+    return;
   }
 
-  texte += "\nCe devis est une estimation indicative. Un devis définitif vous sera transmis par GAMAX-CM.\n";
-
-  return texte;
-}
-
-// Met à jour l’affichage du devis + stockage localStorage
-function updateRecapDevis(forcedPrice){
-  if(!recapDevisEl) return;
-  const devisTexte = buildDevisText(forcedPrice);
-  recapDevisEl.textContent = devisTexte;
-  localStorage.setItem("gamax_abri_devis_texte", devisTexte);
-}
-
-// Écouteurs du configurateur
-if(typeEl && largeurEl && longueurEl && hauteurEl){
-  [typeEl, largeurEl, longueurEl, hauteurEl].forEach(el =>
-    el.addEventListener('input', () => {
-      const price = updateConfigPrice();
-      // updateConfigPrice appelle déjà updateRecapDevis
-      return price;
-    })
-  );
-}
-
-// Ajout de l’abri configuré au panier
-if(configAddBtn){
-  configAddBtn.addEventListener('click', () => {
-    const price = updateConfigPrice();
-    const typeVal = typeEl ? typeEl.value : "abri";
-    const labelType = typeEl && typeEl.options && typeEl.selectedIndex >= 0
-      ? typeEl.options[typeEl.selectedIndex].textContent
-      : (typeVal.charAt(0).toUpperCase() + typeVal.slice(1));
-
-    const label = labelType + " sur mesure";
-    addToCart({id: Date.now(), name: label, price});
-    // Le renderCart → updateRecapDevis est déjà appelé
+  cities.forEach((c) => {
+    const opt = document.createElement("option");
+    opt.value = c;
+    opt.textContent = c;
+    citySelect.appendChild(opt);
   });
+
+  if (cities.length === 1) citySelect.value = cities[0];
 }
 
-// Initialisation prix + devis au chargement
-updateConfigPrice();
+/* =========================================
+   CALCUL PRIX + TEXTE DEVIS
+========================================= */
 
-/* ========= STRIPE : PAYEMENT PANIER ========= */
-
-if(payBtn){
-  payBtn.addEventListener('click', async () => {
-    if(cart.length === 0){ alert('Votre panier est vide'); return; }
-    const res = await fetch(API_BASE + "/api/create-checkout-session", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({
-        items: cart.map(i => ({
-          id: i.id,
-          name: i.name,
-          price: i.price,
-          quantity: i.quantity || 1
-        })),
-        success_url: FRONTEND_BASE + "/success.html",
-        cancel_url: FRONTEND_BASE + "/cancel.html"
-      })
-    });
-    const data = await res.json();
-    if(!data.id){ alert('Erreur de paiement'); return; }
-    const stripe = Stripe(data.publishableKey);
-    stripe.redirectToCheckout({ sessionId: data.id });
-  });
-}
-// === RÉCAPITULATIF CONFIGURATEUR & LIEN VERS commander.html ===
-(function () {
-  const recapDevisEl = document.getElementById("recapDevis");
-  if (!recapDevisEl) return; // sécurité si la section n'est pas sur la page
-
-  const widthEl  = document.getElementById("width");
+function calculatePriceAndRecap() {
+  const widthEl = document.getElementById("width");
   const lengthEl = document.getElementById("length");
   const heightEl = document.getElementById("height");
+  if (!widthEl || !lengthEl || !heightEl) return;
 
-  const slopeInputs         = document.querySelectorAll('input[name="slopeType"]');
-  const roofTypeInputs      = document.querySelectorAll('input[name="roofType"]');
-  const roofColorInputs     = document.querySelectorAll('input[name="roofColor"]');
-  const claddingTypeInputs  = document.querySelectorAll('input[name="claddingType"]');
-  const claddingColorInputs = document.querySelectorAll('input[name="claddingColor"]');
-  const claddingSideInputs  = document.querySelectorAll(".bardage-side");
+  const type = getSelectedType();
+  const width = parseFloat(widthEl.value);
+  const length = parseFloat(lengthEl.value);
+  const height = parseFloat(heightEl.value);
+  if (!width || !length || !height) return;
 
-  // Nouveaux champs adresse / livraison
-  const deliveryModeInputs = document.querySelectorAll('input[name="deliveryMode"]');
-  const postalCodeEl       = document.getElementById("postalCode");
-  const cityEl             = document.getElementById("city");
+  const area = width * length;
+  const sizeKey = width + "x" + length;
 
-  const roofTypeLabels = {
-    bac_simple: "Bac acier simple",
-    bac_regul: "Bac acier avec régulateur de condensation",
-    sandwich40: "Panneau sandwich ép. 40 mm",
-  };
+  let structureBase = STRUCTURE_PRICE_TABLE[type]?.[sizeKey] ?? 0;
 
-  const claddingTypeLabels = {
-    bac_simple: "Bac acier simple",
-    sandwich40: "Bardage panneau sandwich ép. 40 mm",
-  };
-
-  function getCheckedValue(nodeList) {
-    const el = Array.from(nodeList).find((n) => n.checked);
-    return el ? el.value : "";
+  // Surcoût hauteur > 3 m
+  if (height > 3) {
+    const extra = height - 3;
+    const steps = extra / 0.5;
+    structureBase *= 1 + steps * 0.1;
   }
 
-  function getCheckedText(nodeList) {
-    const el = Array.from(nodeList).find((n) => n.checked);
-    return el ? el.value : "";
-  }
+  // Toiture
+  const roofType =
+    document.querySelector('input[name="roofType"]:checked')?.value;
+  const roofUnit = ROOF_PRICE_PER_M2[roofType] ?? 0;
+  const roofCost = area * roofUnit;
 
-  // --- Prix de livraison selon mode + département ---
-  function getDeliveryPrice(mode, postalCode) {
-    // Retrait à l’atelier : pas de frais de livraison
-    if (mode === "retrait") return 0;
-
-    if (!postalCode || postalCode.length !== 5) return 0;
-    const dep = parseInt(postalCode.slice(0, 2), 10);
-    if (dep === 47) return 150;
-    if ([40, 33, 24, 46].includes(dep)) return 250;
-    return 350;
-  }
-
-  // Estimation du prix (hors livraison) comme avant
-  function estimatePrice() {
-    const largeur  = parseFloat(widthEl?.value || "0");
-    const longueur = parseFloat(lengthEl?.value || "0");
-    const hauteur  = parseFloat(heightEl?.value || "0");
-
-    if (!largeur || !longueur || !hauteur) return 0;
-
-    const surface = largeur * longueur;
-
-    const roofType     = getCheckedValue(roofTypeInputs);
-    const claddingType = getCheckedValue(claddingTypeInputs);
-    const bardageSides = Array.from(claddingSideInputs).filter((i) => i.checked).length;
-
-    let rate = 70; // base €/m² (à ajuster plus tard)
-
-    if (roofType === "bac_regul")     rate += 5;
-    if (roofType === "sandwich40")    rate += 25;
-    if (claddingType === "sandwich40") rate += 30;
-    rate += bardageSides * 3;
-
-    return Math.round(surface * rate);
-  }
-
-  function updateRecapDevis() {
-    const slopeVal   = getCheckedValue(slopeInputs) || "mono";
-    const slopeLabel = slopeVal === "bi" ? "Abris bipente" : "Abris monopente";
-
-    const largeur  = widthEl?.value || "-";
-    const longueur = lengthEl?.value || "-";
-    const hauteur  = heightEl?.value || "-";
-
-    const roofTypeVal   = getCheckedValue(roofTypeInputs);
-    const roofTypeLabel = roofTypeLabels[roofTypeVal] || "Non renseigné";
-    const roofColor     = getCheckedText(roofColorInputs) || "Non renseignée";
-
-    const claddingTypeVal   = getCheckedValue(claddingTypeInputs);
-    const claddingTypeLabel = claddingTypeLabels[claddingTypeVal] || "Non renseigné";
-    const claddingColor     = getCheckedText(claddingColorInputs) || "Non renseignée";
-
-    const bardageSidesText =
-      Array.from(claddingSideInputs)
-        .filter((i) => i.checked)
-        .map((i) => i.value)
-        .join(", ") || "Aucune façade bardée";
-
-    // --- Mode de livraison / retrait + adresse ---
-    const modeInput   = Array.from(deliveryModeInputs).find((i) => i.checked);
-    const deliveryMode = modeInput ? modeInput.value : "livraison";
-
-    const cp   = (postalCodeEl?.value || "").trim();
-    const city = cityEl?.value || "";
-
-    let addressText;
-    if (deliveryMode === "retrait") {
-      addressText = "Retrait à l’atelier GAMAX-CM – 47400 Tonneins";
-    } else {
-      addressText = cp
-        ? cp + (city ? " " + city : "")
-        : "Non renseignée";
-    }
-
-    const deliveryCost = getDeliveryPrice(deliveryMode, cp);
-    const price = estimatePrice(); // prix abri hors livraison
-
-    let texte = "Devis abri métallique GAMAX-CM\n\n";
-
-    texte += `Type d'abri : ${slopeLabel}\n`;
-    texte += `Dimensions : ${largeur} m x ${longueur} m, hauteur avant ${hauteur} m\n\n`;
-
-    texte += `Toiture : ${roofTypeLabel}\n`;
-    texte += `Couleur de toiture (RAL) : ${roofColor}\n\n`;
-
-    texte += `Bardage : ${claddingTypeLabel}\n`;
-    texte += `Couleur de bardage (RAL) : ${claddingColor}\n`;
-    texte += `Façades bardées : ${bardageSidesText}\n\n`;
-
-    // Bloc adresse / mode de retrait
-    texte += `Adresse / lieu : ${addressText}\n`;
-    if (deliveryMode === "retrait") {
-      texte += "Mode : Retrait à l’atelier (pas de frais de livraison)\n\n";
-    } else {
-      texte += `Livraison estimative : ${
-        deliveryCost ? deliveryCost.toFixed(0) + " € TTC" : "À définir"
-      }\n\n`;
-    }
-
-    if (price > 0) {
-      texte += `Prix estimatif indicatif (hors livraison) : ${price.toFixed(0)} € TTC\n`;
-      if (deliveryMode !== "retrait" && deliveryCost) {
-        const total = price + deliveryCost;
-        texte += `Total avec livraison estimée : ${total.toFixed(0)} € TTC\n\n`;
-      } else {
-        texte += "\n";
-      }
-    }
-
-    texte += "Ce devis est une estimation indicative. Un devis définitif vous sera transmis par GAMAX-CM.\n";
-
-    recapDevisEl.textContent = texte;
-    localStorage.setItem("gamax_abri_devis_texte", texte);
-  }
-
-  // Écouteurs sur tous les champs du configurateur
-  const fieldsToWatch = [
-    ...Array.from(slopeInputs),
-    widthEl,
-    lengthEl,
-    heightEl,
-    ...Array.from(roofTypeInputs),
-    ...Array.from(roofColorInputs),
-    ...Array.from(claddingTypeInputs),
-    ...Array.from(claddingColorInputs),
-    ...Array.from(claddingSideInputs),
-    ...Array.from(deliveryModeInputs),
-    postalCodeEl,
-    cityEl,
-  ].filter(Boolean);
-
-  fieldsToWatch.forEach((el) => {
-    el.addEventListener("change", updateRecapDevis);
-    el.addEventListener("input", updateRecapDevis);
+  // Bardage
+  let claddingArea = 0;
+  const claddings = document.querySelectorAll(
+    'input[name="claddingSide"]:checked'
+  );
+  claddings.forEach((el) => {
+    if (el.value === "A" || el.value === "C")
+      claddingArea += length * height;
+    else claddingArea += width * height;
   });
 
-  // Fonction globale pour le bouton "Commander cet abri"
-  function goToOrderPage() {
-    updateRecapDevis(); // on s'assure que le texte est bien à jour + stocké
-    window.location.href = "commander.html";
+  const claddingType =
+    document.querySelector('input[name="claddingType"]:checked')?.value;
+  const cladUnit = CLADDING_PRICE_PER_M2[claddingType] ?? 0;
+  const claddingCost = claddingArea * cladUnit;
+
+  // Options
+  const optFaitiereSolin = document.getElementById("optFaitiereSolin");
+  const optRiveSolin = document.getElementById("optRiveSolin");
+  const optGrandeRive = document.getElementById("optGrandeRive");
+  const optAngles = document.getElementById("optAngles");
+  const optRejetEau = document.getElementById("optRejetEau");
+  const optFaitiereDouble = document.getElementById("optFaitiereDouble");
+  const optFaitiereSimple = document.getElementById("optFaitiereSimple");
+  const optInstall = document.getElementById("optInstall");
+
+  let optionsPrice = 0;
+  const finishingSelected =
+    (optFaitiereSolin && optFaitiereSolin.checked) ||
+    (optRiveSolin && optRiveSolin.checked) ||
+    (optGrandeRive && optGrandeRive.checked) ||
+    (optAngles && optAngles.checked) ||
+    (optRejetEau && optRejetEau.checked) ||
+    (optFaitiereDouble && optFaitiereDouble.checked) ||
+    (optFaitiereSimple && optFaitiereSimple.checked);
+
+  if (finishingSelected) {
+    optionsPrice += area * OPTIONS_PRICES.finishingPerM2;
   }
-  window.goToOrderPage = goToOrderPage;
+  if (optInstall && optInstall.checked) {
+    optionsPrice += area * OPTIONS_PRICES.installPerM2;
+  }
 
-  // Première génération au chargement
-  updateRecapDevis();
-})();
+  // Livraison / retrait
+  const postalCodeEl = document.getElementById("postalCode");
+  const postalCode = postalCodeEl ? postalCodeEl.value.trim() : "";
+  const mode = getDeliveryMode();
+  const delivery = getDeliveryPrice(postalCode, mode);
 
-/* ========= LIEN VERS LA PAGE COMMANDE ========= */
+  let totalHT =
+    structureBase + roofCost + claddingCost + optionsPrice + delivery;
+  totalHT = Math.round(totalHT / 50) * 50;
+  const totalTTC = Math.round((totalHT * (1 + TVA_RATE)) / 10) * 10;
 
-function goToOrderPage(){
-  // On s'assure que le devis est bien à jour dans le localStorage
-  updateRecapDevis();
-  window.location.href = "commander.html";
+  /* -------- TEXTE RÉCAP -------- */
+  const typeLabel = type === "bi" ? "Abris bipente" : "Abris monopente";
+
+  const claddingChecked = Array.from(claddings);
+  const claddingCount = claddingChecked.length;
+
+  let claddingAreaText = "";
+  if (claddingCount === 0) {
+    claddingAreaText =
+      "Abris ouvert (sans bardage) – 0 m² de bardage calculé";
+  } else {
+    const codes = claddingChecked.map((c) => c.value);
+    const sides = codes.map(
+      (code) => FACADE_LABELS[code] || "Façade " + code
+    );
+    claddingAreaText =
+      claddingCount +
+      " façade(s) bardée(s) : " +
+      sides.join(", ") +
+      " – env. " +
+      claddingArea.toFixed(1) +
+      " m² de bardage";
+  }
+
+  const roofColor = document.querySelector(
+    'input[name="roofColor"]:checked'
+  )?.value;
+
+  const claddingColorInput = document.querySelector(
+    'input[name="claddingColor"]:checked'
+  );
+  const claddingColor = claddingColorInput
+    ? claddingColorInput.value
+    : "Non précisé";
+
+  const selectedOptions = [];
+  if (finishingSelected) selectedOptions.push("Habillages de finition");
+  if (optFaitiereSolin && optFaitiereSolin.checked)
+    selectedOptions.push("Faîtière avec solin");
+  if (optRiveSolin && optRiveSolin.checked)
+    selectedOptions.push("Rive avec solin");
+  if (optGrandeRive && optGrandeRive.checked)
+    selectedOptions.push("Grande rive");
+  if (optAngles && optAngles.checked)
+    selectedOptions.push("Angles de bardage");
+  if (optRejetEau && optRejetEau.checked)
+    selectedOptions.push("Rejet d’eau");
+  if (optFaitiereDouble && optFaitiereDouble.checked)
+    selectedOptions.push("Faîtière double");
+  if (optFaitiereSimple && optFaitiereSimple.checked)
+    selectedOptions.push("Faîtière simple");
+  if (optInstall && optInstall.checked)
+    selectedOptions.push("Pose par nos équipes");
+
+  const cityEl = document.getElementById("city");
+  let addressText = "Non renseignée";
+  let deliveryText = "";
+
+  if (mode === "retrait") {
+    addressText = "Retrait à l’atelier GAMAX-CM – 47400 Tonneins";
+    deliveryText = "Retrait sur place (0 €)";
+  } else {
+    addressText = postalCode
+      ? postalCode + (cityEl && cityEl.value ? " " + cityEl.value : "")
+      : "Non renseignée";
+    deliveryText = delivery
+      ? formatCurrency(delivery) + " HT (livraison estimative)"
+      : "À définir";
+  }
+
+  let recapText = "Devis abri métallique GAMAX-CM\n\n";
+
+  recapText += "Type d'abri : " + typeLabel + "\n";
+  recapText +=
+    "Dimensions : " +
+    width.toString().replace(".", ",") +
+    " m x " +
+    length.toString().replace(".", ",") +
+    " m, hauteur " +
+    height.toString().replace(".", ",") +
+    " m\n\n";
+
+  recapText +=
+    "Toiture : " +
+    (ROOF_TYPE_LABELS[roofType] || "Non précisé") +
+    "\n";
+  recapText +=
+    "Couleur de toiture (RAL) : " +
+    (roofColor || "Non précisée") +
+    "\n\n";
+
+  recapText +=
+    "Bardage : " +
+    (CLADDING_TYPE_LABELS[claddingType] || "Non précisé") +
+    "\n";
+  recapText +=
+    "Couleur de bardage (RAL) : " +
+    claddingColor +
+    "\n";
+  recapText += "Façades bardées : " + claddingAreaText + "\n\n";
+
+  recapText += "Adresse / mode : " + addressText + "\n";
+  recapText += "Livraison / retrait : " + deliveryText + "\n\n";
+
+  recapText +=
+    "Options sélectionnées : " +
+    (selectedOptions.length > 0
+      ? selectedOptions.join(", ")
+      : "Aucune option") +
+    "\n\n";
+
+  recapText +=
+    "Prix estimatif : " +
+    formatCurrency(totalHT) +
+    " HT soit env. " +
+    formatCurrency(totalTTC) +
+    " TTC\n\n";
+
+  recapText +=
+    "Ce devis est une estimation indicative. Un devis définitif vous sera transmis par GAMAX-CM.\n";
+
+  const recapEl = document.getElementById("recapDevis");
+  if (recapEl) {
+    recapEl.textContent = recapText;
+  }
+  localStorage.setItem("gamax_abri_devis_texte", recapText);
+
+  // met à jour la 3D
+  update3DFromConfig();
 }
 
+/* ---- bouton commander ---- */
+function goToOrderPage() {
+  calculatePriceAndRecap();
+  window.location.href = "commander.html";
+}
+window.goToOrderPage = goToOrderPage;
 
-// Init
-(async () => {
-  await loadConfig();
-  loadProducts();
-})();
-renderCart();
+/* =========================================
+   THREE.JS – VUE 3D
+========================================= */
+
+let scene, camera, renderer, controls;
+let baseModule = null;
+let baseBBox = null;
+let structureGroup = null;
+let overlayGroup = null;
+let roofMesh = null;
+let groundDisc = null;
+let padMesh = null;
+let backgroundPlane = null;
+const cladMeshes = { A: null, B: null, C: null, D: null };
+
+const MODEL_PATH = "assets/abri-monopente-3x5m.gltf";
+const PAVE_TEXTURE_PATH = "assets/texture-pave-gris.jpg";
+
+// Module de base (en mètres)
+const BASE_LENGTH_M = 5;   // X
+const BASE_WIDTH_M = 3;    // Z
+const BASE_HEIGHT_M = 2.15;
+const GLOBAL_SCALE = 2.5;
+
+function initThree() {
+  const canvas = document.getElementById("viewer3d");
+  if (!canvas || !window.THREE) return;
+
+  const width = canvas.clientWidth || 400;
+  const height = canvas.clientHeight || (width * 3) / 4;
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xf5f5f5);
+
+  camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+  camera.position.set(8, 5, 10);
+
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(window.devicePixelRatio || 1);
+  renderer.setSize(width, height);
+
+  const amb = new THREE.AmbientLight(0xffffff, 0.8);
+  scene.add(amb);
+
+  const dir = new THREE.DirectionalLight(0xffffff, 0.9);
+  dir.position.set(10, 20, 10);
+  scene.add(dir);
+
+  // Disque sol
+  const discGeo = new THREE.CircleGeometry(5, 64);
+  const discMat = new THREE.MeshPhongMaterial({
+    color: 0xffffff,
+    side: THREE.DoubleSide,
+  });
+  groundDisc = new THREE.Mesh(discGeo, discMat);
+  groundDisc.rotation.x = -Math.PI / 2;
+  groundDisc.position.y = 0;
+  scene.add(groundDisc);
+
+  // Dalle sous l’abri
+  const padGeo = new THREE.PlaneGeometry(4, 3);
+  const padMat = new THREE.MeshPhongMaterial({
+    color: 0xffffff,
+    side: THREE.DoubleSide,
+  });
+  padMesh = new THREE.Mesh(padGeo, padMat);
+  padMesh.rotation.x = -Math.PI / 2;
+  padMesh.position.y = 0.01;
+  scene.add(padMesh);
+
+  // Texture pavée
+  const paveLoader = new THREE.TextureLoader();
+  paveLoader.load(
+    PAVE_TEXTURE_PATH,
+    (tex) => {
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(8, 8);
+      groundDisc.material.map = tex;
+      groundDisc.material.needsUpdate = true;
+
+      const tex2 = tex.clone();
+      tex2.repeat.set(4, 4);
+      padMesh.material.map = tex2;
+      padMesh.material.needsUpdate = true;
+    },
+    undefined,
+    () => {}
+  );
+
+  // Fond
+  const texLoader = new THREE.TextureLoader();
+  texLoader.load(
+    "assets/fond-jardin.jpg",
+    (tex) => {
+      const bgGeo = new THREE.PlaneGeometry(40, 15);
+      const bgMat = new THREE.MeshBasicMaterial({ map: tex });
+      backgroundPlane = new THREE.Mesh(bgGeo, bgMat);
+      backgroundPlane.position.set(0, 7, -20);
+      scene.add(backgroundPlane);
+    },
+    undefined,
+    () => {}
+  );
+
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.target.set(0, 1.5, 0);
+
+  const loader = new THREE.GLTFLoader();
+  loader.load(
+    MODEL_PATH,
+    (gltf) => {
+      baseModule = gltf.scene;
+      baseModule.traverse((obj) => {
+        if (obj.isMesh) {
+          obj.castShadow = true;
+          obj.receiveShadow = true;
+          obj.material = obj.material.clone();
+        }
+      });
+      baseBBox = new THREE.Box3().setFromObject(baseModule);
+      update3DFromConfig();
+    },
+    undefined,
+    (error) => {
+      console.error("Erreur chargement GLTF :", error);
+    }
+  );
+
+  window.addEventListener("resize", onThreeResize);
+  animateThree();
+}
+
+function onThreeResize() {
+  const canvas = document.getElementById("viewer3d");
+  if (!canvas || !renderer || !camera) return;
+  const width = canvas.clientWidth || 400;
+  const height = canvas.clientHeight || (width * 3) / 4;
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(width, height);
+}
+
+function animateThree() {
+  requestAnimationFrame(animateThree);
+  if (controls) controls.update();
+  if (renderer && scene && camera) {
+    renderer.render(scene, camera);
+  }
+}
+
+/* ---- COULEURS 3D ---- */
+function getRALColorFromRadio(name) {
+  const input = document.querySelector(`input[name="${name}"]:checked`);
+  if (!input) return "#666666";
+  const box = input.closest(".ral-choice")?.querySelector(".ral-box");
+  if (!box) return "#666666";
+  return window.getComputedStyle(box).backgroundColor;
+}
+
+function getRoofColor3D() {
+  return getRALColorFromRadio("roofColor");
+}
+
+function getCladdingColor3D() {
+  return getRALColorFromRadio("claddingColor");
+}
+
+/* ---- DIMENSIONS COURANTES ---- */
+function getCurrentDimensions() {
+  const widthSel = document.getElementById("width");
+  const lengthSel = document.getElementById("length");
+  const heightSel = document.getElementById("height");
+  const width = parseFloat(widthSel?.value || "3");
+  const length = parseFloat(lengthSel?.value || "3");
+  const height = parseFloat(heightSel?.value || "2.15");
+  return { width, length, height };
+}
+
+function getBayCount(length) {
+  if (length <= 6) return 1;
+  if (length <= 12) return 2;
+  if (length <= 18) return 3;
+  if (length <= 24) return 4;
+  return 6;
+}
+
+/* ---- STRUCTURE À PARTIR DU MODULE ---- */
+function buildStructureFromConfig() {
+  if (!baseModule || !baseBBox) return null;
+
+  if (structureGroup) {
+    scene.remove(structureGroup);
+  }
+  structureGroup = new THREE.Group();
+  scene.add(structureGroup);
+
+  const { width, length, height } = getCurrentDimensions();
+  const bays = getBayCount(length);
+  const bayLengthM = length / bays;
+
+  const baseSize = new THREE.Vector3();
+  baseBBox.getSize(baseSize);
+
+  let currentX = 0;
+
+  for (let i = 0; i < bays; i++) {
+    const clone = baseModule.clone(true);
+
+    const scaleX = (bayLengthM / BASE_LENGTH_M) * GLOBAL_SCALE;
+    const scaleZ = (width / BASE_WIDTH_M) * GLOBAL_SCALE;
+    const scaleY = (height / BASE_HEIGHT_M) * GLOBAL_SCALE;
+
+    clone.scale.set(scaleX, scaleY, scaleZ);
+
+    const minXScaled = baseBBox.min.x * scaleX;
+    const offsetX = currentX - minXScaled;
+
+    clone.position.set(offsetX, 0, 0);
+    structureGroup.add(clone);
+
+    const segLength = baseSize.x * scaleX;
+    currentX += segLength;
+  }
+
+  let bbox = new THREE.Box3().setFromObject(structureGroup);
+  const center = bbox.getCenter(new THREE.Vector3());
+  structureGroup.position.sub(center);
+  bbox = new THREE.Box3().setFromObject(structureGroup);
+  return bbox;
+}
+
+/* ---- TOIT + BARDAGE SEMI-OPAQUE ---- */
+function rebuildOverlays(bbox) {
+  if (!bbox) return;
+
+  if (overlayGroup) {
+    scene.remove(overlayGroup);
+  }
+  overlayGroup = new THREE.Group();
+  scene.add(overlayGroup);
+
+  const min = bbox.min;
+  const max = bbox.max;
+
+  const lenX = max.x - min.x;
+  const widthZ = max.z - min.z;
+  const heightY = max.y - min.y;
+  const eps = 0.02 * Math.max(lenX, widthZ, heightY);
+
+  const roofMat = new THREE.MeshStandardMaterial({
+    color: getRoofColor3D(),
+    transparent: true,
+    opacity: 0.85,          // moins transparent
+    side: THREE.DoubleSide,
+  });
+
+  const claddingMat = new THREE.MeshStandardMaterial({
+    color: getCladdingColor3D(),
+    transparent: true,
+    opacity: 0.9,           // moins transparent
+    side: THREE.DoubleSide,
+  });
+
+  // Toiture
+  const roofGeo = new THREE.PlaneGeometry(lenX, widthZ);
+  roofMesh = new THREE.Mesh(roofGeo, roofMat);
+  roofMesh.rotation.x = -Math.PI / 2;
+  roofMesh.position.set(
+    (min.x + max.x) / 2,
+    max.y + eps,
+    (min.z + max.z) / 2
+  );
+  overlayGroup.add(roofMesh);
+
+  // Façades
+  const geoLong = new THREE.PlaneGeometry(lenX, heightY);
+  cladMeshes.A = new THREE.Mesh(geoLong, claddingMat.clone());
+  cladMeshes.A.position.set(
+    (min.x + max.x) / 2,
+    (min.y + max.y) / 2,
+    max.z + eps
+  );
+  overlayGroup.add(cladMeshes.A);
+
+  cladMeshes.C = new THREE.Mesh(geoLong, claddingMat.clone());
+  cladMeshes.C.position.set(
+    (min.x + max.x) / 2,
+    (min.y + max.y) / 2,
+    min.z - eps
+  );
+  cladMeshes.C.rotation.y = Math.PI;
+  overlayGroup.add(cladMeshes.C);
+
+  const geoShort = new THREE.PlaneGeometry(widthZ, heightY);
+  cladMeshes.B = new THREE.Mesh(geoShort, claddingMat.clone());
+  cladMeshes.B.position.set(
+    min.x - eps,
+    (min.y + max.y) / 2,
+    (min.z + max.z) / 2
+  );
+  cladMeshes.B.rotation.y = Math.PI / 2;
+  overlayGroup.add(cladMeshes.B);
+
+  cladMeshes.D = new THREE.Mesh(geoShort, claddingMat.clone());
+  cladMeshes.D.position.set(
+    max.x + eps,
+    (min.y + max.y) / 2,
+    (min.z + max.z) / 2
+  );
+  cladMeshes.D.rotation.y = -Math.PI / 2;
+  overlayGroup.add(cladMeshes.D);
+
+  // Sol + fond
+  const radius = Math.max(lenX, widthZ) * 0.9;
+  if (groundDisc) {
+    groundDisc.geometry.dispose();
+    groundDisc.geometry = new THREE.CircleGeometry(radius, 80);
+    groundDisc.position.y = min.y - 0.01;
+  }
+
+  if (padMesh) {
+    const padLength = lenX * 1.05;
+    const padWidth = widthZ * 1.15;
+    padMesh.geometry.dispose();
+    padMesh.geometry = new THREE.PlaneGeometry(padLength, padWidth);
+    padMesh.position.y = min.y;
+  }
+
+  if (backgroundPlane) {
+    backgroundPlane.position.set(
+      (min.x + max.x) / 2,
+      min.y + heightY * 0.6,
+      -radius * 1.2
+    );
+    backgroundPlane.scale.set(1.3, 1.3, 1);
+  }
+
+  if (controls && camera) {
+    const center = new THREE.Vector3(
+      (min.x + max.x) / 2,
+      (min.y + max.y) / 2,
+      (min.z + max.z) / 2
+    );
+    controls.target.set(center.x, center.y * 0.7, center.z);
+    camera.position.set(
+      center.x + lenX * 0.9,
+      center.y + heightY * 1.1,
+      center.z + widthZ * 1.0
+    );
+  }
+
+  updateOverlayStyles();
+}
+
+function updateOverlayStyles() {
+  const cladColor = getCladdingColor3D();
+  const roofColor = getRoofColor3D();
+
+  if (roofMesh) {
+    roofMesh.material.color.set(roofColor);
+  }
+
+  ["A", "B", "C", "D"].forEach((side) => {
+    const cb = document.querySelector(
+      `input[name="claddingSide"][value="${side}"]`
+    );
+    const mesh = cladMeshes[side];
+    if (!mesh) return;
+    mesh.visible = !!(cb && cb.checked);
+    mesh.material.color.set(cladColor);
+  });
+}
+
+function update3DFromConfig() {
+  if (!baseModule) return;
+  const bbox = buildStructureFromConfig();
+  rebuildOverlays(bbox);
+}
+
+/* ---- ZOOM BOUTONS ---- */
+function zoom3D(factor) {
+  if (!camera || !controls) return;
+  const dir = new THREE.Vector3();
+  dir.subVectors(camera.position, controls.target);
+  dir.multiplyScalar(factor);
+  camera.position.copy(controls.target).add(dir);
+}
+
+/* ---- PLEIN ÉCRAN / TOOLBAR ---- */
+function initViewerUI() {
+  const wrapper = document.getElementById("viewer3d-wrapper");
+  const btnFull = document.getElementById("btnFullscreen3D");
+  const btnClose = document.getElementById("btnClose3D");
+  const btnZoomIn = document.getElementById("btnZoomIn3D");
+  const btnZoomOut = document.getElementById("btnZoomOut3D");
+
+  if (btnFull && wrapper) {
+    btnFull.addEventListener("click", () => {
+      wrapper.classList.add("is-fullscreen");
+      onThreeResize();
+    });
+  }
+  if (btnClose && wrapper) {
+    btnClose.addEventListener("click", () => {
+      wrapper.classList.remove("is-fullscreen");
+      onThreeResize();
+    });
+  }
+  if (btnZoomIn) {
+    btnZoomIn.addEventListener("click", () => zoom3D(0.8));
+  }
+  if (btnZoomOut) {
+    btnZoomOut.addEventListener("click", () => zoom3D(1.25));
+  }
+}
+
+/* =========================================
+   INIT GLOBAL
+========================================= */
+
+document.addEventListener("DOMContentLoaded", () => {
+  // dimensions + calcul initial
+  populateDimensions();
+  calculatePriceAndRecap();
+
+  // type d’abri
+  document
+    .querySelectorAll('input[name="slopeType"]')
+    .forEach((el) =>
+      el.addEventListener("change", () => {
+        populateDimensions();
+        calculatePriceAndRecap();
+      })
+    );
+
+  // champs principaux
+  [
+    "width",
+    "length",
+    "height",
+    "postalCode",
+    "city",
+    "optInstall",
+    "optFaitiereSolin",
+    "optRiveSolin",
+    "optGrandeRive",
+    "optAngles",
+    "optRejetEau",
+    "optFaitiereDouble",
+    "optFaitiereSimple",
+  ].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener("change", calculatePriceAndRecap);
+      el.addEventListener("input", calculatePriceAndRecap);
+    }
+  });
+
+  // mode livraison / retrait
+  document
+    .querySelectorAll('input[name="deliveryMode"]')
+    .forEach((el) =>
+      el.addEventListener("change", calculatePriceAndRecap)
+    );
+
+  // couleurs toit / bardage
+  document
+    .querySelectorAll('input[name="roofColor"]')
+    .forEach((el) =>
+      el.addEventListener("change", () => {
+        updateOverlayStyles();
+        calculatePriceAndRecap();
+      })
+    );
+
+  document
+    .querySelectorAll('input[name="claddingColor"]')
+    .forEach((el) =>
+      el.addEventListener("change", () => {
+        updateOverlayStyles();
+        calculatePriceAndRecap();
+      })
+    );
+
+  // côtés bardés
+  document
+    .querySelectorAll('input[name="claddingSide"]')
+    .forEach((el) =>
+      el.addEventListener("change", () => {
+        updateOverlayStyles();
+        calculatePriceAndRecap();
+      })
+    );
+
+  // bouton calculer
+  const btnCalc = document.getElementById("btnCalculate");
+  if (btnCalc) btnCalc.addEventListener("click", calculatePriceAndRecap);
+
+  // code postal -> villes
+  const postalCodeEl = document.getElementById("postalCode");
+  if (postalCodeEl) {
+    postalCodeEl.addEventListener("input", () => {
+      updateCityOptions();
+      calculatePriceAndRecap();
+    });
+  }
+
+  // 3D
+  initThree();
+  initViewerUI();
+});
