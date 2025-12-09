@@ -677,15 +677,22 @@ Votre devis apparaîtra ici après configuration...
               </button>
             </div>
 
-            <!-- Bloc Vue 3D -->
-            <div class="sidepanel viewer-panel">
-              <h2>Vue 3D</h2>
-              <p class="recap-sub">Visualisation simplifiée de votre abri (bientôt disponible).</p>
-              <canvas id="viewer3d" class="viewer-3d"></canvas>
-            </div>
-          </aside>
-        </div>
-      </div>
+       <!-- Bloc Vue 3D -->
+<div class="sidepanel viewer-panel">
+  <h2>Vue 3D</h2>
+  <p class="recap-sub">
+    Visualisation simplifiée de votre abri (bientôt disponible).
+  </p>
+
+  <canvas id="viewer3d" class="viewer-3d"></canvas>
+
+  <button type="button" class="btn-ghost viewer-3d-toggle" id="viewer3dToggle">
+    Agrandir la vue 3D
+  </button>
+
+  <p class="viewer-note">Image non contractuelle.</p>
+</div>
+
     </section>
   </main>
 
