@@ -225,39 +225,36 @@ if(payBtn){
     stripe.redirectToCheckout({ sessionId: data.id });
   });
 }
-
-/* ========= LIEN VERS LA PAGE COMMANDE ========= */
-
-function goToOrderPage(){
-  // On s'assure que le devis est bien à jour dans le localStorage
-  updateRecapDevis();
-  window.location.href = "commander.html";
-}
 // === RÉCAPITULATIF CONFIGURATEUR & LIEN VERS commander.html ===
 (function () {
   const recapDevisEl = document.getElementById("recapDevis");
   if (!recapDevisEl) return; // sécurité si la section n'est pas sur la page
 
-  const widthEl = document.getElementById("width");
+  const widthEl  = document.getElementById("width");
   const lengthEl = document.getElementById("length");
   const heightEl = document.getElementById("height");
 
-  const slopeInputs = document.querySelectorAll('input[name="slopeType"]');
-  const roofTypeInputs = document.querySelectorAll('input[name="roofType"]');
-  const roofColorInputs = document.querySelectorAll('input[name="roofColor"]');
-  const claddingTypeInputs = document.querySelectorAll('input[name="claddingType"]');
+  const slopeInputs         = document.querySelectorAll('input[name="slopeType"]');
+  const roofTypeInputs      = document.querySelectorAll('input[name="roofType"]');
+  const roofColorInputs     = document.querySelectorAll('input[name="roofColor"]');
+  const claddingTypeInputs  = document.querySelectorAll('input[name="claddingType"]');
   const claddingColorInputs = document.querySelectorAll('input[name="claddingColor"]');
-  const claddingSideInputs = document.querySelectorAll(".bardage-side");
+  const claddingSideInputs  = document.querySelectorAll(".bardage-side");
+
+  // Nouveaux champs adresse / livraison
+  const deliveryModeInputs = document.querySelectorAll('input[name="deliveryMode"]');
+  const postalCodeEl       = document.getElementById("postalCode");
+  const cityEl             = document.getElementById("city");
 
   const roofTypeLabels = {
     bac_simple: "Bac acier simple",
     bac_regul: "Bac acier avec régulateur de condensation",
-    sandwich40: "Panneau sandwich ép. 40 mm"
+    sandwich40: "Panneau sandwich ép. 40 mm",
   };
 
   const claddingTypeLabels = {
     bac_simple: "Bac acier simple",
-    sandwich40: "Bardage panneau sandwich ép. 40 mm"
+    sandwich40: "Bardage panneau sandwich ép. 40 mm",
   };
 
   function getCheckedValue(nodeList) {
@@ -270,23 +267,36 @@ function goToOrderPage(){
     return el ? el.value : "";
   }
 
+  // --- Prix de livraison selon mode + département ---
+  function getDeliveryPrice(mode, postalCode) {
+    // Retrait à l’atelier : pas de frais de livraison
+    if (mode === "retrait") return 0;
+
+    if (!postalCode || postalCode.length !== 5) return 0;
+    const dep = parseInt(postalCode.slice(0, 2), 10);
+    if (dep === 47) return 150;
+    if ([40, 33, 24, 46].includes(dep)) return 250;
+    return 350;
+  }
+
+  // Estimation du prix (hors livraison) comme avant
   function estimatePrice() {
-    const largeur = parseFloat(widthEl?.value || "0");
+    const largeur  = parseFloat(widthEl?.value || "0");
     const longueur = parseFloat(lengthEl?.value || "0");
-    const hauteur = parseFloat(heightEl?.value || "0");
+    const hauteur  = parseFloat(heightEl?.value || "0");
 
     if (!largeur || !longueur || !hauteur) return 0;
 
     const surface = largeur * longueur;
 
-    const roofType = getCheckedValue(roofTypeInputs);
+    const roofType     = getCheckedValue(roofTypeInputs);
     const claddingType = getCheckedValue(claddingTypeInputs);
     const bardageSides = Array.from(claddingSideInputs).filter((i) => i.checked).length;
 
     let rate = 70; // base €/m² (à ajuster plus tard)
 
-    if (roofType === "bac_regul") rate += 5;
-    if (roofType === "sandwich40") rate += 25;
+    if (roofType === "bac_regul")     rate += 5;
+    if (roofType === "sandwich40")    rate += 25;
     if (claddingType === "sandwich40") rate += 30;
     rate += bardageSides * 3;
 
@@ -294,27 +304,45 @@ function goToOrderPage(){
   }
 
   function updateRecapDevis() {
-    const slopeVal = getCheckedValue(slopeInputs) || "mono";
+    const slopeVal   = getCheckedValue(slopeInputs) || "mono";
     const slopeLabel = slopeVal === "bi" ? "Abris bipente" : "Abris monopente";
 
-    const largeur = widthEl?.value || "-";
+    const largeur  = widthEl?.value || "-";
     const longueur = lengthEl?.value || "-";
-    const hauteur = heightEl?.value || "-";
+    const hauteur  = heightEl?.value || "-";
 
-    const roofTypeVal = getCheckedValue(roofTypeInputs);
+    const roofTypeVal   = getCheckedValue(roofTypeInputs);
     const roofTypeLabel = roofTypeLabels[roofTypeVal] || "Non renseigné";
-    const roofColor = getCheckedText(roofColorInputs) || "Non renseignée";
+    const roofColor     = getCheckedText(roofColorInputs) || "Non renseignée";
 
-    const claddingTypeVal = getCheckedValue(claddingTypeInputs);
+    const claddingTypeVal   = getCheckedValue(claddingTypeInputs);
     const claddingTypeLabel = claddingTypeLabels[claddingTypeVal] || "Non renseigné";
-    const claddingColor = getCheckedText(claddingColorInputs) || "Non renseignée";
+    const claddingColor     = getCheckedText(claddingColorInputs) || "Non renseignée";
 
-    const bardageSides = Array.from(claddingSideInputs)
-      .filter((i) => i.checked)
-      .map((i) => i.value)
-      .join(", ") || "Aucune façade bardée";
+    const bardageSidesText =
+      Array.from(claddingSideInputs)
+        .filter((i) => i.checked)
+        .map((i) => i.value)
+        .join(", ") || "Aucune façade bardée";
 
-    const price = estimatePrice();
+    // --- Mode de livraison / retrait + adresse ---
+    const modeInput   = Array.from(deliveryModeInputs).find((i) => i.checked);
+    const deliveryMode = modeInput ? modeInput.value : "livraison";
+
+    const cp   = (postalCodeEl?.value || "").trim();
+    const city = cityEl?.value || "";
+
+    let addressText;
+    if (deliveryMode === "retrait") {
+      addressText = "Retrait à l’atelier GAMAX-CM – 47400 Tonneins";
+    } else {
+      addressText = cp
+        ? cp + (city ? " " + city : "")
+        : "Non renseignée";
+    }
+
+    const deliveryCost = getDeliveryPrice(deliveryMode, cp);
+    const price = estimatePrice(); // prix abri hors livraison
 
     let texte = "Devis abri métallique GAMAX-CM\n\n";
 
@@ -326,10 +354,26 @@ function goToOrderPage(){
 
     texte += `Bardage : ${claddingTypeLabel}\n`;
     texte += `Couleur de bardage (RAL) : ${claddingColor}\n`;
-    texte += `Façades bardées : ${bardageSides}\n\n`;
+    texte += `Façades bardées : ${bardageSidesText}\n\n`;
+
+    // Bloc adresse / mode de retrait
+    texte += `Adresse / lieu : ${addressText}\n`;
+    if (deliveryMode === "retrait") {
+      texte += "Mode : Retrait à l’atelier (pas de frais de livraison)\n\n";
+    } else {
+      texte += `Livraison estimative : ${
+        deliveryCost ? deliveryCost.toFixed(0) + " € TTC" : "À définir"
+      }\n\n`;
+    }
 
     if (price > 0) {
-      texte += `Prix estimatif indicatif : ${price.toFixed(0)} € TTC\n\n`;
+      texte += `Prix estimatif indicatif (hors livraison) : ${price.toFixed(0)} € TTC\n`;
+      if (deliveryMode !== "retrait" && deliveryCost) {
+        const total = price + deliveryCost;
+        texte += `Total avec livraison estimée : ${total.toFixed(0)} € TTC\n\n`;
+      } else {
+        texte += "\n";
+      }
     }
 
     texte += "Ce devis est une estimation indicative. Un devis définitif vous sera transmis par GAMAX-CM.\n";
@@ -339,7 +383,7 @@ function goToOrderPage(){
   }
 
   // Écouteurs sur tous les champs du configurateur
-  [
+  const fieldsToWatch = [
     ...Array.from(slopeInputs),
     widthEl,
     lengthEl,
@@ -349,12 +393,15 @@ function goToOrderPage(){
     ...Array.from(claddingTypeInputs),
     ...Array.from(claddingColorInputs),
     ...Array.from(claddingSideInputs),
-  ]
-    .filter(Boolean)
-    .forEach((el) => {
-      el.addEventListener("change", updateRecapDevis);
-      el.addEventListener("input", updateRecapDevis);
-    });
+    ...Array.from(deliveryModeInputs),
+    postalCodeEl,
+    cityEl,
+  ].filter(Boolean);
+
+  fieldsToWatch.forEach((el) => {
+    el.addEventListener("change", updateRecapDevis);
+    el.addEventListener("input", updateRecapDevis);
+  });
 
   // Fonction globale pour le bouton "Commander cet abri"
   function goToOrderPage() {
@@ -366,6 +413,15 @@ function goToOrderPage(){
   // Première génération au chargement
   updateRecapDevis();
 })();
+
+/* ========= LIEN VERS LA PAGE COMMANDE ========= */
+
+function goToOrderPage(){
+  // On s'assure que le devis est bien à jour dans le localStorage
+  updateRecapDevis();
+  window.location.href = "commander.html";
+}
+
 
 // Init
 (async () => {
