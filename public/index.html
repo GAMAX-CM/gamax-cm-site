@@ -981,202 +981,263 @@ Votre devis apparaîtra ici après configuration...
 
     // ---- CALCUL PRIX ----
     function calculatePrice() {
-      const widthEl = document.getElementById("width");
-      const lengthEl = document.getElementById("length");
-      const heightEl = document.getElementById("height");
+  const widthEl = document.getElementById("width");
+  const lengthEl = document.getElementById("length");
+  const heightEl = document.getElementById("height");
 
-      if (!widthEl || !lengthEl || !heightEl) return;
+  if (!widthEl || !lengthEl || !heightEl) return;
 
-      const type = getSelectedType();
-      const width = parseFloat(widthEl.value);
-      const length = parseFloat(lengthEl.value);
-      const height = parseFloat(heightEl.value);
-      if (!width || !length || !height) return;
+  const type = getSelectedType();
+  const width = parseFloat(widthEl.value);
+  const length = parseFloat(lengthEl.value);
+  const height = parseFloat(heightEl.value);
+  if (!width || !length || !height) return;
 
-      const area = width * length;
+  const area = width * length;
 
-      const sizeKey = width + "x" + length;
-      let structureBase = STRUCTURE_PRICE_TABLE[type]?.[sizeKey] ?? 0;
+  const sizeKey = width + "x" + length;
+  let structureBase = STRUCTURE_PRICE_TABLE[type]?.[sizeKey] ?? 0;
 
-      if (height > 3) {
-        const extra = height - 3;
-        const steps = extra / 0.5;
-        structureBase *= 1 + steps * 0.1;
-      }
+  if (height > 3) {
+    const extra = height - 3;
+    const steps = extra / 0.5;
+    structureBase *= 1 + steps * 0.1;
+  }
 
-      const roofType =
-        document.querySelector('input[name="roofType"]:checked')?.value;
-      const roofUnit = ROOF_PRICE_PER_M2[roofType] ?? 0;
-      const roofCost = area * roofUnit;
+  const roofType =
+    document.querySelector('input[name="roofType"]:checked')?.value;
+  const roofUnit = ROOF_PRICE_PER_M2[roofType] ?? 0;
+  const roofCost = area * roofUnit;
 
-      let claddingArea = 0;
-      const claddings = document.querySelectorAll(
-        'input[name="claddingSide"]:checked'
-      );
-      claddings.forEach((el) => {
-        if (el.value === "A" || el.value === "C")
-          claddingArea += length * height;
-        else claddingArea += width * height;
-      });
+  let claddingArea = 0;
+  const claddings = document.querySelectorAll(
+    'input[name="claddingSide"]:checked'
+  );
+  claddings.forEach((el) => {
+    if (el.value === "A" || el.value === "C")
+      claddingArea += length * height;
+    else claddingArea += width * height;
+  });
 
-      const claddingType =
-        document.querySelector('input[name="claddingType"]:checked')?.value;
-      const cladUnit = CLADDING_PRICE_PER_M2[claddingType] ?? 0;
-      const claddingCost = claddingArea * cladUnit;
+  const claddingType =
+    document.querySelector('input[name="claddingType"]:checked')?.value;
+  const cladUnit = CLADDING_PRICE_PER_M2[claddingType] ?? 0;
+  const claddingCost = claddingArea * cladUnit;
 
-      const optFaitiereSolin = document.getElementById("optFaitiereSolin");
-      const optRiveSolin = document.getElementById("optRiveSolin");
-      const optGrandeRive = document.getElementById("optGrandeRive");
-      const optAngles = document.getElementById("optAngles");
-      const optRejetEau = document.getElementById("optRejetEau");
-      const optFaitiereDouble = document.getElementById("optFaitiereDouble");
-      const optFaitiereSimple = document.getElementById("optFaitiereSimple");
-      const optInstall = document.getElementById("optInstall");
+  const optFaitiereSolin = document.getElementById("optFaitiereSolin");
+  const optRiveSolin = document.getElementById("optRiveSolin");
+  const optGrandeRive = document.getElementById("optGrandeRive");
+  const optAngles = document.getElementById("optAngles");
+  const optRejetEau = document.getElementById("optRejetEau");
+  const optFaitiereDouble = document.getElementById("optFaitiereDouble");
+  const optFaitiereSimple = document.getElementById("optFaitiereSimple");
+  const optInstall = document.getElementById("optInstall");
 
-      let optionsPrice = 0;
-      const finishingSelected =
-        (optFaitiereSolin && optFaitiereSolin.checked) ||
-        (optRiveSolin && optRiveSolin.checked) ||
-        (optGrandeRive && optGrandeRive.checked) ||
-        (optAngles && optAngles.checked) ||
-        (optRejetEau && optRejetEau.checked) ||
-        (optFaitiereDouble && optFaitiereDouble.checked) ||
-        (optFaitiereSimple && optFaitiereSimple.checked);
+  let optionsPrice = 0;
+  const finishingSelected =
+    (optFaitiereSolin && optFaitiereSolin.checked) ||
+    (optRiveSolin && optRiveSolin.checked) ||
+    (optGrandeRive && optGrandeRive.checked) ||
+    (optAngles && optAngles.checked) ||
+    (optRejetEau && optRejetEau.checked) ||
+    (optFaitiereDouble && optFaitiereDouble.checked) ||
+    (optFaitiereSimple && optFaitiereSimple.checked);
 
-      if (finishingSelected)
-        optionsPrice += area * OPTIONS_PRICES.finishingPerM2;
-      if (optInstall && optInstall.checked)
-        optionsPrice += area * OPTIONS_PRICES.installPerM2;
+  if (finishingSelected)
+    optionsPrice += area * OPTIONS_PRICES.finishingPerM2;
+  if (optInstall && optInstall.checked)
+    optionsPrice += area * OPTIONS_PRICES.installPerM2;
 
-      const postalCodeEl = document.getElementById("postalCode");
-      const postalCode = postalCodeEl ? postalCodeEl.value.trim() : "";
-      const delivery = getDeliveryPrice(postalCode);
+  const postalCodeEl = document.getElementById("postalCode");
+  const postalCode = postalCodeEl ? postalCodeEl.value.trim() : "";
 
-      let totalHT =
-        structureBase + roofCost + claddingCost + optionsPrice + delivery;
+  const deliveryModeInput = document.querySelector('input[name="deliveryMode"]:checked');
+  const deliveryMode = deliveryModeInput ? deliveryModeInput.value : "livraison";
 
-      totalHT = Math.round(totalHT / 50) * 50;
-      const totalTTC = Math.round((totalHT * (1 + TVA_RATE)) / 10) * 10;
-      const pricePerM2 = totalHT / area;
+  const delivery = getDeliveryPrice(postalCode);
 
-      const typeLabel = type === "bi" ? "Abris bipente" : "Abris monopente";
+  let totalHT =
+    structureBase + roofCost + claddingCost + optionsPrice + delivery;
 
-      const claddingChecked = Array.from(claddings);
-      const claddingCount = claddingChecked.length;
+  totalHT = Math.round(totalHT / 50) * 50;
+  const totalTTC = Math.round((totalHT * (1 + TVA_RATE)) / 10) * 10;
+  const pricePerM2 = totalHT / area;
 
-      let claddingAreaText = "";
-      if (claddingCount === 0) {
-        claddingAreaText =
-          "Abris ouvert (sans bardage) – 0 m² de bardage calculé";
-      } else {
-        const codes = claddingChecked.map((c) => c.value);
-        const sides = codes.map(
-          (code) => FACADE_LABELS[code] || "Façade " + code
-        );
-        claddingAreaText =
-          claddingCount +
-          " façade(s) bardée(s) : " +
-          sides.join(", ") +
-          " – env. " +
-          claddingArea.toFixed(1) +
-          " m² de bardage";
-      }
+  const typeLabel = type === "bi" ? "Abris bipente" : "Abris monopente";
 
-      const roofColor = document.querySelector(
-        'input[name="roofColor"]:checked'
-      )?.value;
+  const claddingChecked = Array.from(claddings);
+  const claddingCount = claddingChecked.length;
 
-      const claddingColorInput = document.querySelector(
-        'input[name="claddingColor"]:checked'
-      );
-      const claddingColor = claddingColorInput
-        ? claddingColorInput.value
-        : "Non précisé";
+  let claddingAreaText = "";
+  if (claddingCount === 0) {
+    claddingAreaText =
+      "Abris ouvert (sans bardage) – 0 m² de bardage calculé";
+  } else {
+    const codes = claddingChecked.map((c) => c.value);
+    const sides = codes.map(
+      (code) => FACADE_LABELS[code] || "Façade " + code
+    );
+    claddingAreaText =
+      claddingCount +
+      " façade(s) bardée(s) : " +
+      sides.join(", ") +
+      " – env. " +
+      claddingArea.toFixed(1) +
+      " m² de bardage";
+  }
 
-      const selectedOptions = [];
-      if (finishingSelected) selectedOptions.push("Habillages et finitions");
-      if (optFaitiereSolin && optFaitiereSolin.checked)
-        selectedOptions.push("Faitière en solin");
-      if (optRiveSolin && optRiveSolin.checked)
-        selectedOptions.push("Rive en solin");
-      if (optGrandeRive && optGrandeRive.checked)
-        selectedOptions.push("Grande rive");
-      if (optAngles && optAngles.checked)
-        selectedOptions.push("Angles");
-      if (optRejetEau && optRejetEau.checked)
-        selectedOptions.push("Rejet d'eau");
-      if (optFaitiereDouble && optFaitiereDouble.checked)
-        selectedOptions.push("Faitière double");
-      if (optFaitiereSimple && optFaitiereSimple.checked)
-        selectedOptions.push("Faitière simple");
-      if (optInstall && optInstall.checked)
-        selectedOptions.push("Pose par nos équipes");
+  const roofColor = document.querySelector(
+    'input[name="roofColor"]:checked'
+  )?.value;
 
-      const cityEl = document.getElementById("city");
-      const addressText = postalCode
-        ? postalCode + (cityEl && cityEl.value ? " " + cityEl.value : "")
-        : "Non renseignée";
+  const claddingColorInput = document.querySelector(
+    'input[name="claddingColor"]:checked'
+  );
+  const claddingColor = claddingColorInput
+    ? claddingColorInput.value
+    : "Non précisé";
 
-      // (Les affichages détaillés dans d'autres spans sont conservés si tu les remets)
-      // Mise à jour du récap texte pour commander.html
-      let recapText = "Devis abri métallique GAMAX-CM\n\n";
+  const selectedOptions = [];
+  if (finishingSelected) selectedOptions.push("Habillages et finitions");
+  if (optFaitiereSolin && optFaitiereSolin.checked)
+    selectedOptions.push("Faitière en solin");
+  if (optRiveSolin && optRiveSolin.checked)
+    selectedOptions.push("Rive en solin");
+  if (optGrandeRive && optGrandeRive.checked)
+    selectedOptions.push("Grande rive");
+  if (optAngles && optAngles.checked)
+    selectedOptions.push("Angles");
+  if (optRejetEau && optRejetEau.checked)
+    selectedOptions.push("Rejet d'eau");
+  if (optFaitiereDouble && optFaitiereDouble.checked)
+    selectedOptions.push("Faitière double");
+  if (optFaitiereSimple && optFaitiereSimple.checked)
+    selectedOptions.push("Faitière simple");
+  if (optInstall && optInstall.checked)
+    selectedOptions.push("Pose par nos équipes");
 
-      recapText += "Type d'abri : " + typeLabel + "\n";
-      recapText +=
-        "Dimensions : " +
-        width.toString().replace(".", ",") +
-        " m x " +
-        length.toString().replace(".", ",") +
-        " m, hauteur " +
-        height.toString().replace(".", ",") +
-        " m\n\n";
+  const cityEl = document.getElementById("city");
+  let addressText;
+  if (deliveryMode === "retrait") {
+    addressText = "Retrait à l’atelier GAMAX-CM – 47400 Tonneins";
+  } else {
+    addressText = postalCode
+      ? postalCode + (cityEl && cityEl.value ? " " + cityEl.value : "")
+      : "Non renseignée";
+  }
 
-      recapText +=
-        "Toiture : " +
-        (ROOF_TYPE_LABELS[roofType] || "Non précisé") +
-        "\n";
-      recapText +=
-        "Couleur de toiture (RAL) : " +
-        (roofColor || "Non précisée") +
-        "\n\n";
+  // (si tu as encore des spans type typeDisplay, dimensionsDisplay, etc. ils restent comme avant...)
 
-      recapText +=
-        "Bardage : " +
-        (CLADDING_TYPE_LABELS[claddingType] || "Non précisé") +
-        "\n";
-      recapText +=
-        "Couleur de bardage (RAL) : " +
-        claddingColor +
-        "\n";
-      recapText += "Façades bardées : " + claddingAreaText + "\n\n";
+  const deliveryDisplay = document.getElementById("deliveryDisplay");
+  if (deliveryDisplay) {
+    deliveryDisplay.textContent =
+      deliveryMode === "retrait"
+        ? "Retrait atelier (0 € de livraison)"
+        : (delivery ? formatCurrency(delivery) + " HT" : "À définir");
+  }
 
-      recapText +=
-        "Adresse de livraison estimée : " + addressText + "\n";
-      recapText +=
-        "Livraison estimative : " +
-        (delivery ? formatCurrency(delivery) + " HT" : "À définir") +
-        "\n\n";
+  const priceHTEl = document.getElementById("priceHT");
+  if (priceHTEl) priceHTEl.textContent = formatCurrency(totalHT);
 
-      recapText +=
-        "Prix estimatif : " +
-        formatCurrency(totalHT) +
-        " HT soit env. " +
-        formatCurrency(totalTTC) +
-        " TTC\n";
-     
+  const priceTTCEl = document.getElementById("priceTTC");
+  if (priceTTCEl) priceTTCEl.textContent = formatCurrency(totalTTC);
 
-      recapText +=
-        "Options sélectionnées : " +
-        (selectedOptions.length > 0
-          ? selectedOptions.join(", ")
-          : "Aucune option") +
-        "\n\n";
+  const pricePerM2El = document.getElementById("pricePerM2");
+  if (pricePerM2El) pricePerM2El.textContent = formatCurrency(pricePerM2);
 
-      recapText +=
-        "Ce devis est une estimation indicative. Un devis définitif vous sera transmis par GAMAX-CM.\n";
+  const summarySentence = document.getElementById("summarySentence");
+  if (summarySentence) {
+    summarySentence.textContent =
+      typeLabel +
+      " de " +
+      width.toString().replace(".", ",") +
+      " m x " +
+      length.toString().replace(".", ",") +
+      " m, hauteur " +
+      height.toString().replace(".", ",") +
+      " m, " +
+      claddingAreaText.toLowerCase() +
+      ", toiture " +
+      (ROOF_TYPE_LABELS[roofType] || "") +
+      " " +
+      (roofColor || "") +
+      ", bardage " +
+      (CLADDING_TYPE_LABELS[claddingType] || "") +
+      " " +
+      claddingColor +
+      ". Prix estimatif : " +
+      formatCurrency(totalHT) +
+      " HT (dont livraison env. " +
+      formatCurrency(delivery) +
+      ").";
+  }
 
-      // Envoi vers le bloc récap + stockage pour commander.html
-      afficherRecapitulatif(recapText);
+  // met à jour le schéma 2D
+  updateBardage2DView();
+
+  // ---- TEXTE DEVIS POUR RÉCAP + PAGE COMMANDE ----
+  let recapText = "Devis abri métallique GAMAX-CM\n\n";
+
+  recapText += "Type d'abri : " + typeLabel + "\n";
+  recapText +=
+    "Dimensions : " +
+    width.toString().replace(".", ",") +
+    " m x " +
+    length.toString().replace(".", ",") +
+    " m, hauteur " +
+    height.toString().replace(".", ",") +
+    " m\n\n";
+
+  recapText +=
+    "Toiture : " +
+    (ROOF_TYPE_LABELS[roofType] || "Non précisé") +
+    "\n";
+  recapText +=
+    "Couleur de toiture (RAL) : " +
+    (roofColor || "Non précisée") +
+    "\n\n";
+
+  recapText +=
+    "Bardage : " +
+    (CLADDING_TYPE_LABELS[claddingType] || "Non précisé") +
+    "\n";
+  recapText +=
+    "Couleur de bardage (RAL) : " +
+    claddingColor +
+    "\n";
+  recapText += "Façades bardées : " + claddingAreaText + "\n\n";
+
+  recapText += "Adresse / lieu : " + addressText + "\n";
+  if (deliveryMode === "retrait") {
+    recapText +=
+      "Mode : Retrait à l’atelier GAMAX-CM – 47400 Tonneins (pas de frais de livraison)\n\n";
+  } else {
+    recapText +=
+      "Livraison estimative : " +
+      (delivery ? formatCurrency(delivery) + " HT" : "À définir") +
+      "\n\n";
+  }
+
+  recapText +=
+    "Prix estimatif : " +
+    formatCurrency(totalHT) +
+    " HT soit env. " +
+    formatCurrency(totalTTC) +
+    " TTC\n\n";
+
+  recapText +=
+    "Options sélectionnées : " +
+    (selectedOptions.length > 0
+      ? selectedOptions.join(", ")
+      : "Aucune option") +
+    "\n\n";
+
+  recapText +=
+    "Ce devis est une estimation indicative. Un devis définitif vous sera transmis par GAMAX-CM.\n";
+
+  // Envoi vers le bloc récap + stockage pour commander.html
+  afficherRecapitulatif(recapText);
+}
 
       // met à jour le schéma 2D
       updateBardage2DView();
