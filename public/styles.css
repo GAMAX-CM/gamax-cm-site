@@ -540,5 +540,23 @@ body.no-scroll {
   font-size: 0.8rem;
   color: #666;
 }
+.radio-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.radio-row label {
+  font-size: 0.9rem;
+}
+
+@media (min-width: 768px) {
+  .radio-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+  }
+}
 
 }
