@@ -629,34 +629,52 @@
             </div>
 
             <!-- 6. ADRESSE -->
-            <h3>6. Adresse du projet & livraison</h3>
-            <div class="form-grid address-grid">
-              <div class="field">
-                <label for="postalCode">Code postal</label>
-                <input
-                  type="text"
-                  id="postalCode"
-                  name="postalCode"
-                  inputmode="numeric"
-                  maxlength="5"
-                />
-                <p class="field-help">
-                  Saisissez les 5 chiffres du code postal du chantier.
-                </p>
-              </div>
+          <h3>6. Adresse du projet & livraison</h3>
+<div class="form-grid address-grid">
+  <div class="field">
+    <label>Mode de retrait / livraison</label>
+    <div class="radio-row">
+      <label>
+        <input type="radio" name="deliveryMode" value="livraison" checked>
+        Livraison sur site
+      </label>
+      <label>
+        <input type="radio" name="deliveryMode" value="retrait">
+        Retrait à l’atelier GAMAX-CM – 47400 Tonneins
+      </label>
+    </div>
+    <p class="field-help">
+      Choisissez si vous souhaitez être livré ou venir chercher l’abri à Tonneins.
+    </p>
+  </div>
 
-              <div class="field">
-                <label for="city">Ville</label>
-                <select id="city" name="city">
-                  <option value="">
-                    Sélectionnez votre ville après saisie du code postal
-                  </option>
-                </select>
-                <p class="field-help">
-                  La liste se met à jour automatiquement selon le code postal.
-                </p>
-              </div>
-            </div>
+  <div class="field">
+    <label for="postalCode">Code postal du chantier</label>
+    <input
+      type="text"
+      id="postalCode"
+      name="postalCode"
+      inputmode="numeric"
+      maxlength="5"
+    />
+    <p class="field-help">
+      Saisissez le code postal uniquement si vous choisissez la livraison sur site.
+    </p>
+  </div>
+
+  <div class="field">
+    <label for="city">Ville</label>
+    <select id="city" name="city">
+      <option value="">
+        Sélectionnez votre ville après saisie du code postal
+      </option>
+    </select>
+    <p class="field-help">
+      La liste se met à jour automatiquement selon le code postal.
+    </p>
+  </div>
+</div>
+
 
             <button class="btn full-width" type="button" id="btnCalculate">
               Calculer le prix estimatif
