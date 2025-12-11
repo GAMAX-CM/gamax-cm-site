@@ -442,7 +442,6 @@ function goToOrderPage() {
   window.location.href = "commander.html";
 }
 window.goToOrderPage = goToOrderPage;
-
 /* =========================================
    THREE.JS – VUE 3D
 ========================================= */
@@ -463,15 +462,15 @@ const PAVE_TEXTURE_PATH = "assets/texture-pave-gris.jpg";
 
 // Module de base (en mètres)
 const BASE_LENGTH_M = 5;   // X
-const BASE_WIDTH_M = 3;    // Z
+const BASE_WIDTH_M  = 3;   // Z
 const BASE_HEIGHT_M = 2.15;
-const GLOBAL_SCALE = 2.5;
+const GLOBAL_SCALE  = 2.5;
 
 function initThree() {
   const canvas = document.getElementById("viewer3d");
   if (!canvas || !window.THREE) return;
 
-  const width = canvas.clientWidth || 400;
+  const width  = canvas.clientWidth || 400;
   const height = canvas.clientHeight || (width * 3) / 4;
 
   scene = new THREE.Scene();
@@ -491,7 +490,7 @@ function initThree() {
   dir.position.set(10, 20, 10);
   scene.add(dir);
 
-  // Disque sol
+  // ----- Disque sol pavé -----
   const discGeo = new THREE.CircleGeometry(5, 64);
   const discMat = new THREE.MeshPhongMaterial({
     color: 0xffffff,
@@ -502,7 +501,7 @@ function initThree() {
   groundDisc.position.y = 0;
   scene.add(groundDisc);
 
-  // Dalle sous l’abri
+  // ----- Dalle sous l’abri -----
   const padGeo = new THREE.PlaneGeometry(4, 3);
   const padMat = new THREE.MeshPhongMaterial({
     color: 0xffffff,
@@ -532,7 +531,7 @@ function initThree() {
     () => {}
   );
 
-  // Fond
+  // ----- Fond jardin / mur -----
   const texLoader = new THREE.TextureLoader();
   texLoader.load(
     "assets/fond-jardin.jpg",
@@ -580,7 +579,7 @@ function initThree() {
 function onThreeResize() {
   const canvas = document.getElementById("viewer3d");
   if (!canvas || !renderer || !camera) return;
-  const width = canvas.clientWidth || 400;
+  const width  = canvas.clientWidth || 400;
   const height = canvas.clientHeight || (width * 3) / 4;
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
@@ -614,10 +613,10 @@ function getCladdingColor3D() {
 
 /* ---- DIMENSIONS COURANTES ---- */
 function getCurrentDimensions() {
-  const widthSel = document.getElementById("width");
+  const widthSel  = document.getElementById("width");
   const lengthSel = document.getElementById("length");
   const heightSel = document.getElementById("height");
-  const width = parseFloat(widthSel?.value || "3");
+  const width  = parseFloat(widthSel?.value  || "3");
   const length = parseFloat(lengthSel?.value || "3");
   const height = parseFloat(heightSel?.value || "2.15");
   return { width, length, height };
@@ -642,7 +641,7 @@ function buildStructureFromConfig() {
   scene.add(structureGroup);
 
   const { width, length, height } = getCurrentDimensions();
-  const bays = getBayCount(length);
+  const bays       = getBayCount(length);
   const bayLengthM = length / bays;
 
   const baseSize = new THREE.Vector3();
@@ -654,13 +653,13 @@ function buildStructureFromConfig() {
     const clone = baseModule.clone(true);
 
     const scaleX = (bayLengthM / BASE_LENGTH_M) * GLOBAL_SCALE;
-    const scaleZ = (width / BASE_WIDTH_M) * GLOBAL_SCALE;
-    const scaleY = (height / BASE_HEIGHT_M) * GLOBAL_SCALE;
+    const scaleZ = (width      / BASE_WIDTH_M)  * GLOBAL_SCALE;
+    const scaleY = (height     / BASE_HEIGHT_M) * GLOBAL_SCALE;
 
     clone.scale.set(scaleX, scaleY, scaleZ);
 
     const minXScaled = baseBBox.min.x * scaleX;
-    const offsetX = currentX - minXScaled;
+    const offsetX    = currentX - minXScaled;
 
     clone.position.set(offsetX, 0, 0);
     structureGroup.add(clone);
@@ -676,7 +675,7 @@ function buildStructureFromConfig() {
   return bbox;
 }
 
-/* ---- TOIT + BARDAGE SEMI-OPAQUE ---- */
+/* ---- TOIT + BARDAGE SEMI-OPAQUE AVEC PENTE ---- */
 function rebuildOverlays(bbox) {
   if (!bbox) return;
 
@@ -689,29 +688,39 @@ function rebuildOverlays(bbox) {
   const min = bbox.min;
   const max = bbox.max;
 
-  const lenX = max.x - min.x;
-  const widthZ = max.z - min.z;
+  const lenX    = max.x - min.x;
+  const widthZ  = max.z - min.z;
   const heightY = max.y - min.y;
-  const eps = 0.02 * Math.max(lenX, widthZ, heightY);
+  const eps     = 0.02 * Math.max(lenX, widthZ, heightY);
 
   const roofMat = new THREE.MeshStandardMaterial({
     color: getRoofColor3D(),
     transparent: true,
-    opacity: 0.85,          // moins transparent
+    opacity: 0.88,        // toiture quasi opaque
     side: THREE.DoubleSide,
+    metalness: 0.35,
+    roughness: 0.4,
   });
 
   const claddingMat = new THREE.MeshStandardMaterial({
     color: getCladdingColor3D(),
     transparent: true,
-    opacity: 0.9,           // moins transparent
+    opacity: 0.92,        // bardage quasi opaque
     side: THREE.DoubleSide,
+    metalness: 0.25,
+    roughness: 0.55,
   });
 
-  // Toiture
+  // ----- TOITURE -----
   const roofGeo = new THREE.PlaneGeometry(lenX, widthZ);
   roofMesh = new THREE.Mesh(roofGeo, roofMat);
+
+  // on part horizontal
   roofMesh.rotation.x = -Math.PI / 2;
+  // pente légère (monopente) le long de la largeur
+  const slopeAngle = THREE.MathUtils.degToRad(8); // ≈ 8°
+  roofMesh.rotation.z = slopeAngle;
+
   roofMesh.position.set(
     (min.x + max.x) / 2,
     max.y + eps,
@@ -719,8 +728,11 @@ function rebuildOverlays(bbox) {
   );
   overlayGroup.add(roofMesh);
 
-  // Façades
-  const geoLong = new THREE.PlaneGeometry(lenX, heightY);
+  // ----- FAÇADES -----
+  const geoLong  = new THREE.PlaneGeometry(lenX, heightY);
+  const geoShort = new THREE.PlaneGeometry(widthZ, heightY);
+
+  // A – long pan avant (z max)
   cladMeshes.A = new THREE.Mesh(geoLong, claddingMat.clone());
   cladMeshes.A.position.set(
     (min.x + max.x) / 2,
@@ -729,6 +741,7 @@ function rebuildOverlays(bbox) {
   );
   overlayGroup.add(cladMeshes.A);
 
+  // C – long pan arrière (z min)
   cladMeshes.C = new THREE.Mesh(geoLong, claddingMat.clone());
   cladMeshes.C.position.set(
     (min.x + max.x) / 2,
@@ -738,7 +751,7 @@ function rebuildOverlays(bbox) {
   cladMeshes.C.rotation.y = Math.PI;
   overlayGroup.add(cladMeshes.C);
 
-  const geoShort = new THREE.PlaneGeometry(widthZ, heightY);
+  // B – pignon gauche (x min)
   cladMeshes.B = new THREE.Mesh(geoShort, claddingMat.clone());
   cladMeshes.B.position.set(
     min.x - eps,
@@ -748,6 +761,7 @@ function rebuildOverlays(bbox) {
   cladMeshes.B.rotation.y = Math.PI / 2;
   overlayGroup.add(cladMeshes.B);
 
+  // D – pignon droit (x max)
   cladMeshes.D = new THREE.Mesh(geoShort, claddingMat.clone());
   cladMeshes.D.position.set(
     max.x + eps,
@@ -757,7 +771,7 @@ function rebuildOverlays(bbox) {
   cladMeshes.D.rotation.y = -Math.PI / 2;
   overlayGroup.add(cladMeshes.D);
 
-  // Sol + fond
+  // ----- Sol + fond adaptés à la taille -----
   const radius = Math.max(lenX, widthZ) * 0.9;
   if (groundDisc) {
     groundDisc.geometry.dispose();
@@ -767,7 +781,7 @@ function rebuildOverlays(bbox) {
 
   if (padMesh) {
     const padLength = lenX * 1.05;
-    const padWidth = widthZ * 1.15;
+    const padWidth  = widthZ * 1.15;
     padMesh.geometry.dispose();
     padMesh.geometry = new THREE.PlaneGeometry(padLength, padWidth);
     padMesh.position.y = min.y;
@@ -790,7 +804,7 @@ function rebuildOverlays(bbox) {
     );
     controls.target.set(center.x, center.y * 0.7, center.z);
     camera.position.set(
-      center.x + lenX * 0.9,
+      center.x + lenX  * 0.9,
       center.y + heightY * 1.1,
       center.z + widthZ * 1.0
     );
@@ -835,11 +849,11 @@ function zoom3D(factor) {
 
 /* ---- PLEIN ÉCRAN / TOOLBAR ---- */
 function initViewerUI() {
-  const wrapper = document.getElementById("viewer3d-wrapper");
-  const btnFull = document.getElementById("btnFullscreen3D");
-  const btnClose = document.getElementById("btnClose3D");
+  const wrapper   = document.getElementById("viewer3d-wrapper");
+  const btnFull   = document.getElementById("btnFullscreen3D");
+  const btnClose  = document.getElementById("btnClose3D");
   const btnZoomIn = document.getElementById("btnZoomIn3D");
-  const btnZoomOut = document.getElementById("btnZoomOut3D");
+  const btnZoomOut= document.getElementById("btnZoomOut3D");
 
   if (btnFull && wrapper) {
     btnFull.addEventListener("click", () => {
@@ -956,265 +970,4 @@ document.addEventListener("DOMContentLoaded", () => {
   initThree();
   initViewerUI();
 });
-/* =========================================================
-   VUE 3D GAMAX-CM – abri simple + couleurs toiture/bardage
-   (à coller tout en bas de script.js)
-========================================================= */
-(function () {
-  // Sécurité : si Three.js n'est pas chargé ou pas de canvas, on sort.
-  const canvas = document.getElementById("viewer3d");
-  if (!canvas || typeof THREE === "undefined") return;
 
-  let scene, camera, renderer, controls;
-  let shedGroup = null;
-  let bodyMesh = null;
-  let roofMesh = null;
-
-  const wrapper = document.getElementById("viewer3d-wrapper");
-  const btnFull = document.getElementById("btnFullscreen3D");
-  const btnClose = document.getElementById("btnClose3D");
-  const btnZoomIn = document.getElementById("btnZoomIn3D");
-  const btnZoomOut = document.getElementById("btnZoomOut3D");
-
-  // --------- Utils pour récupérer les valeurs du configurateur ---------
-  function getSelectNumber(id, fallback) {
-    const el = document.getElementById(id);
-    if (!el || !el.value) return fallback;
-    const v = parseFloat(el.value.replace(",", "."));
-    return isNaN(v) ? fallback : v;
-  }
-
-  function getCheckedRadioValue(name) {
-    const el = document.querySelector(`input[name="${name}"]:checked`);
-    return el ? el.value : "";
-  }
-
-  function getRALColorFromRadio(name) {
-    const input = document.querySelector(`input[name="${name}"]:checked`);
-    if (!input) return "#888888";
-    const box = input.closest(".ral-choice")?.querySelector(".ral-box");
-    if (!box) return "#888888";
-    return window.getComputedStyle(box).backgroundColor; // "rgb(...)"
-  }
-
-  function cssColorToThree(colorStr) {
-    // accepte "rgb(r,g,b)" ou "#xxxxxx"
-    try {
-      return new THREE.Color(colorStr);
-    } catch {
-      return new THREE.Color("#888888");
-    }
-  }
-
-  // --------- Initialisation Three.js ---------
-  function initThree() {
-    const width = canvas.clientWidth || 300;
-    const height = canvas.clientHeight || 220;
-
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf5f0e8); // beige clair
-
-    camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.set(8, 5, 10);
-
-    renderer = new THREE.WebGLRenderer({
-      canvas: canvas,
-      antialias: true,
-    });
-    renderer.setPixelRatio(window.devicePixelRatio || 1);
-    renderer.setSize(width, height);
-
-    const amb = new THREE.AmbientLight(0xffffff, 0.8);
-    scene.add(amb);
-
-    const dir = new THREE.DirectionalLight(0xffffff, 0.9);
-    dir.position.set(10, 20, 10);
-    scene.add(dir);
-
-    // Sol simple
-    const groundGeo = new THREE.PlaneGeometry(20, 20);
-    const groundMat = new THREE.MeshPhongMaterial({
-      color: 0xe3d5bd,
-      side: THREE.DoubleSide,
-    });
-    const ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = 0;
-    scene.add(ground);
-
-    controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
-    controls.target.set(0, 1.5, 0);
-
-    window.addEventListener("resize", onResize);
-    animate();
-
-    // Premier build
-    rebuildFromConfig();
-  }
-
-  function onResize() {
-    if (!renderer || !camera) return;
-    const width = canvas.clientWidth || 300;
-    const height = canvas.clientHeight || 220;
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-    renderer.setSize(width, height);
-  }
-
-  function animate() {
-    requestAnimationFrame(animate);
-    if (controls) controls.update();
-    if (renderer && scene && camera) {
-      renderer.render(scene, camera);
-    }
-  }
-
-  // --------- Construction de l’abri 3D ---------
-  function rebuildFromConfig() {
-    const largeur = getSelectNumber("width", 3);   // m
-    const longueur = getSelectNumber("length", 5); // m
-    const hauteur = getSelectNumber("height", 2.15); // m
-
-    const roofColorCSS = getRALColorFromRadio("roofColor");
-    const claddingColorCSS = getRALColorFromRadio("claddingColor");
-    const roofColor = cssColorToThree(roofColorCSS);
-    const claddingColor = cssColorToThree(claddingColorCSS);
-
-    // Supprime l’ancien groupe
-    if (shedGroup) {
-      scene.remove(shedGroup);
-      shedGroup.traverse((obj) => {
-        if (obj.isMesh) {
-          obj.geometry.dispose();
-          obj.material.dispose();
-        }
-      });
-    }
-
-    shedGroup = new THREE.Group();
-
-    // Corps de l’abri (volume bardé)
-    const bodyGeo = new THREE.BoxGeometry(1, 1, 1);
-    const bodyMat = new THREE.MeshStandardMaterial({
-      color: claddingColor,
-      transparent: true,
-      opacity: 0.9, // moins transparent
-      metalness: 0.2,
-      roughness: 0.6,
-    });
-    bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
-    bodyMesh.position.y = 0.5;
-    shedGroup.add(bodyMesh);
-
-    // Toiture (panneau)
-    const roofGeo = new THREE.PlaneGeometry(1.1, 1.1);
-    const roofMat = new THREE.MeshStandardMaterial({
-      color: roofColor,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.9, // moins transparent
-      metalness: 0.3,
-      roughness: 0.4,
-    });
-    roofMesh = new THREE.Mesh(roofGeo, roofMat);
-
-    // Légère pente
-    roofMesh.rotation.x = -Math.PI / 3.5;
-    roofMesh.position.y = 1.05;
-    shedGroup.add(roofMesh);
-
-    // Mise à l’échelle en fonction des dimensions (facteur visuel)
-    const SCALE = 0.4;
-    // On considère X = longueur, Y = hauteur, Z = largeur
-    shedGroup.scale.set(longueur * SCALE, hauteur * SCALE, largeur * SCALE);
-
-    // Centre l’abri
-    const box = new THREE.Box3().setFromObject(shedGroup);
-    const center = box.getCenter(new THREE.Vector3());
-    shedGroup.position.sub(center);
-
-    // Ajuste la caméra pour bien cadrer
-    const size = box.getSize(new THREE.Vector3());
-    const radius = size.length() * 0.7;
-    const dist = radius / Math.sin((Math.PI * camera.fov) / 360);
-
-    camera.position.set(dist, dist * 0.6, dist);
-    controls.target.set(0, size.y * 0.4, 0);
-    controls.update();
-
-    scene.add(shedGroup);
-  }
-
-  function updateColorsOnly() {
-    if (!bodyMesh || !roofMesh) return;
-    const roofColorCSS = getRALColorFromRadio("roofColor");
-    const claddingColorCSS = getRALColorFromRadio("claddingColor");
-    bodyMesh.material.color.set(cssColorToThree(claddingColorCSS));
-    roofMesh.material.color.set(cssColorToThree(roofColorCSS));
-  }
-
-  // --------- Plein écran & zoom ---------
-  function enableFullscreen() {
-    if (!wrapper) return;
-    wrapper.classList.add("fullscreen-3d");
-    onResize();
-  }
-  function disableFullscreen() {
-    if (!wrapper) return;
-    wrapper.classList.remove("fullscreen-3d");
-    onResize();
-  }
-
-  function zoom(factor) {
-    // on rapproche / éloigne la caméra
-    camera.position.sub(controls.target).multiplyScalar(factor).add(controls.target);
-  }
-
-  // --------- Écouteurs DOM ---------
-  function attachUIEvents() {
-    // Dimensions
-    ["width", "length", "height"].forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) {
-        el.addEventListener("change", rebuildFromConfig);
-        el.addEventListener("input", rebuildFromConfig);
-      }
-    });
-
-    // Couleurs
-    document.querySelectorAll('input[name="roofColor"]').forEach((el) => {
-      el.addEventListener("change", () => {
-        updateColorsOnly();
-      });
-    });
-    document.querySelectorAll('input[name="claddingColor"]').forEach((el) => {
-      el.addEventListener("change", () => {
-        updateColorsOnly();
-      });
-    });
-
-    // Plein écran
-    if (btnFull) {
-      btnFull.addEventListener("click", enableFullscreen);
-    }
-    if (btnClose) {
-      btnClose.addEventListener("click", disableFullscreen);
-    }
-
-    // Zoom
-    if (btnZoomIn) {
-      btnZoomIn.addEventListener("click", () => zoom(0.8)); // rapproche
-    }
-    if (btnZoomOut) {
-      btnZoomOut.addEventListener("click", () => zoom(1.25)); // éloigne
-    }
-  }
-
-  // --------- Lancement ---------
-  window.addEventListener("DOMContentLoaded", () => {
-    initThree();
-    attachUIEvents();
-  });
-})();
