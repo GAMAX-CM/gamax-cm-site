@@ -706,26 +706,42 @@ function rebuildOverlays(bbox) {
     side: THREE.DoubleSide,
   });
 
-   // =======================
-  // TOITURE MONOPENTE
-  // =======================
-  const roofGeo = new THREE.PlaneGeometry(lenX, widthZ);
-  roofMesh = new THREE.Mesh(roofGeo, roofMat);
+// =======================
+// TOITURE MONOPENTE
+// =======================
 
-  // 10 % de pente  → angle = atan(0.10)
-  const TILT_ANGLE = Math.atan(0.10); // ≈ 5,7°
+// --- Débords (en proportion des dimensions) ---
+const overhangLong = lenX * 0.05;   // débord en longueur (~5%)
+const overhangLow  = widthZ * 0.10; // débord côté bas de pente (~10%)
+const overhangHigh = widthZ * 0.03; // léger débord côté haut (~3%)
 
-  // - PI/2 : plan horizontal
-  // - TILT_ANGLE : pente dans l’autre sens qu’avant
-  roofMesh.rotation.set(-Math.PI / 2 - TILT_ANGLE, 0, 0);
-
- roofMesh.position.set(
-  (min.x + max.x) / 2,
-  max.y + eps * 0.1,   // ⇦ beaucoup plus proche de la structure
-  (min.z + max.z) / 2
+// Géométrie de la toiture avec débord
+const roofGeo = new THREE.PlaneGeometry(
+  lenX + overhangLong * 2,               // débord avant / arrière
+  widthZ + overhangLow + overhangHigh    // débord haut/bas pente
 );
 
-  overlayGroup.add(roofMesh);
+roofMesh = new THREE.Mesh(roofGeo, roofMat);
+
+// --- Inclinaison 10 % (à conserver exactement ainsi) ---
+const TILT_ANGLE = Math.atan(0.10); // ≈ 5,7°
+roofMesh.rotation.set(
+  -Math.PI / 2 - TILT_ANGLE,   // donne l'inclinaison correcte
+  0,
+  0
+);
+
+// --- Position de la toiture ---
+// plus proche : eps * 0.10
+// décalage léger sur Z pour mettre le débord côté bas de pente
+roofMesh.position.set(
+  (min.x + max.x) / 2,
+  max.y + eps * 0.10,
+  (min.z + max.z) / 2 + (overhangLow - overhangHigh) / 2
+);
+
+overlayGroup.add(roofMesh);
+
 
 
   // =======================
