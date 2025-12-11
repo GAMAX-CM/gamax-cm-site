@@ -719,11 +719,12 @@ function rebuildOverlays(bbox) {
   // - TILT_ANGLE : pente dans l’autre sens qu’avant
   roofMesh.rotation.set(-Math.PI / 2 - TILT_ANGLE, 0, 0);
 
-  roofMesh.position.set(
-    (min.x + max.x) / 2,
-    max.y + eps,
-    (min.z + max.z) / 2
-  );
+ roofMesh.position.set(
+  (min.x + max.x) / 2,
+  max.y + eps * 0.1,   // ⇦ beaucoup plus proche de la structure
+  (min.z + max.z) / 2
+);
+
   overlayGroup.add(roofMesh);
 
 
