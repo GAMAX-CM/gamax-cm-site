@@ -674,8 +674,7 @@ function buildStructureFromConfig() {
   bbox = new THREE.Box3().setFromObject(structureGroup);
   return bbox;
 }
-
-/* ---- TOIT + BARDAGE SEMI-OPAQUE AVEC PENTE ---- */
+/* ---- TOIT + BARDAGE SEMI-OPAQUE ---- */
 function rebuildOverlays(bbox) {
   if (!bbox) return;
 
@@ -688,38 +687,38 @@ function rebuildOverlays(bbox) {
   const min = bbox.min;
   const max = bbox.max;
 
-  const lenX    = max.x - min.x;
-  const widthZ  = max.z - min.z;
-  const heightY = max.y - min.y;
-  const eps     = 0.02 * Math.max(lenX, widthZ, heightY);
+  const lenX = max.x - min.x;      // longueur
+  const widthZ = max.z - min.z;    // largeur
+  const heightY = max.y - min.y;   // hauteur
+  const eps = 0.02 * Math.max(lenX, widthZ, heightY);
 
   const roofMat = new THREE.MeshStandardMaterial({
     color: getRoofColor3D(),
     transparent: true,
-    opacity: 0.88,        // toiture quasi opaque
+    opacity: 0.85,          // moins transparent
     side: THREE.DoubleSide,
-    metalness: 0.35,
-    roughness: 0.4,
   });
 
   const claddingMat = new THREE.MeshStandardMaterial({
     color: getCladdingColor3D(),
     transparent: true,
-    opacity: 0.92,        // bardage quasi opaque
+    opacity: 0.9,           // moins transparent
     side: THREE.DoubleSide,
-    metalness: 0.25,
-    roughness: 0.55,
   });
 
-  // ----- TOITURE -----
+  // =======================
+  // TOITURE MONOPENTE
+  // =======================
   const roofGeo = new THREE.PlaneGeometry(lenX, widthZ);
   roofMesh = new THREE.Mesh(roofGeo, roofMat);
 
-  // on part horizontal
-  roofMesh.rotation.x = -Math.PI / 2;
-  // pente légère (monopente) le long de la largeur
-  const slopeAngle = THREE.MathUtils.degToRad(8); // ≈ 8°
-  roofMesh.rotation.z = slopeAngle;
+  // On part d’une toiture "horizontale" puis
+  // on ajoute un angle de pente.
+  const TILT_ANGLE = Math.PI / 14; // ≈ 13° de pente
+
+  // - PI/2 : on met le plan à l’horizontale
+  // + TILT_ANGLE : on incline pour simuler la monopente
+  roofMesh.rotation.set(-Math.PI / 2 + TILT_ANGLE, 0, 0);
 
   roofMesh.position.set(
     (min.x + max.x) / 2,
@@ -728,11 +727,10 @@ function rebuildOverlays(bbox) {
   );
   overlayGroup.add(roofMesh);
 
-  // ----- FAÇADES -----
-  const geoLong  = new THREE.PlaneGeometry(lenX, heightY);
-  const geoShort = new THREE.PlaneGeometry(widthZ, heightY);
-
-  // A – long pan avant (z max)
+  // =======================
+  // FAÇADES BARDÉES
+  // =======================
+  const geoLong = new THREE.PlaneGeometry(lenX, heightY);
   cladMeshes.A = new THREE.Mesh(geoLong, claddingMat.clone());
   cladMeshes.A.position.set(
     (min.x + max.x) / 2,
@@ -741,7 +739,6 @@ function rebuildOverlays(bbox) {
   );
   overlayGroup.add(cladMeshes.A);
 
-  // C – long pan arrière (z min)
   cladMeshes.C = new THREE.Mesh(geoLong, claddingMat.clone());
   cladMeshes.C.position.set(
     (min.x + max.x) / 2,
@@ -751,7 +748,7 @@ function rebuildOverlays(bbox) {
   cladMeshes.C.rotation.y = Math.PI;
   overlayGroup.add(cladMeshes.C);
 
-  // B – pignon gauche (x min)
+  const geoShort = new THREE.PlaneGeometry(widthZ, heightY);
   cladMeshes.B = new THREE.Mesh(geoShort, claddingMat.clone());
   cladMeshes.B.position.set(
     min.x - eps,
@@ -761,7 +758,6 @@ function rebuildOverlays(bbox) {
   cladMeshes.B.rotation.y = Math.PI / 2;
   overlayGroup.add(cladMeshes.B);
 
-  // D – pignon droit (x max)
   cladMeshes.D = new THREE.Mesh(geoShort, claddingMat.clone());
   cladMeshes.D.position.set(
     max.x + eps,
@@ -771,7 +767,9 @@ function rebuildOverlays(bbox) {
   cladMeshes.D.rotation.y = -Math.PI / 2;
   overlayGroup.add(cladMeshes.D);
 
-  // ----- Sol + fond adaptés à la taille -----
+  // =======================
+  // SOL + DALLE + FOND
+  // =======================
   const radius = Math.max(lenX, widthZ) * 0.9;
   if (groundDisc) {
     groundDisc.geometry.dispose();
@@ -781,7 +779,7 @@ function rebuildOverlays(bbox) {
 
   if (padMesh) {
     const padLength = lenX * 1.05;
-    const padWidth  = widthZ * 1.15;
+    const padWidth = widthZ * 1.15;
     padMesh.geometry.dispose();
     padMesh.geometry = new THREE.PlaneGeometry(padLength, padWidth);
     padMesh.position.y = min.y;
@@ -796,6 +794,7 @@ function rebuildOverlays(bbox) {
     backgroundPlane.scale.set(1.3, 1.3, 1);
   }
 
+  // Re-cadrage de la caméra
   if (controls && camera) {
     const center = new THREE.Vector3(
       (min.x + max.x) / 2,
@@ -804,7 +803,7 @@ function rebuildOverlays(bbox) {
     );
     controls.target.set(center.x, center.y * 0.7, center.z);
     camera.position.set(
-      center.x + lenX  * 0.9,
+      center.x + lenX * 0.9,
       center.y + heightY * 1.1,
       center.z + widthZ * 1.0
     );
@@ -812,6 +811,8 @@ function rebuildOverlays(bbox) {
 
   updateOverlayStyles();
 }
+
+
 
 function updateOverlayStyles() {
   const cladColor = getCladdingColor3D();
