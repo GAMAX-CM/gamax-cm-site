@@ -456,6 +456,8 @@ let groundDisc = null;
 let padMesh = null;
 let backgroundPlane = null;
 const cladMeshes = { A: null, B: null, C: null, D: null };
+let roofRibs = []; // nervures de toiture
+
 
 const MODEL_PATH = "assets/abri-monopente-3x5m.gltf";
 const PAVE_TEXTURE_PATH = "assets/texture-pave-gris.jpg";
@@ -470,11 +472,11 @@ function initThree() {
   const canvas = document.getElementById("viewer3d");
   if (!canvas || !window.THREE) return;
 
-  const width  = canvas.clientWidth || 400;
+  const width = canvas.clientWidth || 400;
   const height = canvas.clientHeight || (width * 3) / 4;
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xf5f5f5);
+  scene.background = new THREE.Color(0xf5f0e8); // beige clair du site
 
   camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
   camera.position.set(8, 5, 10);
@@ -483,14 +485,33 @@ function initThree() {
   renderer.setPixelRatio(window.devicePixelRatio || 1);
   renderer.setSize(width, height);
 
-  const amb = new THREE.AmbientLight(0xffffff, 0.8);
+  // --- Ombres activées ---
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  // --- Lumière ambiante douce ---
+  const amb = new THREE.AmbientLight(0xffffff, 0.65);
   scene.add(amb);
 
+  // --- Lumière directionnelle principale (soleil) ---
   const dir = new THREE.DirectionalLight(0xffffff, 0.9);
-  dir.position.set(10, 20, 10);
+  dir.position.set(15, 25, 10);
+  dir.castShadow = true;
+  dir.shadow.mapSize.width = 2048;
+  dir.shadow.mapSize.height = 2048;
+  dir.shadow.camera.near = 1;
+  dir.shadow.camera.far = 80;
+  dir.shadow.camera.left = -30;
+  dir.shadow.camera.right = 30;
+  dir.shadow.camera.top = 30;
+  dir.shadow.camera.bottom = -30;
   scene.add(dir);
 
-  // ----- Disque sol pavé -----
+  // --- Légère lumière de ciel / sol pour adoucir ---
+  const hemi = new THREE.HemisphereLight(0xffffff, 0xb0a89a, 0.4);
+  scene.add(hemi);
+
+  // Disque sol (pavés)
   const discGeo = new THREE.CircleGeometry(5, 64);
   const discMat = new THREE.MeshPhongMaterial({
     color: 0xffffff,
@@ -499,9 +520,10 @@ function initThree() {
   groundDisc = new THREE.Mesh(discGeo, discMat);
   groundDisc.rotation.x = -Math.PI / 2;
   groundDisc.position.y = 0;
+  groundDisc.receiveShadow = true;
   scene.add(groundDisc);
 
-  // ----- Dalle sous l’abri -----
+  // Dalle sous l’abri
   const padGeo = new THREE.PlaneGeometry(4, 3);
   const padMat = new THREE.MeshPhongMaterial({
     color: 0xffffff,
@@ -510,6 +532,7 @@ function initThree() {
   padMesh = new THREE.Mesh(padGeo, padMat);
   padMesh.rotation.x = -Math.PI / 2;
   padMesh.position.y = 0.01;
+  padMesh.receiveShadow = true;
   scene.add(padMesh);
 
   // Texture pavée
@@ -531,7 +554,7 @@ function initThree() {
     () => {}
   );
 
-  // ----- Fond jardin / mur -----
+  // Fond photo (mur / jardin)
   const texLoader = new THREE.TextureLoader();
   texLoader.load(
     "assets/fond-jardin.jpg",
@@ -574,24 +597,6 @@ function initThree() {
 
   window.addEventListener("resize", onThreeResize);
   animateThree();
-}
-
-function onThreeResize() {
-  const canvas = document.getElementById("viewer3d");
-  if (!canvas || !renderer || !camera) return;
-  const width  = canvas.clientWidth || 400;
-  const height = canvas.clientHeight || (width * 3) / 4;
-  camera.aspect = width / height;
-  camera.updateProjectionMatrix();
-  renderer.setSize(width, height);
-}
-
-function animateThree() {
-  requestAnimationFrame(animateThree);
-  if (controls) controls.update();
-  if (renderer && scene && camera) {
-    renderer.render(scene, camera);
-  }
 }
 
 /* ---- COULEURS 3D ---- */
