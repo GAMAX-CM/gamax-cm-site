@@ -689,69 +689,105 @@ function rebuildOverlays(bbox) {
   overlayGroup = new THREE.Group();
   scene.add(overlayGroup);
 
+  // reset nervures
+  roofRibs = [];
+
   const min = bbox.min;
   const max = bbox.max;
 
-  const lenX = max.x - min.x;      // longueur
-  const widthZ = max.z - min.z;    // largeur
-  const heightY = max.y - min.y;   // hauteur
+  const lenX = max.x - min.x;   // longueur
+  const widthZ = max.z - min.z; // largeur
+  const heightY = max.y - min.y;
   const eps = 0.02 * Math.max(lenX, widthZ, heightY);
 
   const roofMat = new THREE.MeshStandardMaterial({
     color: getRoofColor3D(),
     transparent: true,
-    opacity: 0.85,          // moins transparent
+    opacity: 0.9,          // moins transparent = plus réaliste
     side: THREE.DoubleSide,
+    metalness: 0.35,
+    roughness: 0.4,
   });
 
   const claddingMat = new THREE.MeshStandardMaterial({
     color: getCladdingColor3D(),
     transparent: true,
-    opacity: 0.9,           // moins transparent
+    opacity: 0.92,
     side: THREE.DoubleSide,
+    metalness: 0.25,
+    roughness: 0.55,
   });
 
-// =======================
-// TOITURE MONOPENTE
-// =======================
+  // =======================
+  // TOITURE MONOPENTE + NERVURES
+  // =======================
 
-// --- Débords (en proportion des dimensions) ---
-const overhangLong = lenX * 0.05;   // débord en longueur (~5%)
-const overhangLow  = widthZ * 0.10; // débord côté bas de pente (~10%)
-const overhangHigh = widthZ * 0.03; // léger débord côté haut (~3%)
+  // Débords en mètres (proportionnels à la taille)
+  const overhangLong = lenX * 0.05;  // avant / arrière
+  const overhangLow  = widthZ * 0.10; // bas de pente
+  const overhangHigh = widthZ * 0.03; // haut de pente
 
-// Géométrie de la toiture avec débord
-const roofGeo = new THREE.PlaneGeometry(
-  lenX + overhangLong * 2,               // débord avant / arrière
-  widthZ + overhangLow + overhangHigh    // débord haut/bas pente
-);
+  // Groupe toiture (plateau + nervures)
+  const roofGroup = new THREE.Group();
 
-roofMesh = new THREE.Mesh(roofGeo, roofMat);
+  // Plateau de couverture
+  const roofGeo = new THREE.PlaneGeometry(
+    lenX + overhangLong * 2,
+    widthZ + overhangLow + overhangHigh
+  );
+  const roofPlate = new THREE.Mesh(roofGeo, roofMat);
+  roofPlate.castShadow = true;
+  roofPlate.receiveShadow = false;
+  roofGroup.add(roofPlate);
+  roofMesh = roofPlate; // pour updateOverlayStyles()
 
-// --- Inclinaison 10 % (à conserver exactement ainsi) ---
-const TILT_ANGLE = Math.atan(0.10); // ≈ 5,7°
-roofMesh.rotation.set(
-  -Math.PI / 2 - TILT_ANGLE,   // donne l'inclinaison correcte
-  0,
-  0
-);
+  // Nervures (lignes sombres dans le sens de la longueur)
+  const ribsCount = 6; // nombre de nervures visibles
+  const ribWidth = (widthZ + overhangLow + overhangHigh) / (ribsCount * 3);
+  const ribGeo = new THREE.PlaneGeometry(
+    lenX + overhangLong * 2,
+    ribWidth
+  );
+  const ribMat = new THREE.MeshStandardMaterial({
+    color: 0x000000,
+    transparent: true,
+    opacity: 0.18,
+    side: THREE.DoubleSide,
+    metalness: 0.2,
+    roughness: 0.6,
+  });
 
-// --- Position de la toiture ---
-// plus proche : eps * 0.10
-// décalage léger sur Z pour mettre le débord côté bas de pente
-roofMesh.position.set(
-  (min.x + max.x) / 2,
-  max.y + eps * 0.10,
-  (min.z + max.z) / 2 + (overhangLow - overhangHigh) / 2
-);
+  const totalDepth = widthZ + overhangLow + overhangHigh;
+  const spacing = totalDepth / (ribsCount + 1);
 
-overlayGroup.add(roofMesh);
+  for (let i = 0; i < ribsCount; i++) {
+    const rib = new THREE.Mesh(ribGeo, ribMat);
+    const offsetY = -totalDepth / 2 + spacing * (i + 1); // déplacement local en Y
+    rib.position.set(0, offsetY, 0.002); // léger décalage en Z pour éviter le z-fighting
+    rib.castShadow = false;
+    rib.receiveShadow = false;
+    roofGroup.add(rib);
+    roofRibs.push(rib);
+  }
 
+  // Inclinaison 10 %
+  const TILT_ANGLE = Math.atan(0.10); // ≈ 5,7°
 
+  roofGroup.rotation.set(-Math.PI / 2 - TILT_ANGLE, 0, 0);
+
+  // Position : proche de la structure + débord côté bas de pente
+  roofGroup.position.set(
+    (min.x + max.x) / 2,
+    max.y + eps * 0.10,
+    (min.z + max.z) / 2 + (overhangLow - overhangHigh) / 2
+  );
+
+  overlayGroup.add(roofGroup);
 
   // =======================
   // FAÇADES BARDÉES
   // =======================
+
   const geoLong = new THREE.PlaneGeometry(lenX, heightY);
   cladMeshes.A = new THREE.Mesh(geoLong, claddingMat.clone());
   cladMeshes.A.position.set(
@@ -759,6 +795,8 @@ overlayGroup.add(roofMesh);
     (min.y + max.y) / 2,
     max.z + eps
   );
+  cladMeshes.A.castShadow = true;
+  cladMeshes.A.receiveShadow = true;
   overlayGroup.add(cladMeshes.A);
 
   cladMeshes.C = new THREE.Mesh(geoLong, claddingMat.clone());
@@ -768,6 +806,8 @@ overlayGroup.add(roofMesh);
     min.z - eps
   );
   cladMeshes.C.rotation.y = Math.PI;
+  cladMeshes.C.castShadow = true;
+  cladMeshes.C.receiveShadow = true;
   overlayGroup.add(cladMeshes.C);
 
   const geoShort = new THREE.PlaneGeometry(widthZ, heightY);
@@ -778,6 +818,8 @@ overlayGroup.add(roofMesh);
     (min.z + max.z) / 2
   );
   cladMeshes.B.rotation.y = Math.PI / 2;
+  cladMeshes.B.castShadow = true;
+  cladMeshes.B.receiveShadow = true;
   overlayGroup.add(cladMeshes.B);
 
   cladMeshes.D = new THREE.Mesh(geoShort, claddingMat.clone());
@@ -787,11 +829,14 @@ overlayGroup.add(roofMesh);
     (min.z + max.z) / 2
   );
   cladMeshes.D.rotation.y = -Math.PI / 2;
+  cladMeshes.D.castShadow = true;
+  cladMeshes.D.receiveShadow = true;
   overlayGroup.add(cladMeshes.D);
 
   // =======================
-  // SOL + DALLE + FOND
+  // SOL, DALLE, FOND & CAMÉRA
   // =======================
+
   const radius = Math.max(lenX, widthZ) * 0.9;
   if (groundDisc) {
     groundDisc.geometry.dispose();
@@ -816,7 +861,6 @@ overlayGroup.add(roofMesh);
     backgroundPlane.scale.set(1.3, 1.3, 1);
   }
 
-  // Re-cadrage de la caméra
   if (controls && camera) {
     const center = new THREE.Vector3(
       (min.x + max.x) / 2,
@@ -824,6 +868,7 @@ overlayGroup.add(roofMesh);
       (min.z + max.z) / 2
     );
     controls.target.set(center.x, center.y * 0.7, center.z);
+
     camera.position.set(
       center.x + lenX * 0.9,
       center.y + heightY * 1.1,
@@ -834,14 +879,18 @@ overlayGroup.add(roofMesh);
   updateOverlayStyles();
 }
 
-
-
 function updateOverlayStyles() {
   const cladColor = getCladdingColor3D();
   const roofColor = getRoofColor3D();
 
   if (roofMesh) {
     roofMesh.material.color.set(roofColor);
+  }
+  if (roofRibs && roofRibs.length) {
+    roofRibs.forEach((rib) => {
+      rib.material.color.set(roofColor);
+      rib.material.opacity = 0.18; // on garde un léger contraste
+    });
   }
 
   ["A", "B", "C", "D"].forEach((side) => {
@@ -854,6 +903,7 @@ function updateOverlayStyles() {
     mesh.material.color.set(cladColor);
   });
 }
+
 
 function update3DFromConfig() {
   if (!baseModule) return;
