@@ -706,19 +706,18 @@ function rebuildOverlays(bbox) {
     side: THREE.DoubleSide,
   });
 
-  // =======================
+   // =======================
   // TOITURE MONOPENTE
   // =======================
   const roofGeo = new THREE.PlaneGeometry(lenX, widthZ);
   roofMesh = new THREE.Mesh(roofGeo, roofMat);
 
-  // On part d’une toiture "horizontale" puis
-  // on ajoute un angle de pente.
-  const TILT_ANGLE = Math.PI / 14; // ≈ 13° de pente
+  // 10 % de pente  → angle = atan(0.10)
+  const TILT_ANGLE = Math.atan(0.10); // ≈ 5,7°
 
-  // - PI/2 : on met le plan à l’horizontale
-  // + TILT_ANGLE : on incline pour simuler la monopente
-  roofMesh.rotation.set(-Math.PI / 2 + TILT_ANGLE, 0, 0);
+  // - PI/2 : plan horizontal
+  // - TILT_ANGLE : pente dans l’autre sens qu’avant
+  roofMesh.rotation.set(-Math.PI / 2 - TILT_ANGLE, 0, 0);
 
   roofMesh.position.set(
     (min.x + max.x) / 2,
@@ -726,6 +725,7 @@ function rebuildOverlays(bbox) {
     (min.z + max.z) / 2
   );
   overlayGroup.add(roofMesh);
+
 
   // =======================
   // FAÇADES BARDÉES
