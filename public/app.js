@@ -442,6 +442,7 @@ function goToOrderPage() {
   window.location.href = "commander.html";
 }
 window.goToOrderPage = goToOrderPage;
+
 /* =========================================
    THREE.JS – VUE 3D
 ========================================= */
@@ -456,17 +457,15 @@ let groundDisc = null;
 let padMesh = null;
 let backgroundPlane = null;
 const cladMeshes = { A: null, B: null, C: null, D: null };
-let roofRibs = []; // nervures de toiture
-
 
 const MODEL_PATH = "assets/abri-monopente-3x5m.gltf";
 const PAVE_TEXTURE_PATH = "assets/texture-pave-gris.jpg";
 
 // Module de base (en mètres)
 const BASE_LENGTH_M = 5;   // X
-const BASE_WIDTH_M  = 3;   // Z
+const BASE_WIDTH_M = 3;    // Z
 const BASE_HEIGHT_M = 2.15;
-const GLOBAL_SCALE  = 2.5;
+const GLOBAL_SCALE = 2.5;
 
 function initThree() {
   const canvas = document.getElementById("viewer3d");
@@ -476,7 +475,7 @@ function initThree() {
   const height = canvas.clientHeight || (width * 3) / 4;
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xf5f0e8); // beige clair du site
+  scene.background = new THREE.Color(0xf5f5f5);
 
   camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
   camera.position.set(8, 5, 10);
@@ -485,33 +484,14 @@ function initThree() {
   renderer.setPixelRatio(window.devicePixelRatio || 1);
   renderer.setSize(width, height);
 
-  // --- Ombres activées ---
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-  // --- Lumière ambiante douce ---
-  const amb = new THREE.AmbientLight(0xffffff, 0.65);
+  const amb = new THREE.AmbientLight(0xffffff, 0.8);
   scene.add(amb);
 
-  // --- Lumière directionnelle principale (soleil) ---
   const dir = new THREE.DirectionalLight(0xffffff, 0.9);
-  dir.position.set(15, 25, 10);
-  dir.castShadow = true;
-  dir.shadow.mapSize.width = 2048;
-  dir.shadow.mapSize.height = 2048;
-  dir.shadow.camera.near = 1;
-  dir.shadow.camera.far = 80;
-  dir.shadow.camera.left = -30;
-  dir.shadow.camera.right = 30;
-  dir.shadow.camera.top = 30;
-  dir.shadow.camera.bottom = -30;
+  dir.position.set(10, 20, 10);
   scene.add(dir);
 
-  // --- Légère lumière de ciel / sol pour adoucir ---
-  const hemi = new THREE.HemisphereLight(0xffffff, 0xb0a89a, 0.4);
-  scene.add(hemi);
-
-  // Disque sol (pavés)
+  // Disque sol
   const discGeo = new THREE.CircleGeometry(5, 64);
   const discMat = new THREE.MeshPhongMaterial({
     color: 0xffffff,
@@ -520,7 +500,6 @@ function initThree() {
   groundDisc = new THREE.Mesh(discGeo, discMat);
   groundDisc.rotation.x = -Math.PI / 2;
   groundDisc.position.y = 0;
-  groundDisc.receiveShadow = true;
   scene.add(groundDisc);
 
   // Dalle sous l’abri
@@ -532,7 +511,6 @@ function initThree() {
   padMesh = new THREE.Mesh(padGeo, padMat);
   padMesh.rotation.x = -Math.PI / 2;
   padMesh.position.y = 0.01;
-  padMesh.receiveShadow = true;
   scene.add(padMesh);
 
   // Texture pavée
@@ -554,7 +532,7 @@ function initThree() {
     () => {}
   );
 
-  // Fond photo (mur / jardin)
+  // Fond
   const texLoader = new THREE.TextureLoader();
   texLoader.load(
     "assets/fond-jardin.jpg",
@@ -599,6 +577,24 @@ function initThree() {
   animateThree();
 }
 
+function onThreeResize() {
+  const canvas = document.getElementById("viewer3d");
+  if (!canvas || !renderer || !camera) return;
+  const width = canvas.clientWidth || 400;
+  const height = canvas.clientHeight || (width * 3) / 4;
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(width, height);
+}
+
+function animateThree() {
+  requestAnimationFrame(animateThree);
+  if (controls) controls.update();
+  if (renderer && scene && camera) {
+    renderer.render(scene, camera);
+  }
+}
+
 /* ---- COULEURS 3D ---- */
 function getRALColorFromRadio(name) {
   const input = document.querySelector(`input[name="${name}"]:checked`);
@@ -618,10 +614,10 @@ function getCladdingColor3D() {
 
 /* ---- DIMENSIONS COURANTES ---- */
 function getCurrentDimensions() {
-  const widthSel  = document.getElementById("width");
+  const widthSel = document.getElementById("width");
   const lengthSel = document.getElementById("length");
   const heightSel = document.getElementById("height");
-  const width  = parseFloat(widthSel?.value  || "3");
+  const width = parseFloat(widthSel?.value || "3");
   const length = parseFloat(lengthSel?.value || "3");
   const height = parseFloat(heightSel?.value || "2.15");
   return { width, length, height };
@@ -646,7 +642,7 @@ function buildStructureFromConfig() {
   scene.add(structureGroup);
 
   const { width, length, height } = getCurrentDimensions();
-  const bays       = getBayCount(length);
+  const bays = getBayCount(length);
   const bayLengthM = length / bays;
 
   const baseSize = new THREE.Vector3();
@@ -658,13 +654,13 @@ function buildStructureFromConfig() {
     const clone = baseModule.clone(true);
 
     const scaleX = (bayLengthM / BASE_LENGTH_M) * GLOBAL_SCALE;
-    const scaleZ = (width      / BASE_WIDTH_M)  * GLOBAL_SCALE;
-    const scaleY = (height     / BASE_HEIGHT_M) * GLOBAL_SCALE;
+    const scaleZ = (width / BASE_WIDTH_M) * GLOBAL_SCALE;
+    const scaleY = (height / BASE_HEIGHT_M) * GLOBAL_SCALE;
 
     clone.scale.set(scaleX, scaleY, scaleZ);
 
     const minXScaled = baseBBox.min.x * scaleX;
-    const offsetX    = currentX - minXScaled;
+    const offsetX = currentX - minXScaled;
 
     clone.position.set(offsetX, 0, 0);
     structureGroup.add(clone);
@@ -679,6 +675,7 @@ function buildStructureFromConfig() {
   bbox = new THREE.Box3().setFromObject(structureGroup);
   return bbox;
 }
+
 /* ---- TOIT + BARDAGE SEMI-OPAQUE ---- */
 function rebuildOverlays(bbox) {
   if (!bbox) return;
@@ -689,105 +686,40 @@ function rebuildOverlays(bbox) {
   overlayGroup = new THREE.Group();
   scene.add(overlayGroup);
 
-  // reset nervures
-  roofRibs = [];
-
   const min = bbox.min;
   const max = bbox.max;
 
-  const lenX = max.x - min.x;   // longueur
-  const widthZ = max.z - min.z; // largeur
+  const lenX = max.x - min.x;
+  const widthZ = max.z - min.z;
   const heightY = max.y - min.y;
   const eps = 0.02 * Math.max(lenX, widthZ, heightY);
 
   const roofMat = new THREE.MeshStandardMaterial({
     color: getRoofColor3D(),
     transparent: true,
-    opacity: 0.9,          // moins transparent = plus réaliste
+    opacity: 0.85,          // moins transparent
     side: THREE.DoubleSide,
-    metalness: 0.35,
-    roughness: 0.4,
   });
 
   const claddingMat = new THREE.MeshStandardMaterial({
     color: getCladdingColor3D(),
     transparent: true,
-    opacity: 0.92,
+    opacity: 0.9,           // moins transparent
     side: THREE.DoubleSide,
-    metalness: 0.25,
-    roughness: 0.55,
   });
 
-  // =======================
-  // TOITURE MONOPENTE + NERVURES
-  // =======================
-
-  // Débords en mètres (proportionnels à la taille)
-  const overhangLong = lenX * 0.05;  // avant / arrière
-  const overhangLow  = widthZ * 0.10; // bas de pente
-  const overhangHigh = widthZ * 0.03; // haut de pente
-
-  // Groupe toiture (plateau + nervures)
-  const roofGroup = new THREE.Group();
-
-  // Plateau de couverture
-  const roofGeo = new THREE.PlaneGeometry(
-    lenX + overhangLong * 2,
-    widthZ + overhangLow + overhangHigh
-  );
-  const roofPlate = new THREE.Mesh(roofGeo, roofMat);
-  roofPlate.castShadow = true;
-  roofPlate.receiveShadow = false;
-  roofGroup.add(roofPlate);
-  roofMesh = roofPlate; // pour updateOverlayStyles()
-
-  // Nervures (lignes sombres dans le sens de la longueur)
-  const ribsCount = 6; // nombre de nervures visibles
-  const ribWidth = (widthZ + overhangLow + overhangHigh) / (ribsCount * 3);
-  const ribGeo = new THREE.PlaneGeometry(
-    lenX + overhangLong * 2,
-    ribWidth
-  );
-  const ribMat = new THREE.MeshStandardMaterial({
-    color: 0x000000,
-    transparent: true,
-    opacity: 0.18,
-    side: THREE.DoubleSide,
-    metalness: 0.2,
-    roughness: 0.6,
-  });
-
-  const totalDepth = widthZ + overhangLow + overhangHigh;
-  const spacing = totalDepth / (ribsCount + 1);
-
-  for (let i = 0; i < ribsCount; i++) {
-    const rib = new THREE.Mesh(ribGeo, ribMat);
-    const offsetY = -totalDepth / 2 + spacing * (i + 1); // déplacement local en Y
-    rib.position.set(0, offsetY, 0.002); // léger décalage en Z pour éviter le z-fighting
-    rib.castShadow = false;
-    rib.receiveShadow = false;
-    roofGroup.add(rib);
-    roofRibs.push(rib);
-  }
-
-  // Inclinaison 10 %
-  const TILT_ANGLE = Math.atan(0.10); // ≈ 5,7°
-
-  roofGroup.rotation.set(-Math.PI / 2 - TILT_ANGLE, 0, 0);
-
-  // Position : proche de la structure + débord côté bas de pente
-  roofGroup.position.set(
+  // Toiture
+  const roofGeo = new THREE.PlaneGeometry(lenX, widthZ);
+  roofMesh = new THREE.Mesh(roofGeo, roofMat);
+  roofMesh.rotation.x = -Math.PI / 2;
+  roofMesh.position.set(
     (min.x + max.x) / 2,
-    max.y + eps * 0.10,
-    (min.z + max.z) / 2 + (overhangLow - overhangHigh) / 2
+    max.y + eps,
+    (min.z + max.z) / 2
   );
+  overlayGroup.add(roofMesh);
 
-  overlayGroup.add(roofGroup);
-
-  // =======================
-  // FAÇADES BARDÉES
-  // =======================
-
+  // Façades
   const geoLong = new THREE.PlaneGeometry(lenX, heightY);
   cladMeshes.A = new THREE.Mesh(geoLong, claddingMat.clone());
   cladMeshes.A.position.set(
@@ -795,8 +727,6 @@ function rebuildOverlays(bbox) {
     (min.y + max.y) / 2,
     max.z + eps
   );
-  cladMeshes.A.castShadow = true;
-  cladMeshes.A.receiveShadow = true;
   overlayGroup.add(cladMeshes.A);
 
   cladMeshes.C = new THREE.Mesh(geoLong, claddingMat.clone());
@@ -806,8 +736,6 @@ function rebuildOverlays(bbox) {
     min.z - eps
   );
   cladMeshes.C.rotation.y = Math.PI;
-  cladMeshes.C.castShadow = true;
-  cladMeshes.C.receiveShadow = true;
   overlayGroup.add(cladMeshes.C);
 
   const geoShort = new THREE.PlaneGeometry(widthZ, heightY);
@@ -818,8 +746,6 @@ function rebuildOverlays(bbox) {
     (min.z + max.z) / 2
   );
   cladMeshes.B.rotation.y = Math.PI / 2;
-  cladMeshes.B.castShadow = true;
-  cladMeshes.B.receiveShadow = true;
   overlayGroup.add(cladMeshes.B);
 
   cladMeshes.D = new THREE.Mesh(geoShort, claddingMat.clone());
@@ -829,14 +755,9 @@ function rebuildOverlays(bbox) {
     (min.z + max.z) / 2
   );
   cladMeshes.D.rotation.y = -Math.PI / 2;
-  cladMeshes.D.castShadow = true;
-  cladMeshes.D.receiveShadow = true;
   overlayGroup.add(cladMeshes.D);
 
-  // =======================
-  // SOL, DALLE, FOND & CAMÉRA
-  // =======================
-
+  // Sol + fond
   const radius = Math.max(lenX, widthZ) * 0.9;
   if (groundDisc) {
     groundDisc.geometry.dispose();
@@ -868,7 +789,6 @@ function rebuildOverlays(bbox) {
       (min.z + max.z) / 2
     );
     controls.target.set(center.x, center.y * 0.7, center.z);
-
     camera.position.set(
       center.x + lenX * 0.9,
       center.y + heightY * 1.1,
@@ -886,12 +806,6 @@ function updateOverlayStyles() {
   if (roofMesh) {
     roofMesh.material.color.set(roofColor);
   }
-  if (roofRibs && roofRibs.length) {
-    roofRibs.forEach((rib) => {
-      rib.material.color.set(roofColor);
-      rib.material.opacity = 0.18; // on garde un léger contraste
-    });
-  }
 
   ["A", "B", "C", "D"].forEach((side) => {
     const cb = document.querySelector(
@@ -903,7 +817,6 @@ function updateOverlayStyles() {
     mesh.material.color.set(cladColor);
   });
 }
-
 
 function update3DFromConfig() {
   if (!baseModule) return;
@@ -922,11 +835,11 @@ function zoom3D(factor) {
 
 /* ---- PLEIN ÉCRAN / TOOLBAR ---- */
 function initViewerUI() {
-  const wrapper   = document.getElementById("viewer3d-wrapper");
-  const btnFull   = document.getElementById("btnFullscreen3D");
-  const btnClose  = document.getElementById("btnClose3D");
+  const wrapper = document.getElementById("viewer3d-wrapper");
+  const btnFull = document.getElementById("btnFullscreen3D");
+  const btnClose = document.getElementById("btnClose3D");
   const btnZoomIn = document.getElementById("btnZoomIn3D");
-  const btnZoomOut= document.getElementById("btnZoomOut3D");
+  const btnZoomOut = document.getElementById("btnZoomOut3D");
 
   if (btnFull && wrapper) {
     btnFull.addEventListener("click", () => {
@@ -1043,4 +956,5 @@ document.addEventListener("DOMContentLoaded", () => {
   initThree();
   initViewerUI();
 });
+
 
