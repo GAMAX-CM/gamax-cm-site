@@ -242,7 +242,6 @@
             <div class="field">
               <label>Couleur bardage (RAL)</label>
               <div class="ral-grid">
-                <!-- même palette que toiture -->
                 <label class="ral-choice">
                   <input type="radio" name="claddingColor" value="RAL 5008" checked>
                   <div class="ral-box" style="background:#2f3b49">5008</div>
@@ -308,18 +307,14 @@
 
             <!-- 4.3 FAÇADES À BARDER -->
             <div class="field">
-              <p class="field-help">
-                Sélectionnez les façades à barder :
-              </p>
+              <p class="field-help">Sélectionnez les façades à barder :</p>
 
               <div class="bardage-grid">
                 <label class="bardage-choice">
                   <input type="checkbox" name="claddingSide" class="bardage-side" value="A" id="bardageA">
                   <div class="bardage-card">
                     <span class="bardage-label-main">Façade A – Long pan avant</span>
-                    <span class="bardage-label-sub">
-                      Bardage sur toute la longueur avant de l’abri.
-                    </span>
+                    <span class="bardage-label-sub">Bardage sur toute la longueur avant de l’abri.</span>
                   </div>
                 </label>
 
@@ -327,9 +322,7 @@
                   <input type="checkbox" name="claddingSide" class="bardage-side" value="B" id="bardageB">
                   <div class="bardage-card">
                     <span class="bardage-label-main">Façade B – Pignon gauche</span>
-                    <span class="bardage-label-sub">
-                      Bardage sur le pignon gauche (côté A–B).
-                    </span>
+                    <span class="bardage-label-sub">Bardage sur le pignon gauche (côté A–B).</span>
                   </div>
                 </label>
 
@@ -337,9 +330,7 @@
                   <input type="checkbox" name="claddingSide" class="bardage-side" value="C" id="bardageC">
                   <div class="bardage-card">
                     <span class="bardage-label-main">Façade C – Long pan arrière</span>
-                    <span class="bardage-label-sub">
-                      Bardage sur toute la longueur arrière de l’abri.
-                    </span>
+                    <span class="bardage-label-sub">Bardage sur toute la longueur arrière de l’abri.</span>
                   </div>
                 </label>
 
@@ -347,9 +338,7 @@
                   <input type="checkbox" name="claddingSide" class="bardage-side" value="D" id="bardageD">
                   <div class="bardage-card">
                     <span class="bardage-label-main">Façade D – Pignon droit</span>
-                    <span class="bardage-label-sub">
-                      Bardage sur le pignon droit (côté C–D).
-                    </span>
+                    <span class="bardage-label-sub">Bardage sur le pignon droit (côté C–D).</span>
                   </div>
                 </label>
               </div>
@@ -365,95 +354,103 @@
                 Cochez les accessoires de finition souhaités. Le coût est calculé au m² de toiture / bardage.
               </p>
 
+              <!-- ✅ SECTION 5.1 REFAITE -->
               <div class="bardage-grid option-grid">
-                <label class="bardage-choice">
+                <label class="bardage-choice option-choice">
                   <input type="checkbox" id="optFaitiereSolin">
                   <div class="bardage-card option-card">
-                    <img src="assets/faitiere-solin.jpg" alt="Faîtière avec solin" class="option-img">
-                    <div class="option-text">
-                      <span class="bardage-label-main">Faîtière avec solin</span>
-                      <span class="bardage-label-sub">
-                        Finition haute assurant l’étanchéité en faîtage.
-                      </span>
+                    <div class="option-thumb">
+                      <img src="assets/faitiere-solin.jpg" alt="Faîtière avec solin" class="option-img">
                     </div>
+                    <div class="option-content">
+                      <div class="option-title">Faîtière avec solin</div>
+                      <div class="option-desc">Finition haute assurant l’étanchéité en faîtage.</div>
+                    </div>
+                    <div class="option-check" aria-hidden="true">✓</div>
                   </div>
                 </label>
 
-                <label class="bardage-choice">
+                <label class="bardage-choice option-choice">
                   <input type="checkbox" id="optRiveSolin">
                   <div class="bardage-card option-card">
-                    <img src="assets/rive-solin.jpg" alt="Rive avec solin" class="option-img">
-                    <div class="option-text">
-                      <span class="bardage-label-main">Rive avec solin</span>
-                      <span class="bardage-label-sub">
-                        Finition latérale des tôles de couverture.
-                      </span>
+                    <div class="option-thumb">
+                      <img src="assets/rive-solin.jpg" alt="Rive avec solin" class="option-img">
                     </div>
+                    <div class="option-content">
+                      <div class="option-title">Rive avec solin</div>
+                      <div class="option-desc">Finition latérale des tôles de couverture.</div>
+                    </div>
+                    <div class="option-check" aria-hidden="true">✓</div>
                   </div>
                 </label>
 
-                <label class="bardage-choice">
+                <label class="bardage-choice option-choice">
                   <input type="checkbox" id="optGrandeRive">
                   <div class="bardage-card option-card">
-                    <img src="assets/grande-rive.jpg" alt="Grande rive" class="option-img">
-                    <div class="option-text">
-                      <span class="bardage-label-main">Grande rive</span>
-                      <span class="bardage-label-sub">
-                        Habillage périphérique renforcé des rives.
-                      </span>
+                    <div class="option-thumb">
+                      <img src="assets/grande-rive.jpg" alt="Grande rive" class="option-img">
                     </div>
+                    <div class="option-content">
+                      <div class="option-title">Grande rive</div>
+                      <div class="option-desc">Habillage périphérique renforcé des rives.</div>
+                    </div>
+                    <div class="option-check" aria-hidden="true">✓</div>
                   </div>
                 </label>
 
-                <label class="bardage-choice">
+                <label class="bardage-choice option-choice">
                   <input type="checkbox" id="optAngles">
                   <div class="bardage-card option-card">
-                    <img src="assets/angles-bardage.jpg" alt="Angles de bardage" class="option-img">
-                    <div class="option-text">
-                      <span class="bardage-label-main">Angles de bardage</span>
-                      <span class="bardage-label-sub">
-                        Finition des angles sortants / rentrants.
-                      </span>
+                    <div class="option-thumb">
+                      <img src="assets/angles-bardage.jpg" alt="Angles de bardage" class="option-img">
                     </div>
+                    <div class="option-content">
+                      <div class="option-title">Angles de bardage</div>
+                      <div class="option-desc">Finition des angles sortants / rentrants.</div>
+                    </div>
+                    <div class="option-check" aria-hidden="true">✓</div>
                   </div>
                 </label>
 
-                <label class="bardage-choice">
+                <label class="bardage-choice option-choice">
                   <input type="checkbox" id="optRejetEau">
                   <div class="bardage-card option-card">
-                    <img src="assets/rejet-eau.png" alt="Rejet d’eau" class="option-img">
-                    <div class="option-text">
-                      <span class="bardage-label-main">Rejet d’eau</span>
-                      <span class="bardage-label-sub">
-                        Profil de rejet d’eau en pied de bardage.
-                      </span>
+                    <div class="option-thumb">
+                      <img src="assets/rejet-eau.png" alt="Rejet d’eau" class="option-img">
                     </div>
+                    <div class="option-content">
+                      <div class="option-title">Rejet d’eau</div>
+                      <div class="option-desc">Profil de rejet d’eau en pied de bardage.</div>
+                    </div>
+                    <div class="option-check" aria-hidden="true">✓</div>
                   </div>
                 </label>
 
-                <label class="bardage-choice">
+                <label class="bardage-choice option-choice">
                   <input type="checkbox" id="optFaitiereDouble">
                   <div class="bardage-card option-card">
-                    <img src="assets/faitiere-double.jpg" alt="Faîtière double" class="option-img">
-                    <div class="option-text">
-                      <span class="bardage-label-main">Faîtière double</span>
-                      <span class="bardage-label-sub">
-                        Pour deux pans de toiture juxtaposés.
-                      </span>
+                    <div class="option-thumb">
+                      <img src="assets/faitiere-double.jpg" alt="Faîtière double" class="option-img">
                     </div>
+                    <div class="option-content">
+                      <div class="option-title">Faîtière double</div>
+                      <div class="option-desc">Pour deux pans de toiture juxtaposés.</div>
+                    </div>
+                    <div class="option-check" aria-hidden="true">✓</div>
                   </div>
                 </label>
 
-                <label class="bardage-choice">
+                <label class="bardage-choice option-choice">
                   <input type="checkbox" id="optFaitiereSimple">
                   <div class="bardage-card option-card">
-                    <img src="assets/faitiere-simple.jpg" alt="Faîtière simple" class="option-img">
-                    <div class="option-text">
-                      <span class="bardage-label-main">Faîtière simple</span>
-                      <span class="bardage-label-sub">
-                        Faîtière standard sur un seul pan.
-                      </span>
+                    <div class="option-thumb">
+                      <img src="assets/faitiere-simple.jpg" alt="Faîtière simple" class="option-img">
                     </div>
+                    <div class="option-content">
+                      <div class="option-title">Faîtière simple</div>
+                      <div class="option-desc">Faîtière standard sur un seul pan.</div>
+                    </div>
+                    <div class="option-check" aria-hidden="true">✓</div>
                   </div>
                 </label>
               </div>
@@ -496,9 +493,7 @@
               <div class="field">
                 <label for="postalCode">Code postal</label>
                 <input type="text" id="postalCode" name="postalCode" inputmode="numeric" maxlength="5">
-                <p class="field-help">
-                  Saisissez les 5 chiffres du code postal du chantier.
-                </p>
+                <p class="field-help">Saisissez les 5 chiffres du code postal du chantier.</p>
               </div>
 
               <div class="field">
@@ -506,9 +501,7 @@
                 <select id="city" name="city">
                   <option value="">Sélectionnez votre ville après saisie du code postal</option>
                 </select>
-                <p class="field-help">
-                  La liste se met à jour automatiquement selon le code postal.
-                </p>
+                <p class="field-help">La liste se met à jour automatiquement selon le code postal.</p>
               </div>
             </div>
 
@@ -522,9 +515,7 @@
             <!-- Bloc récap -->
             <div class="sidepanel recap-panel">
               <h2>Récapitulatif de votre abri</h2>
-              <p class="recap-sub">
-                Vérifiez les éléments avant de passer à la commande.
-              </p>
+              <p class="recap-sub">Vérifiez les éléments avant de passer à la commande.</p>
               <pre id="recapDevis" class="recap-text">
 Votre devis apparaîtra ici après configuration...
               </pre>
@@ -536,9 +527,7 @@ Votre devis apparaîtra ici après configuration...
             <!-- Bloc Vue 3D -->
             <div class="sidepanel viewer-panel">
               <h2>Vue 3D</h2>
-              <p class="recap-sub">
-                Visualisation simplifiée de votre abri.
-              </p>
+              <p class="recap-sub">Visualisation simplifiée de votre abri.</p>
 
               <div id="viewer3d-wrapper" class="viewer-wrapper">
                 <canvas id="viewer3d" class="viewer-3d"></canvas>
@@ -568,17 +557,9 @@ Votre devis apparaîtra ici après configuration...
     <section class="section" id="contact">
       <div class="container contact-block">
         <h2>Contact</h2>
-        <p>
-          Pour toute question ou pour un devis détaillé, contactez GAMAX-CM.
-        </p>
-        <p>
-          <strong>Téléphone :</strong>
-          <a href="tel:0688047983">06 88 04 79 83</a>
-        </p>
-        <p>
-          <strong>E-mail :</strong>
-          <a href="mailto:contact@gamax-cm.fr">contact@gamax-cm.fr</a>
-        </p>
+        <p>Pour toute question ou pour un devis détaillé, contactez GAMAX-CM.</p>
+        <p><strong>Téléphone :</strong> <a href="tel:0688047983">06 88 04 79 83</a></p>
+        <p><strong>E-mail :</strong> <a href="mailto:contact@gamax-cm.fr">contact@gamax-cm.fr</a></p>
       </div>
     </section>
   </main>
@@ -594,6 +575,6 @@ Votre devis apparaîtra ici après configuration...
   <script src="https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://unpkg.com/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
 
- <script src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
