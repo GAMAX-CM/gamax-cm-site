@@ -1112,6 +1112,26 @@ select:focus {
   filter: grayscale(0.25);
   transform: none !important;
 }
+/* =========================
+   OPTIONS (CATALOGUE) — fond identique aux vignettes
+========================= */
+
+/* Beige identique au fond des images (à ajuster si besoin) */
+:root{
+  --option-thumb-bg: #e9dfc4; /* même teinte que tes vignettes */
+}
+
+/* Applique le même fond à la carte catalogue */
+.option-card--catalogue{
+  background: var(--option-thumb-bg) !important;
+  border-color: rgba(0,0,0,0.10);
+}
+
+/* Harmonise aussi le fond derrière l'image (si tu l'as) */
+.option-card--catalogue .option-thumb,
+.option-card--catalogue .option-img{
+  background: var(--option-thumb-bg) !important;
+}
 
 }
 
