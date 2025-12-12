@@ -685,13 +685,13 @@ function rebuildOverlays(bbox) {
     const roof = new THREE.Mesh(roofGeo, roofMat);
 
     // ✅ rotation : horizontal puis inclinaison
-    roof.rotation.x = -Math.PI / 2 + angle;
+    roof.rotation.x = -Math.PI / 2 - angle;
 
     // ✅ position : au sommet + légère compensation + décalage vers bas de pente
     roof.position.set(
       cx,
       max.y + eps - deltaY * 0.12,
-      cz - overhang * 0.35
+      cz + overhang * 0.35
     );
 
     // ✅ tag (important pour updateOverlayStylesOnly)
