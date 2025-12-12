@@ -702,52 +702,40 @@ function rebuildOverlays(bbox) {
     opacity: CLAD_OPACITY,
   });
 
-  // ===== TOITURE =====
-  const slopeType = getSelectedType();
+// ===== TOITURE MONOPENTE (pente vers façade C) =====
+if (slopeType === "mono") {
 
-  if (slopeType === "mono") {
-    // pente 10% : deltaY dépend de la largeur (Z)
-    const deltaY = widthZ * PITCH_RATIO;
-    const angle = Math.atan(deltaY / widthZ);
+  const deltaY = widthZ * PITCH_RATIO;      // hauteur créée par la pente
+  const angle = Math.atan(deltaY / widthZ);
 
-    // débord bas de pente (vers -Z)
-    const overhang = widthZ * ROOF_OVERHANG_RATIO;
+  const overhang = widthZ * ROOF_OVERHANG_RATIO;
 
-    const roofGeo = new THREE.PlaneGeometry(lenX, widthZ + overhang);
-    const roof = new THREE.Mesh(roofGeo, roofMat);
-    roof.userData.part = "roof";
-    roof.castShadow = true;
-    roof.receiveShadow = false;
+  const roofGeo = new THREE.PlaneGeometry(
+    lenX,
+    widthZ + overhang
+  );
 
-    // plan horizontal (-PI/2) puis inclinaison (+angle)
-    roof.rotation.x = -Math.PI / 2 + angle;
+  const roof = new THREE.Mesh(roofGeo, roofMat);
 
-    roof.position.set(
-      cx,
-      (max.y - ROOF_DROP) + eps - deltaY * 0.15,
-      cz - overhang * 0.35
-    );
+  // 👉 IMPORTANT :
+  // - Plan à plat = -PI/2
+  // - On SOUSTRAIT l’angle pour que le haut soit côté +Z (façade A)
+  roof.rotation.x = -Math.PI / 2 - angle;
 
-    overlayGroup.add(roof);
-  } else {
-    // bipente : 2 pans
-    const angle = Math.atan(PITCH_RATIO);
-    const halfW = widthZ / 2;
+  // 👉 Position :
+  // - un peu plus bas que la structure
+  // - débord côté façade C (Z négatif)
+  roof.position.set(
+    cx,
+    max.y - deltaY * 0.35,        // couverture plus basse
+    cz - overhang * 0.4
+  );
 
-    const roofL = new THREE.Mesh(new THREE.PlaneGeometry(lenX, halfW), roofMat.clone());
-    roofL.userData.part = "roof";
-    roofL.castShadow = true;
-    roofL.rotation.x = -Math.PI / 2 + angle;
-    roofL.position.set(cx, (max.y - ROOF_DROP) + eps, cz - halfW / 2);
-    overlayGroup.add(roofL);
+  roof.castShadow = true;
+  roof.receiveShadow = true;
 
-    const roofR = new THREE.Mesh(new THREE.PlaneGeometry(lenX, halfW), roofMat.clone());
-    roofR.userData.part = "roof";
-    roofR.castShadow = true;
-    roofR.rotation.x = -Math.PI / 2 - angle;
-    roofR.position.set(cx, (max.y - ROOF_DROP) + eps, cz + halfW / 2);
-    overlayGroup.add(roofR);
-  }
+  overlayGroup.add(roof);
+}
 
   // ===== FAÎTIÈRE (option) =====
   if (isRidgeSelected()) {
