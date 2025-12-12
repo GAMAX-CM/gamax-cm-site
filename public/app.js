@@ -58,7 +58,7 @@ const STRUCTURE_PRICE_TABLE = {
     "6x18": 2480, "6x20": 2980, "6x24": 3180, "6x25": 3640, "6x30": 3880,
   },
   bi: {
-    // (à compléter si tu veux une table bipente)
+    // (à compléter plus tard)
   },
 };
 
@@ -218,9 +218,6 @@ function updateDeliveryUI() {
 ---------------------------- */
 
 function calculatePriceAndRecap() {
-  // applique les règles UI avant de calculer (sécurité)
-  applyOptionRules();
-
   const type = getSelectedType();
   const width = parseFloat($("width")?.value || "0");
   const length = parseFloat($("length")?.value || "0");
@@ -254,6 +251,11 @@ function calculatePriceAndRecap() {
   const cladUnit = CLADDING_PRICE_PER_M2[claddingType] ?? 0;
   const claddingCost = claddingArea * cladUnit;
 
+  // options (on les garde côté prix/récap si tu veux, mais plus rien n'est utilisé en 3D)
+  const optInstall = $("optInstall");
+
+  // tu avais un prix "finishingPerM2" basé sur les accessoires : on peut le laisser, mais si tu veux
+  // "laisser tomber les profils", tu peux mettre finishingSelected à false.
   const optFaitiereSolin = $("optFaitiereSolin");
   const optRiveSolin = $("optRiveSolin");
   const optGrandeRive = $("optGrandeRive");
@@ -261,9 +263,7 @@ function calculatePriceAndRecap() {
   const optRejetEau = $("optRejetEau");
   const optFaitiereDouble = $("optFaitiereDouble");
   const optFaitiereSimple = $("optFaitiereSimple");
-  const optInstall = $("optInstall");
 
-  let optionsPrice = 0;
   const finishingSelected =
     (optFaitiereSolin?.checked) ||
     (optRiveSolin?.checked) ||
@@ -273,6 +273,7 @@ function calculatePriceAndRecap() {
     (optFaitiereDouble?.checked) ||
     (optFaitiereSimple?.checked);
 
+  let optionsPrice = 0;
   if (finishingSelected) optionsPrice += area * OPTIONS_PRICES.finishingPerM2;
   if (optInstall?.checked) optionsPrice += area * OPTIONS_PRICES.installPerM2;
 
@@ -347,7 +348,7 @@ function calculatePriceAndRecap() {
 
   afficherRecapitulatif(recapText);
 
-  // met à jour structure + overlays + couleurs + visibilité bardage + faîtières
+  // MAJ 3D
   update3DFromConfig();
 }
 
@@ -382,9 +383,9 @@ const BASE_HEIGHT_M = 2.15;
 
 const GLOBAL_SCALE = 2.5;
 
-// Pente + débord (monopente)
+// Pente + débord
 const PITCH_RATIO = 0.10;          // 10%
-const ROOF_OVERHANG_RATIO = 0.14;  // débord bas de pente
+const ROOF_OVERHANG_RATIO = 0.14;  // débord vers bas de pente (-Z)
 
 // Visuel texture (répétition)
 const ROOF_TEX_REPEAT_X = 8;
@@ -397,14 +398,14 @@ const CLAD_TEX_REPEAT_Y = 3;
 const ROOF_OPACITY = 0.92;
 const CLAD_OPACITY = 0.92;
 
-// Epaisseurs (mètres "modèle", épaisseur réelle calculée dans rebuildOverlays)
-const ROOF_THICKNESS = 0.06;   // m
-const CLAD_THICKNESS = 0.035;  // m
+// Epaisseurs (mètres "modèle", scalées)
+const ROOF_THICKNESS = 0.06;
+const CLAD_THICKNESS = 0.035;
 
-// Descendre légèrement la couverture pour qu’elle colle à la structure (bbox height ratio)
+// Descendre légèrement la couverture (ratio bbox)
 const ROOF_DROP_RATIO = 0.05;
 
-// Limites de rotation OrbitControls (éviter les vues “impossibles”)
+// Limites de rotation OrbitControls
 const ORBIT_MIN_POLAR = 0.15 * Math.PI;
 const ORBIT_MAX_POLAR = 0.48 * Math.PI;
 
@@ -456,6 +457,11 @@ function getBayCount(length) {
 function initThree() {
   const canvas = $("viewer3d");
   if (!canvas) return;
+
+  if (!window.THREE) {
+    console.error("THREE.js non chargé. Vérifie tes <script> (three, OrbitControls, GLTFLoader) avant app.js");
+    return;
+  }
 
   const w = canvas.clientWidth || 420;
   const h = canvas.clientHeight || 320;
@@ -513,8 +519,6 @@ function initThree() {
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
   controls.target.set(0, 1.5, 0);
-
-  // limites de rotation (anti vues impossibles)
   controls.minPolarAngle = ORBIT_MIN_POLAR;
   controls.maxPolarAngle = ORBIT_MAX_POLAR;
 
@@ -569,7 +573,6 @@ function initThree() {
     (tex) => {
       const bgGeo = new THREE.PlaneGeometry(40, 15);
       const bgMat = new THREE.MeshBasicMaterial({ map: tex });
-      backgroundPlane = new THREE.Mesh(bgGeo, bgMat);
       backgroundPlane = new THREE.Mesh(bgGeo, bgMat);
       backgroundPlane.position.set(0, 7, -20);
       scene.add(backgroundPlane);
@@ -702,9 +705,6 @@ function rebuildOverlays(bbox) {
   const cladThick = CLAD_THICKNESS * GLOBAL_SCALE;
   const roofSink = Math.max(0.03, heightY * ROOF_DROP_RATIO);
 
-  const ridgeH = 0.055 * GLOBAL_SCALE;
-  const ridgeW = 0.18 * GLOBAL_SCALE;
-
   const roofMat = materialWithTexture({
     color: getRoofColor3D(),
     tex: roofTex,
@@ -717,19 +717,19 @@ function rebuildOverlays(bbox) {
     opacity: CLAD_OPACITY,
   });
 
-  // ===== TOITURE (SANS PROFILS DE FINITION POUR L'INSTANT) =====
+  // ===== TOITURE (SANS PROFILS DE FINITION) =====
   const slopeType = getSelectedType();
 
   if (slopeType === "mono") {
     const angle = Math.atan(PITCH_RATIO);
     const overhang = widthZ * ROOF_OVERHANG_RATIO;
 
-    // overhang côté bas de pente -> -Z (façade C)
+    // débord côté bas de pente -> -Z
     const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ + overhang);
     const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.userData.kind = "roof";
 
-    // Haut côté façade A = +Z -> rotation.x = -angle
+    // Haut côté façade A = +Z
     roof.rotation.x = -angle;
 
     // compenser l’inclinaison (pivot au centre)
@@ -738,7 +738,7 @@ function rebuildOverlays(bbox) {
     roof.position.set(
       cx,
       max.y + eps - roofSink + lift,
-      cz - (overhang / 2) // débord vers -Z
+      cz - (overhang / 2)
     );
 
     roof.castShadow = SHADOW_ENABLED;
@@ -749,14 +749,10 @@ function rebuildOverlays(bbox) {
     const angle = Math.atan(PITCH_RATIO);
     const halfW = widthZ / 2;
 
-    // chaque demi-pan
     const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
-
-    // Pour que les deux côtés descendent vers l’extérieur :
-    // côté +Z : +angle (fait descendre +Z)
-    // côté -Z : -angle (fait descendre -Z)
     const lift = (halfW / 2) * Math.sin(angle);
 
+    // côté +Z descend vers +Z => +angle
     const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
     roofPlusZ.userData.kind = "roof";
     roofPlusZ.rotation.x = +angle;
@@ -764,74 +760,13 @@ function rebuildOverlays(bbox) {
     roofPlusZ.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roofPlusZ);
 
+    // côté -Z descend vers -Z => -angle
     const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
     roofMinusZ.userData.kind = "roof";
     roofMinusZ.rotation.x = -angle;
     roofMinusZ.position.set(cx, max.y + eps - roofSink + lift, cz - halfW / 2);
     roofMinusZ.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roofMinusZ);
-  }
-
-    // faîtière monopente si simple ou solin
-    const optSimple = $("optFaitiereSimple")?.checked;
-    const optSolin = $("optFaitiereSolin")?.checked;
-
-    if (optSimple || optSolin) {
-      const rw = optSolin ? ridgeW * 1.15 : ridgeW;
-      const ridgeGeo = new THREE.BoxGeometry(lenX * 1.01, ridgeH, rw);
-      const ridge = new THREE.Mesh(ridgeGeo, roofMat.clone());
-      ridge.userData.kind = "ridge";
-      ridge.rotation.x = -Math.PI / 2 - angle;
-
-      ridge.position.set(
-        cx,
-        max.y + eps - roofSink + deltaY * 0.35,
-        max.z - (rw * 0.15) + eps
-      );
-
-      ridge.castShadow = SHADOW_ENABLED;
-      ridge.receiveShadow = false;
-      overlayGroup.add(ridge);
-    }
-
-  } else {
-    const angle = Math.atan(PITCH_RATIO);
-    const halfW = widthZ / 2;
-
-    const roofL = new THREE.Mesh(
-      new THREE.BoxGeometry(lenX, roofThick, halfW),
-      roofMat.clone()
-    );
-    roofL.userData.kind = "roof";
-    roofL.rotation.x = -Math.PI / 2 - angle;
-    roofL.position.set(cx, max.y + eps - roofSink, cz + halfW / 2);
-    roofL.castShadow = SHADOW_ENABLED;
-    overlayGroup.add(roofL);
-
-    const roofR = new THREE.Mesh(
-      new THREE.BoxGeometry(lenX, roofThick, halfW),
-      roofMat.clone()
-    );
-    roofR.userData.kind = "roof";
-    roofR.rotation.x = -Math.PI / 2 + angle;
-    roofR.position.set(cx, max.y + eps - roofSink, cz - halfW / 2);
-    roofR.castShadow = SHADOW_ENABLED;
-    overlayGroup.add(roofR);
-
-    // faîtière bipente si double ou solin
-    const optDouble = $("optFaitiereDouble")?.checked;
-    const optSolin = $("optFaitiereSolin")?.checked;
-
-    if (optDouble || optSolin) {
-      const rw = optSolin ? ridgeW * 1.15 : ridgeW;
-      const ridgeGeo = new THREE.BoxGeometry(lenX * 1.02, ridgeH, rw);
-      const ridge = new THREE.Mesh(ridgeGeo, roofMat.clone());
-      ridge.userData.kind = "ridge";
-
-      ridge.position.set(cx, max.y + eps - roofSink + (halfW * PITCH_RATIO), cz);
-      ridge.castShadow = SHADOW_ENABLED;
-      overlayGroup.add(ridge);
-    }
   }
 
   // ===== BARDAGE (avec double peau simple pour l'épaisseur) =====
@@ -857,27 +792,24 @@ function rebuildOverlays(bbox) {
     return { outer: mesh, inner };
   }
 
-  // A = +Z
+  // A = +Z (OK)
   const cladA_outer = new THREE.Mesh(geoLong, cladMat.clone());
   cladA_outer.position.set(cx, yMid, max.z + eps);
   const A = addCladPanel(cladA_outer, new THREE.Vector3(0, 0, 1));
 
-  // C = -Z
+  // C = -Z (OK)
   const cladC_outer = new THREE.Mesh(geoLong, cladMat.clone());
   cladC_outer.position.set(cx, yMid, min.z - eps);
-  cladC_outer.rotation.y = Math.PI;
   const C = addCladPanel(cladC_outer, new THREE.Vector3(0, 0, -1));
 
-  // B = -X
+  // B = -X (CORRIGÉ : pas de rotation)
   const cladB_outer = new THREE.Mesh(geoShort, cladMat.clone());
   cladB_outer.position.set(min.x - eps, yMid, cz);
-  // ❌ cladB_outer.rotation.y = Math.PI / 2;
   const B = addCladPanel(cladB_outer, new THREE.Vector3(-1, 0, 0));
 
-  // D = +X
+  // D = +X (CORRIGÉ : pas de rotation)
   const cladD_outer = new THREE.Mesh(geoShort, cladMat.clone());
   cladD_outer.position.set(max.x + eps, yMid, cz);
-  // ❌ cladD_outer.rotation.y = -Math.PI / 2;
   const D = addCladPanel(cladD_outer, new THREE.Vector3(1, 0, 0));
 
   function applyCladdingVisibility() {
@@ -939,7 +871,7 @@ function updateOverlayStylesOnly() {
 
     const kind = obj.userData?.kind || "";
 
-    if (kind === "roof" || kind === "ridge") {
+    if (kind === "roof") {
       mat.color.set(roofColor);
       mat.opacity = ROOF_OPACITY;
       if (roofTex) mat.map = roofTex;
@@ -1032,56 +964,11 @@ function setup3DFullscreenUI() {
 }
 
 /* ---------------------------
-   4bis) RÈGLES OPTIONS (UI)
-   - Faîtière simple grisée si bipente
-   - Faîtière double masquée si monopente
----------------------------- */
-
-function setOptionState({ inputId, disabled, hidden }) {
-  const input = $(inputId);
-  if (!input) return;
-
-  const label = input.closest("label");
-  if (!label) return;
-
-  if (hidden) label.style.display = "none";
-  else label.style.display = "";
-
-  input.disabled = !!disabled;
-
-  if (disabled) {
-    input.checked = false;
-    label.classList.add("is-disabled");
-  } else {
-    label.classList.remove("is-disabled");
-  }
-}
-
-function applyOptionRules() {
-  const slopeType = getSelectedType();
-
-  // Faîtière simple : uniquement monopente => grisée en bipente
-  setOptionState({
-    inputId: "optFaitiereSimple",
-    disabled: slopeType === "bi",
-    hidden: false,
-  });
-
-  // Faîtière double : uniquement bipente => masquée en monopente
-  setOptionState({
-    inputId: "optFaitiereDouble",
-    disabled: false,
-    hidden: slopeType === "mono",
-  });
-}
-
-/* ---------------------------
    7) INIT — LIAISONS EVENTS
 ---------------------------- */
 
 document.addEventListener("DOMContentLoaded", async () => {
   populateDimensions();
-  applyOptionRules();
 
   initThree();
   setup3DFullscreenUI();
@@ -1092,9 +979,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.querySelectorAll('input[name="slopeType"]').forEach((el) => {
     el.addEventListener("change", () => {
       populateDimensions();
-      applyOptionRules();
       calculatePriceAndRecap();
-      update3DFromConfig();
     });
   });
 
@@ -1156,9 +1041,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     "optFaitiereSimple",
   ].forEach((id) =>
     $(id)?.addEventListener("change", () => {
-      applyOptionRules();
       calculatePriceAndRecap();
-      update3DFromConfig();
     })
   );
 
