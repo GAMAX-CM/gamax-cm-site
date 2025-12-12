@@ -391,8 +391,12 @@ const CLAD_TEX_REPEAT_Y = 3;
 const ROOF_OPACITY = 0.95;
 const CLAD_OPACITY = 0.95;
 
-// Toiture abaissée (écart vertical par rapport au haut de structure)
-const ROOF_DROP_RATIO = 0.02; // 2% de la hauteur totale
+// Toiture beaucoup plus proche de la structure (petit écart visuel seulement)
+const ROOF_DROP_RATIO = 0.005; // 0.5% (au lieu de 2%)
+// Épaisseurs “réalistes” (en unités scène)
+const ROOF_THICKNESS = 0.06;     // toiture légère
+const CLAD_THICKNESS = 0.05;     // bardage léger
+
 
 // Three globals
 let scene, camera, renderer, controls;
@@ -710,26 +714,28 @@ function rebuildOverlays(bbox) {
 
     const overhang = widthZ * ROOF_OVERHANG_RATIO;
 
-    const roofGeo = new THREE.PlaneGeometry(lenX, widthZ + overhang);
-    const roof = new THREE.Mesh(roofGeo, roofMat);
+  // ---- TOITURE épaisse (box fin) ----
+const roofGeo = new THREE.BoxGeometry(lenX, ROOF_THICKNESS, widthZ + overhang);
+const roof = new THREE.Mesh(roofGeo, roofMat);
 
-    // ✅ sens corrigé : on soustrait l’angle
-    roof.rotation.x = -Math.PI / 2 - angle;
+// IMPORTANT: orientation monopente (haut côté façade A = +Z)
+roof.rotation.x = -Math.PI / 2 - angle;
 
-    // ✅ couverture abaissée
-    const roofDrop = heightY * ROOF_DROP_RATIO;
+// couverture abaissée (plus proche)
+const roofDrop = heightY * ROOF_DROP_RATIO;
 
-    // ✅ débord côté bas de pente (façade C, Z négatif)
-    roof.position.set(
-      cx,
-      max.y + eps - roofDrop - deltaY * 0.15,
-      cz - overhang * 0.4
-    );
+// débord côté bas de pente (façade C, Z négatif)
+roof.position.set(
+  cx,
+  max.y + eps - roofDrop - deltaY * 0.15,
+  cz - overhang * 0.4
+);
 
-    roof.castShadow = true;
-    roof.receiveShadow = true;
-    roof.userData.kind = "roof";
-    overlayGroup.add(roof);
+roof.castShadow = true;
+roof.receiveShadow = true;
+roof.userData.kind = "roof";
+overlayGroup.add(roof);
+
 
     // ✅ Faîtière visible si option cochée (côté haut : façade A)
     if (hasAnyFaitiereOption()) {
@@ -784,18 +790,19 @@ function rebuildOverlays(bbox) {
   }
 
   // ===== BARDAGE (plans) =====
-  const geoLong = new THREE.PlaneGeometry(lenX, heightY);
-  const geoShort = new THREE.PlaneGeometry(widthZ, heightY);
+const geoLong = new THREE.BoxGeometry(lenX, heightY, CLAD_THICKNESS);
+const geoShort = new THREE.BoxGeometry(widthZ, heightY, CLAD_THICKNESS);
+
 
   const cladA = new THREE.Mesh(geoLong, cladMat.clone());
-  cladA.position.set(cx, (min.y + max.y) / 2, max.z + eps);
+  cladA.position.set(cx, (min.y + max.y) / 2, max.z + eps + CLAD_THICKNESS * 0.5);
   cladA.castShadow = true;
   cladA.receiveShadow = true;
   cladA.userData.kind = "clad";
   overlayGroup.add(cladA);
 
   const cladC = new THREE.Mesh(geoLong, cladMat.clone());
-  cladC.position.set(cx, (min.y + max.y) / 2, min.z - eps);
+  cladC.position.set(cx, (min.y + max.y) / 2, min.z - eps - CLAD_THICKNESS * 0.5);
   cladC.rotation.y = Math.PI;
   cladC.castShadow = true;
   cladC.receiveShadow = true;
@@ -803,7 +810,7 @@ function rebuildOverlays(bbox) {
   overlayGroup.add(cladC);
 
   const cladB = new THREE.Mesh(geoShort, cladMat.clone());
-  cladB.position.set(min.x - eps, (min.y + max.y) / 2, cz);
+  cladB.position.set(min.x - eps - CLAD_THICKNESS * 0.5, (min.y + max.y) / 2, cz);
   cladB.rotation.y = Math.PI / 2;
   cladB.castShadow = true;
   cladB.receiveShadow = true;
@@ -811,7 +818,7 @@ function rebuildOverlays(bbox) {
   overlayGroup.add(cladB);
 
   const cladD = new THREE.Mesh(geoShort, cladMat.clone());
-  cladD.position.set(max.x + eps, (min.y + max.y) / 2, cz);
+  cladD.position.set(max.x + eps + CLAD_THICKNESS * 0.5, (min.y + max.y) / 2, cz);
   cladD.rotation.y = -Math.PI / 2;
   cladD.castShadow = true;
   cladD.receiveShadow = true;
