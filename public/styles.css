@@ -913,3 +913,67 @@ select:focus {
 .viewer-wrapper.is-fullscreen .viewer-caption {
   color: rgba(255, 255, 255, 0.75);
 }
+/* =========================================================
+   OVERRIDE FINAL — OPTIONS COMPLÉMENTAIRES UNIQUEMENT
+   (image à gauche / texte à droite + carte plus basse)
+   À COLLER TOUT EN BAS DU styles.css
+========================================================= */
+
+.option-grid--premium {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* cible exactement tes cartes d'options (pas les façades, pas pose & montage) */
+.option-grid--premium .bardage-card.option-card {
+  position: relative;
+  display: grid !important;
+  grid-template-columns: 74px 1fr;
+  align-items: center;
+  gap: 14px;
+
+  padding: 12px 14px;
+  min-height: 82px;
+
+  background: var(--option-thumb-bg);
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  border-radius: 16px;
+}
+
+/* vignette à gauche */
+.option-grid--premium .option-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  background: var(--option-thumb-bg);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.option-grid--premium .option-img {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  object-fit: contain;
+  padding: 8px;
+  background: var(--option-thumb-bg);
+}
+
+/* texte à droite */
+.option-grid--premium .option-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* responsive */
+@media (max-width: 768px) {
+  .option-grid--premium {
+    grid-template-columns: 1fr;
+  }
+}
