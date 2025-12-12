@@ -717,31 +717,60 @@ function rebuildOverlays(bbox) {
     opacity: CLAD_OPACITY,
   });
 
-  // ===== TOITURE + FAÎTIÈRES =====
+  // ===== TOITURE (SANS PROFILS DE FINITION POUR L'INSTANT) =====
   const slopeType = getSelectedType();
 
   if (slopeType === "mono") {
-    const deltaY = widthZ * PITCH_RATIO;
-    const angle = Math.atan(deltaY / widthZ);
+    const angle = Math.atan(PITCH_RATIO);
     const overhang = widthZ * ROOF_OVERHANG_RATIO;
 
-    // toit (épaisseur)
+    // overhang côté bas de pente -> -Z (façade C)
     const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ + overhang);
     const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.userData.kind = "roof";
 
-    // haut côté façade A (+Z) => rotation.x = -PI/2 - angle
-    roof.rotation.x = -Math.PI / 2 - angle;
+    // Haut côté façade A = +Z -> rotation.x = -angle
+    roof.rotation.x = -angle;
+
+    // compenser l’inclinaison (pivot au centre)
+    const lift = (widthZ / 2) * Math.sin(angle);
 
     roof.position.set(
       cx,
-      max.y + eps - roofSink,
-      cz + overhang * 0.35
+      max.y + eps - roofSink + lift,
+      cz - (overhang / 2) // débord vers -Z
     );
 
     roof.castShadow = SHADOW_ENABLED;
     roof.receiveShadow = false;
     overlayGroup.add(roof);
+
+  } else {
+    const angle = Math.atan(PITCH_RATIO);
+    const halfW = widthZ / 2;
+
+    // chaque demi-pan
+    const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
+
+    // Pour que les deux côtés descendent vers l’extérieur :
+    // côté +Z : +angle (fait descendre +Z)
+    // côté -Z : -angle (fait descendre -Z)
+    const lift = (halfW / 2) * Math.sin(angle);
+
+    const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
+    roofPlusZ.userData.kind = "roof";
+    roofPlusZ.rotation.x = +angle;
+    roofPlusZ.position.set(cx, max.y + eps - roofSink + lift, cz + halfW / 2);
+    roofPlusZ.castShadow = SHADOW_ENABLED;
+    overlayGroup.add(roofPlusZ);
+
+    const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
+    roofMinusZ.userData.kind = "roof";
+    roofMinusZ.rotation.x = -angle;
+    roofMinusZ.position.set(cx, max.y + eps - roofSink + lift, cz - halfW / 2);
+    roofMinusZ.castShadow = SHADOW_ENABLED;
+    overlayGroup.add(roofMinusZ);
+  }
 
     // faîtière monopente si simple ou solin
     const optSimple = $("optFaitiereSimple")?.checked;
@@ -842,13 +871,13 @@ function rebuildOverlays(bbox) {
   // B = -X
   const cladB_outer = new THREE.Mesh(geoShort, cladMat.clone());
   cladB_outer.position.set(min.x - eps, yMid, cz);
-  cladB_outer.rotation.y = Math.PI / 2;
+  // ❌ cladB_outer.rotation.y = Math.PI / 2;
   const B = addCladPanel(cladB_outer, new THREE.Vector3(-1, 0, 0));
 
   // D = +X
   const cladD_outer = new THREE.Mesh(geoShort, cladMat.clone());
   cladD_outer.position.set(max.x + eps, yMid, cz);
-  cladD_outer.rotation.y = -Math.PI / 2;
+  // ❌ cladD_outer.rotation.y = -Math.PI / 2;
   const D = addCladPanel(cladD_outer, new THREE.Vector3(1, 0, 0));
 
   function applyCladdingVisibility() {
