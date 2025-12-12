@@ -742,5 +742,44 @@ select:focus {
   .viewer-3d {
     min-height: 210px;
   }
+   /* =========================
+   MODE PLEIN ÉCRAN – VUE 3D
+========================= */
+
+.viewer-wrapper.is-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #0f0f0f;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Canvas plein écran */
+.viewer-wrapper.is-fullscreen .viewer-3d {
+  width: 100% !important;
+  flex: 1;
+  height: auto !important;
+  border-radius: 14px;
+  background: #111;
+}
+
+/* Affichage toolbar en plein écran */
+.viewer-wrapper.is-fullscreen .viewer-toolbar {
+  display: flex;
+}
+
+/* Masquer bouton "Agrandir" quand déjà en plein écran */
+.viewer-wrapper.is-fullscreen .viewer-fullscreen-btn {
+  display: none;
+}
+
+/* Texte image non contractuelle en clair */
+.viewer-wrapper.is-fullscreen .viewer-caption {
+  color: rgba(255, 255, 255, 0.75);
+}
+
 }
 
