@@ -218,6 +218,9 @@ function updateDeliveryUI() {
 ---------------------------- */
 
 function calculatePriceAndRecap() {
+  // applique les règles UI avant de calculer (sécurité)
+  applyOptionRules();
+
   const type = getSelectedType();
   const width = parseFloat($("width")?.value || "0");
   const length = parseFloat($("length")?.value || "0");
@@ -344,7 +347,7 @@ function calculatePriceAndRecap() {
 
   afficherRecapitulatif(recapText);
 
-  // met à jour structure + overlays + couleurs + visibilité bardage
+  // met à jour structure + overlays + couleurs + visibilité bardage + faîtières
   update3DFromConfig();
 }
 
@@ -381,7 +384,7 @@ const GLOBAL_SCALE = 2.5;
 
 // Pente + débord (monopente)
 const PITCH_RATIO = 0.10;          // 10%
-const ROOF_OVERHANG_RATIO = 0.14;  // débord bas de pente (14% largeur)
+const ROOF_OVERHANG_RATIO = 0.14;  // débord bas de pente
 
 // Visuel texture (répétition)
 const ROOF_TEX_REPEAT_X = 8;
@@ -394,16 +397,16 @@ const CLAD_TEX_REPEAT_Y = 3;
 const ROOF_OPACITY = 0.92;
 const CLAD_OPACITY = 0.92;
 
-// Epaisseurs
+// Epaisseurs (mètres "modèle", épaisseur réelle calculée dans rebuildOverlays)
 const ROOF_THICKNESS = 0.06;   // m
 const CLAD_THICKNESS = 0.035;  // m
 
-// Descendre légèrement la couverture pour qu’elle colle à la structure
-const ROOF_DROP_RATIO = 0.05; // % de la hauteur du bbox
+// Descendre légèrement la couverture pour qu’elle colle à la structure (bbox height ratio)
+const ROOF_DROP_RATIO = 0.05;
 
 // Limites de rotation OrbitControls (éviter les vues “impossibles”)
-const ORBIT_MIN_POLAR = 0.15 * Math.PI;  // pas trop au-dessus
-const ORBIT_MAX_POLAR = 0.48 * Math.PI;  // pas dessous le sol
+const ORBIT_MIN_POLAR = 0.15 * Math.PI;
+const ORBIT_MAX_POLAR = 0.48 * Math.PI;
 
 // Ombres
 const SHADOW_ENABLED = true;
@@ -450,15 +453,6 @@ function getBayCount(length) {
   return 6;
 }
 
-function shouldShowRidgeCap() {
-  // simple : si l’utilisateur coche une option de faîtière
-  return !!(
-    $("optFaitiereSolin")?.checked ||
-    $("optFaitiereDouble")?.checked ||
-    $("optFaitiereSimple")?.checked
-  );
-}
-
 function initThree() {
   const canvas = $("viewer3d");
   if (!canvas) return;
@@ -485,19 +479,11 @@ function initThree() {
   scene.add(new THREE.AmbientLight(0xffffff, 0.70));
 
   const dir = new THREE.DirectionalLight(0xffffff, 0.95);
-  dir.position.set(10, 18, 10);
-  if (SHADOW_ENABLED) {
-    dir.castShadow = true;
-    dir.shadow.mapSize.width = 2048;
-    dir.shadow.mapSize.height = 2048;
-    dir.shadow.camera.near = 1;
-    dir.shadow.camera.far = 80;
-    dir.shadow.camera.left = -25;
-    dir.shadow.camera.right = 25;
-    dir.shadow.camera.top = 25;
-    dir.shadow.camera.bottom = -25;
-    dir.shadow.bias = -0.00015;
-  }
+  dir.position.set(10, 20, 10);
+  dir.castShadow = SHADOW_ENABLED;
+  dir.shadow.mapSize.set(2048, 2048);
+  dir.shadow.camera.near = 1;
+  dir.shadow.camera.far = 80;
   scene.add(dir);
 
   const hemi = new THREE.HemisphereLight(0xffffff, 0xe9dcc2, 0.30);
@@ -510,7 +496,7 @@ function initThree() {
   );
   groundDisc.rotation.x = -Math.PI / 2;
   groundDisc.position.y = 0;
-  groundDisc.receiveShadow = true;
+  groundDisc.receiveShadow = SHADOW_ENABLED;
   scene.add(groundDisc);
 
   padMesh = new THREE.Mesh(
@@ -519,7 +505,7 @@ function initThree() {
   );
   padMesh.rotation.x = -Math.PI / 2;
   padMesh.position.y = 0.01;
-  padMesh.receiveShadow = true;
+  padMesh.receiveShadow = SHADOW_ENABLED;
   scene.add(padMesh);
 
   // controls
@@ -584,6 +570,7 @@ function initThree() {
       const bgGeo = new THREE.PlaneGeometry(40, 15);
       const bgMat = new THREE.MeshBasicMaterial({ map: tex });
       backgroundPlane = new THREE.Mesh(bgGeo, bgMat);
+      backgroundPlane = new THREE.Mesh(bgGeo, bgMat);
       backgroundPlane.position.set(0, 7, -20);
       scene.add(backgroundPlane);
     },
@@ -599,8 +586,8 @@ function initThree() {
       baseModule = gltf.scene;
       baseModule.traverse((obj) => {
         if (obj.isMesh) {
-          obj.castShadow = true;
-          obj.receiveShadow = true;
+          obj.castShadow = SHADOW_ENABLED;
+          obj.receiveShadow = SHADOW_ENABLED;
           obj.material = obj.material.clone();
         }
       });
@@ -708,6 +695,15 @@ function rebuildOverlays(bbox) {
 
   const cx = (min.x + max.x) / 2;
   const cz = (min.z + max.z) / 2;
+  const yMid = (min.y + max.y) / 2;
+
+  // épaisseurs & placements (scalés)
+  const roofThick = ROOF_THICKNESS * GLOBAL_SCALE;
+  const cladThick = CLAD_THICKNESS * GLOBAL_SCALE;
+  const roofSink = Math.max(0.03, heightY * ROOF_DROP_RATIO);
+
+  const ridgeH = 0.055 * GLOBAL_SCALE;
+  const ridgeW = 0.18 * GLOBAL_SCALE;
 
   const roofMat = materialWithTexture({
     color: getRoofColor3D(),
@@ -721,119 +717,116 @@ function rebuildOverlays(bbox) {
     opacity: CLAD_OPACITY,
   });
 
-  // ===== TOITURE =====
+  // ===== TOITURE + FAÎTIÈRES =====
   const slopeType = getSelectedType();
 
   if (slopeType === "mono") {
     const deltaY = widthZ * PITCH_RATIO;
     const angle = Math.atan(deltaY / widthZ);
-
     const overhang = widthZ * ROOF_OVERHANG_RATIO;
-    const roofDrop = heightY * ROOF_DROP_RATIO;
 
-    const roofGeo = new THREE.PlaneGeometry(lenX, widthZ + overhang);
+    // toit (épaisseur)
+    const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ + overhang);
+    const roof = new THREE.Mesh(roofGeo, roofMat);
+    roof.userData.kind = "roof";
 
-    // Pan supérieur
-    const roofTop = new THREE.Mesh(roofGeo, roofMat);
-    // Haut côté façade A (+Z) => on descend vers -Z => -PI/2 - angle
-    roofTop.rotation.x = -Math.PI / 2 - angle;
+    // haut côté façade A (+Z) => rotation.x = -PI/2 - angle
+    roof.rotation.x = -Math.PI / 2 - angle;
 
-    roofTop.position.set(
+    roof.position.set(
       cx,
-      max.y + eps - roofDrop - deltaY * 0.15,
-      cz - overhang * 0.35
+      max.y + eps - roofSink,
+      cz + overhang * 0.35
     );
 
-    roofTop.castShadow = true;
-    roofTop.receiveShadow = true;
-    roofTop.userData.kind = "roof";
-    overlayGroup.add(roofTop);
+    roof.castShadow = SHADOW_ENABLED;
+    roof.receiveShadow = false;
+    overlayGroup.add(roof);
 
-    // Pan inférieur (épaisseur)
-    const roofBottom = new THREE.Mesh(roofGeo, roofMat.clone());
-    roofBottom.material.opacity = Math.min(1, ROOF_OPACITY * 0.98);
+    // faîtière monopente si simple ou solin
+    const optSimple = $("optFaitiereSimple")?.checked;
+    const optSolin = $("optFaitiereSolin")?.checked;
 
-    roofBottom.rotation.copy(roofTop.rotation);
-    roofBottom.position.copy(roofTop.position);
+    if (optSimple || optSolin) {
+      const rw = optSolin ? ridgeW * 1.15 : ridgeW;
+      const ridgeGeo = new THREE.BoxGeometry(lenX * 1.01, ridgeH, rw);
+      const ridge = new THREE.Mesh(ridgeGeo, roofMat.clone());
+      ridge.userData.kind = "ridge";
+      ridge.rotation.x = -Math.PI / 2 - angle;
 
-    const normal = new THREE.Vector3(0, 1, 0).applyEuler(roofTop.rotation);
-    roofBottom.position.addScaledVector(normal, -ROOF_THICKNESS);
-
-    roofBottom.castShadow = true;
-    roofBottom.receiveShadow = true;
-    roofBottom.userData.kind = "roof";
-    overlayGroup.add(roofBottom);
-
-    // Faîtière (visible si option cochée)
-    if (shouldShowRidgeCap()) {
-      const capLen = lenX * 0.985;
-      const capW = 0.12;
-      const capH = 0.05;
-
-      const capGeo = new THREE.BoxGeometry(capLen, capH, capW);
-      const capMat = roofMat.clone();
-      capMat.opacity = 0.98;
-
-      const cap = new THREE.Mesh(capGeo, capMat);
-      cap.rotation.x = roofTop.rotation.x;
-
-      cap.position.set(
+      ridge.position.set(
         cx,
-        roofTop.position.y + 0.02,
-        cz + widthZ * 0.5 - 0.02
+        max.y + eps - roofSink + deltaY * 0.35,
+        max.z - (rw * 0.15) + eps
       );
 
-      cap.castShadow = true;
-      cap.receiveShadow = true;
-      cap.userData.kind = "roof";
-      overlayGroup.add(cap);
+      ridge.castShadow = SHADOW_ENABLED;
+      ridge.receiveShadow = false;
+      overlayGroup.add(ridge);
     }
 
   } else {
-    // bipente : 2 pans (simple)
     const angle = Math.atan(PITCH_RATIO);
     const halfW = widthZ / 2;
 
-    const roofL = new THREE.Mesh(new THREE.PlaneGeometry(lenX, halfW), roofMat.clone());
-    roofL.rotation.x = -Math.PI / 2 + angle;
-    roofL.position.set(cx, max.y + eps, cz - halfW / 2);
-    roofL.castShadow = true; roofL.receiveShadow = true;
+    const roofL = new THREE.Mesh(
+      new THREE.BoxGeometry(lenX, roofThick, halfW),
+      roofMat.clone()
+    );
     roofL.userData.kind = "roof";
+    roofL.rotation.x = -Math.PI / 2 - angle;
+    roofL.position.set(cx, max.y + eps - roofSink, cz + halfW / 2);
+    roofL.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roofL);
 
-    const roofR = new THREE.Mesh(new THREE.PlaneGeometry(lenX, halfW), roofMat.clone());
-    roofR.rotation.x = -Math.PI / 2 - angle;
-    roofR.position.set(cx, max.y + eps, cz + halfW / 2);
-    roofR.castShadow = true; roofR.receiveShadow = true;
+    const roofR = new THREE.Mesh(
+      new THREE.BoxGeometry(lenX, roofThick, halfW),
+      roofMat.clone()
+    );
     roofR.userData.kind = "roof";
+    roofR.rotation.x = -Math.PI / 2 + angle;
+    roofR.position.set(cx, max.y + eps - roofSink, cz - halfW / 2);
+    roofR.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roofR);
+
+    // faîtière bipente si double ou solin
+    const optDouble = $("optFaitiereDouble")?.checked;
+    const optSolin = $("optFaitiereSolin")?.checked;
+
+    if (optDouble || optSolin) {
+      const rw = optSolin ? ridgeW * 1.15 : ridgeW;
+      const ridgeGeo = new THREE.BoxGeometry(lenX * 1.02, ridgeH, rw);
+      const ridge = new THREE.Mesh(ridgeGeo, roofMat.clone());
+      ridge.userData.kind = "ridge";
+
+      ridge.position.set(cx, max.y + eps - roofSink + (halfW * PITCH_RATIO), cz);
+      ridge.castShadow = SHADOW_ENABLED;
+      overlayGroup.add(ridge);
+    }
   }
 
-  // ===== BARDAGE (plans + épaisseur simple) =====
-  const geoLong = new THREE.PlaneGeometry(lenX, heightY);
-  const geoShort = new THREE.PlaneGeometry(widthZ, heightY);
+  // ===== BARDAGE (avec double peau simple pour l'épaisseur) =====
+  const geoLong = new THREE.BoxGeometry(lenX, heightY, cladThick);
+  const geoShort = new THREE.BoxGeometry(cladThick, heightY, widthZ);
 
   function addCladPanel(mesh, outwardDir) {
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
+    mesh.castShadow = SHADOW_ENABLED;
+    mesh.receiveShadow = SHADOW_ENABLED;
     mesh.userData.kind = "clad";
     overlayGroup.add(mesh);
 
-    // panneau "intérieur" pour une légère épaisseur visuelle
     const inner = new THREE.Mesh(mesh.geometry, mesh.material.clone());
     inner.rotation.copy(mesh.rotation);
     inner.position.copy(mesh.position);
-    inner.position.addScaledVector(outwardDir, -CLAD_THICKNESS);
+    inner.position.addScaledVector(outwardDir, -cladThick);
     inner.material.opacity = Math.min(1, CLAD_OPACITY * 0.98);
-    inner.castShadow = true;
-    inner.receiveShadow = true;
+    inner.castShadow = SHADOW_ENABLED;
+    inner.receiveShadow = SHADOW_ENABLED;
     inner.userData.kind = "clad";
     overlayGroup.add(inner);
 
     return { outer: mesh, inner };
   }
-
-  const yMid = (min.y + max.y) / 2;
 
   // A = +Z
   const cladA_outer = new THREE.Mesh(geoLong, cladMat.clone());
@@ -915,9 +908,9 @@ function updateOverlayStylesOnly() {
     const mat = obj.material;
     if (!mat || Array.isArray(mat)) return;
 
-    const kind = obj.userData?.kind;
+    const kind = obj.userData?.kind || "";
 
-    if (kind === "roof") {
+    if (kind === "roof" || kind === "ridge") {
       mat.color.set(roofColor);
       mat.opacity = ROOF_OPACITY;
       if (roofTex) mat.map = roofTex;
@@ -1010,11 +1003,56 @@ function setup3DFullscreenUI() {
 }
 
 /* ---------------------------
+   4bis) RÈGLES OPTIONS (UI)
+   - Faîtière simple grisée si bipente
+   - Faîtière double masquée si monopente
+---------------------------- */
+
+function setOptionState({ inputId, disabled, hidden }) {
+  const input = $(inputId);
+  if (!input) return;
+
+  const label = input.closest("label");
+  if (!label) return;
+
+  if (hidden) label.style.display = "none";
+  else label.style.display = "";
+
+  input.disabled = !!disabled;
+
+  if (disabled) {
+    input.checked = false;
+    label.classList.add("is-disabled");
+  } else {
+    label.classList.remove("is-disabled");
+  }
+}
+
+function applyOptionRules() {
+  const slopeType = getSelectedType();
+
+  // Faîtière simple : uniquement monopente => grisée en bipente
+  setOptionState({
+    inputId: "optFaitiereSimple",
+    disabled: slopeType === "bi",
+    hidden: false,
+  });
+
+  // Faîtière double : uniquement bipente => masquée en monopente
+  setOptionState({
+    inputId: "optFaitiereDouble",
+    disabled: false,
+    hidden: slopeType === "mono",
+  });
+}
+
+/* ---------------------------
    7) INIT — LIAISONS EVENTS
 ---------------------------- */
 
 document.addEventListener("DOMContentLoaded", async () => {
   populateDimensions();
+  applyOptionRules();
 
   initThree();
   setup3DFullscreenUI();
@@ -1025,7 +1063,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.querySelectorAll('input[name="slopeType"]').forEach((el) => {
     el.addEventListener("change", () => {
       populateDimensions();
+      applyOptionRules();
       calculatePriceAndRecap();
+      update3DFromConfig();
     });
   });
 
@@ -1087,8 +1127,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     "optFaitiereSimple",
   ].forEach((id) =>
     $(id)?.addEventListener("change", () => {
+      applyOptionRules();
       calculatePriceAndRecap();
-      update3DFromConfig(); // pour afficher/cacher faîtière aussi
+      update3DFromConfig();
     })
   );
 
