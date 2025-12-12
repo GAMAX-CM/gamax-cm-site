@@ -708,16 +708,72 @@ function rebuildOverlays(bbox) {
     side: THREE.DoubleSide,
   });
 
-  // Toiture
+// ===== TOITURE (avec pente) =====
+const slopeVal = document.querySelector('input[name="slopeType"]:checked')?.value || "mono";
+
+// Matériau toiture (moins transparent)
+const roofMat = new THREE.MeshStandardMaterial({
+  color: getRoofColor3D(),
+  transparent: true,
+  opacity: 0.85,      // << moins transparent
+  side: THREE.DoubleSide,
+});
+
+// Matériau bardage (moins transparent)
+const claddingMat = new THREE.MeshStandardMaterial({
+  color: getCladdingColor3D(),
+  transparent: true,
+  opacity: 0.85,      // << moins transparent
+  side: THREE.DoubleSide,
+});
+
+const centerX = (min.x + max.x) / 2;
+const centerY = (min.y + max.y) / 2;
+const centerZ = (min.z + max.z) / 2;
+
+// (A) MONOPENTE : une seule plaque inclinée
+if (slopeVal === "mono") {
+  // pente “visuelle” (ajuste si tu veux) : 10% de la largeur
+  const pitchRatio = 0.10; // 10%
+  const deltaY = widthZ * pitchRatio;
+  const angle = Math.atan(deltaY / widthZ);
+
   const roofGeo = new THREE.PlaneGeometry(lenX, widthZ);
   roofMesh = new THREE.Mesh(roofGeo, roofMat);
-  roofMesh.rotation.x = -Math.PI / 2;
-  roofMesh.position.set(
-    (min.x + max.x) / 2,
-    max.y + eps,
-    (min.z + max.z) / 2
-  );
+
+  // Base : horizontale en XZ, puis inclinaison sur l'axe X
+  roofMesh.rotation.x = -Math.PI / 2 + angle;
+
+  // On centre la toiture et on compense la pente pour qu’elle “colle” au haut
+  roofMesh.position.set(centerX, max.y + eps - deltaY * 0.25, centerZ);
+
   overlayGroup.add(roofMesh);
+}
+
+// (B) BIPENTE : deux plaques inclinées vers une faîtière
+else {
+  const pitchDeg = 18; // pente visuelle
+  const angle = THREE.MathUtils.degToRad(pitchDeg);
+
+  const halfW = widthZ / 2;
+
+  // Pan gauche
+  const roofGeoL = new THREE.PlaneGeometry(lenX, halfW);
+  const roofL = new THREE.Mesh(roofGeoL, roofMat.clone());
+  roofL.rotation.x = -Math.PI / 2 + angle;
+  roofL.position.set(centerX, max.y + eps, centerZ - halfW / 2);
+  overlayGroup.add(roofL);
+
+  // Pan droit
+  const roofGeoR = new THREE.PlaneGeometry(lenX, halfW);
+  const roofR = new THREE.Mesh(roofGeoR, roofMat.clone());
+  roofR.rotation.x = -Math.PI / 2 - angle;
+  roofR.position.set(centerX, max.y + eps, centerZ + halfW / 2);
+  overlayGroup.add(roofR);
+
+  roofMesh = null; // on n’utilise plus roofMesh unique en bipente
+}
+
 
   // Façades
   const geoLong = new THREE.PlaneGeometry(lenX, heightY);
