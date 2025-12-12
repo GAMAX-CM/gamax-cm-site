@@ -38,7 +38,6 @@ const CLADDING_TYPE_LABELS = {
   sandwich40: "Panneau sandwich ép. 40 mm",
 };
 
-// ---- TARIFS STRUCTURE PAR DIMENSION ----
 const STRUCTURE_PRICE_TABLE = {
   mono: {
     "3x3": 740, "3x4": 790, "3x5": 840, "3x6": 890,
@@ -60,7 +59,6 @@ const STRUCTURE_PRICE_TABLE = {
   bi: {},
 };
 
-// ---- PRIX COUVERTURE & BARDAGE (€/m²) ----
 const ROOF_PRICE_PER_M2 = {
   bac_simple: 15.34,
   bac_regul: 17.35,
@@ -360,9 +358,12 @@ window.goToOrderPage = function goToOrderPage() {
    5) THREE.JS — VUE 3D
 ---------------------------- */
 
-// Textures / assets
-const ROOF_TEX_PATH = "assets/texture-bac-acier.jpg";
-const CLAD_TEX_PATH = "assets/texture-bac-acier.jpg";
+// ✅ Texture neutre (solution 3) : elle sera teinte par la couleur RAL
+const BAC_ACIER_TEXTURE = "assets/texture-bac-acier-neutral.jpg";
+
+const ROOF_TEX_PATH = BAC_ACIER_TEXTURE;
+const CLAD_TEX_PATH = BAC_ACIER_TEXTURE;
+
 const PAVE_TEX_PATH = "assets/texture-pave-gris.jpg";
 const BG_TEX_PATH   = "assets/fond-jardin.jpg";
 
@@ -376,20 +377,20 @@ const BASE_HEIGHT_M = 2.15;
 
 const GLOBAL_SCALE = 2.5;
 
-// Pente + débord (monopente)
+// ✅ Pente + débord (monopente)
 const PITCH_RATIO = 0.10;          // 10%
 const ROOF_OVERHANG_RATIO = 0.14;  // débord bas de pente (14% largeur)
 
-// Visuel texture (répétition)
-const ROOF_TEX_REPEAT_X = 8;
+// Texture repeat
+const ROOF_TEX_REPEAT_X = 10;
 const ROOF_TEX_REPEAT_Z = 2;
 
-const CLAD_TEX_REPEAT_X = 8;
+const CLAD_TEX_REPEAT_X = 10;
 const CLAD_TEX_REPEAT_Y = 3;
 
-// Moins transparent (plus “réaliste”)
-const ROOF_OPACITY = 0.92;
-const CLAD_OPACITY = 0.92;
+// ✅ moins transparent
+const ROOF_OPACITY = 0.95;
+const CLAD_OPACITY = 0.95;
 
 // Three globals
 let scene, camera, renderer, controls;
@@ -628,7 +629,7 @@ function materialWithTexture({ color, tex, opacity }) {
     opacity,
     side: THREE.DoubleSide,
     metalness: 0.05,
-    roughness: 0.85,
+    roughness: 0.88, // mat
   });
 
   if (tex) {
@@ -656,7 +657,6 @@ function rebuildOverlays(bbox) {
   const cx = (min.x + max.x) / 2;
   const cz = (min.z + max.z) / 2;
 
-  // matériaux nervurés + couleurs RAL + faible transparence
   const roofMat = materialWithTexture({
     color: getRoofColor3D(),
     tex: roofTex,
@@ -673,27 +673,29 @@ function rebuildOverlays(bbox) {
   const slopeType = getSelectedType();
 
   if (slopeType === "mono") {
-    // pente 10% : deltaY dépend de la largeur (Z)
+    // ✅ pente 10% sur largeur (Z)
     const deltaY = widthZ * PITCH_RATIO;
     const angle = Math.atan(deltaY / widthZ);
 
-    // débord bas de pente (vers -Z)
+    // ✅ débord bas de pente (vers -Z)
     const overhang = widthZ * ROOF_OVERHANG_RATIO;
 
-    // géométrie étendue + décalage vers le bas de pente
+    // géométrie : largeur augmentée
     const roofGeo = new THREE.PlaneGeometry(lenX, widthZ + overhang);
     const roof = new THREE.Mesh(roofGeo, roofMat);
 
-    // IMPORTANT : plan horizontal (-PI/2) puis inclinaison (+angle)
+    // ✅ rotation : horizontal puis inclinaison
     roof.rotation.x = -Math.PI / 2 + angle;
 
-    // position : collé au haut + petite compensation
+    // ✅ position : au sommet + légère compensation + décalage vers bas de pente
     roof.position.set(
       cx,
-      max.y + eps - deltaY * 0.15,
+      max.y + eps - deltaY * 0.12,
       cz - overhang * 0.35
     );
 
+    // ✅ tag (important pour updateOverlayStylesOnly)
+    roof.userData.kind = "roof";
     overlayGroup.add(roof);
   } else {
     // bipente : 2 pans
@@ -703,11 +705,13 @@ function rebuildOverlays(bbox) {
     const roofL = new THREE.Mesh(new THREE.PlaneGeometry(lenX, halfW), roofMat.clone());
     roofL.rotation.x = -Math.PI / 2 + angle;
     roofL.position.set(cx, max.y + eps, cz - halfW / 2);
+    roofL.userData.kind = "roof";
     overlayGroup.add(roofL);
 
     const roofR = new THREE.Mesh(new THREE.PlaneGeometry(lenX, halfW), roofMat.clone());
     roofR.rotation.x = -Math.PI / 2 - angle;
     roofR.position.set(cx, max.y + eps, cz + halfW / 2);
+    roofR.userData.kind = "roof";
     overlayGroup.add(roofR);
   }
 
@@ -717,28 +721,38 @@ function rebuildOverlays(bbox) {
 
   const cladA = new THREE.Mesh(geoLong, cladMat.clone());
   cladA.position.set(cx, (min.y + max.y) / 2, max.z + eps);
+  cladA.userData.kind = "clad";
+  cladA.userData.side = "A";
   overlayGroup.add(cladA);
 
   const cladC = new THREE.Mesh(geoLong, cladMat.clone());
   cladC.position.set(cx, (min.y + max.y) / 2, min.z - eps);
   cladC.rotation.y = Math.PI;
+  cladC.userData.kind = "clad";
+  cladC.userData.side = "C";
   overlayGroup.add(cladC);
 
   const cladB = new THREE.Mesh(geoShort, cladMat.clone());
   cladB.position.set(min.x - eps, (min.y + max.y) / 2, cz);
   cladB.rotation.y = Math.PI / 2;
+  cladB.userData.kind = "clad";
+  cladB.userData.side = "B";
   overlayGroup.add(cladB);
 
   const cladD = new THREE.Mesh(geoShort, cladMat.clone());
   cladD.position.set(max.x + eps, (min.y + max.y) / 2, cz);
   cladD.rotation.y = -Math.PI / 2;
+  cladD.userData.kind = "clad";
+  cladD.userData.side = "D";
   overlayGroup.add(cladD);
 
   function applyCladdingVisibility() {
-    cladA.visible = !!document.querySelector('input[name="claddingSide"][value="A"]:checked');
-    cladB.visible = !!document.querySelector('input[name="claddingSide"][value="B"]:checked');
-    cladC.visible = !!document.querySelector('input[name="claddingSide"][value="C"]:checked');
-    cladD.visible = !!document.querySelector('input[name="claddingSide"][value="D"]:checked');
+    const isChecked = (side) =>
+      !!document.querySelector(`input[name="claddingSide"][value="${side}"]:checked`);
+    cladA.visible = isChecked("A");
+    cladB.visible = isChecked("B");
+    cladC.visible = isChecked("C");
+    cladD.visible = isChecked("D");
   }
   applyCladdingVisibility();
 
@@ -787,19 +801,21 @@ function updateOverlayStylesOnly() {
     const mat = obj.material;
     if (!mat || Array.isArray(mat)) return;
 
-    // toiture : rotation.x pas exactement -PI/2 (pans inclinés)
-    const isRoof = Math.abs(obj.rotation.x + Math.PI / 2) > 0.001;
-
-    if (isRoof) {
+    if (obj.userData?.kind === "roof") {
       mat.color.set(roofColor);
       mat.opacity = ROOF_OPACITY;
       if (roofTex) mat.map = roofTex;
-    } else {
+      mat.needsUpdate = true;
+      return;
+    }
+
+    if (obj.userData?.kind === "clad") {
       mat.color.set(cladColor);
       mat.opacity = CLAD_OPACITY;
       if (cladTex) mat.map = cladTex;
+      mat.needsUpdate = true;
+      return;
     }
-    mat.needsUpdate = true;
   });
 
   overlayGroup.userData?.applyCladdingVisibility?.();
@@ -826,12 +842,15 @@ function setup3DFullscreenUI() {
 
   if (!wrapper || !canvas || !btnFS) return;
 
+  function isFullscreenNow() {
+    return document.fullscreenElement === wrapper;
+  }
+
   function resize3D() {
     if (!renderer || !camera) return;
 
     const w = wrapper.clientWidth || 420;
-    const isFS = wrapper.classList.contains("is-fullscreen");
-
+    const isFS = wrapper.classList.contains("is-fullscreen") || isFullscreenNow();
     const h = isFS
       ? Math.max(320, window.innerHeight - 140)
       : (lastInlineCanvasHeight || canvas.clientHeight || 320);
@@ -842,24 +861,46 @@ function setup3DFullscreenUI() {
     controls?.update?.();
   }
 
-  btnFS.addEventListener("click", () => {
+  async function enterFullscreen() {
     // sauvegarde hauteur inline
     lastInlineCanvasHeight = canvas.clientHeight || lastInlineCanvasHeight || 320;
 
-    wrapper.classList.add("is-fullscreen");
-    setTimeout(resize3D, 80);
-  });
+    // 1) essaye vrai fullscreen navigateur
+    if (wrapper.requestFullscreen) {
+      try {
+        await wrapper.requestFullscreen();
+      } catch {
+        // ignore
+      }
+    }
 
-  btnClose?.addEventListener("click", () => {
+    // 2) fallback CSS si fullscreen refusé / non supporté
+    wrapper.classList.add("is-fullscreen");
+    setTimeout(resize3D, 100);
+  }
+
+  function exitFullscreen() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen?.();
+    }
     wrapper.classList.remove("is-fullscreen");
+    setTimeout(resize3D, 100);
+  }
+
+  btnFS.addEventListener("click", enterFullscreen);
+  btnClose?.addEventListener("click", exitFullscreen);
+
+  document.addEventListener("fullscreenchange", () => {
+    // synchronise classe CSS
+    if (isFullscreenNow()) wrapper.classList.add("is-fullscreen");
+    else wrapper.classList.remove("is-fullscreen");
     setTimeout(resize3D, 80);
   });
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      if (wrapper.classList.contains("is-fullscreen")) {
-        wrapper.classList.remove("is-fullscreen");
-        setTimeout(resize3D, 80);
+      if (wrapper.classList.contains("is-fullscreen") || document.fullscreenElement) {
+        exitFullscreen();
       }
     }
   });
