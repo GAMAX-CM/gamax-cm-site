@@ -361,8 +361,8 @@ window.goToOrderPage = function goToOrderPage() {
 ---------------------------- */
 
 // Textures / assets
-const ROOF_TEX_PATH = "assets/texture-bac-acier.jpg";
-const CLAD_TEX_PATH = "assets/texture-bac-acier.jpg";
+const ROOF_TEX_PATH = "assets/texture-bac-acier-neutral.jpg";
+const CLAD_TEX_PATH = "assets/texture-bac-acier-neutral.jpg";
 const PAVE_TEX_PATH = "assets/texture-pave-gris.jpg";
 const BG_TEX_PATH   = "assets/fond-jardin.jpg";
 
@@ -388,11 +388,11 @@ const CLAD_TEX_REPEAT_X = 8;
 const CLAD_TEX_REPEAT_Y = 3;
 
 // Moins transparent (plus “réaliste”)
-const ROOF_OPACITY = 0.92;
-const CLAD_OPACITY = 0.92;
+const ROOF_OPACITY = 0.95;
+const CLAD_OPACITY = 0.95;
 
-// ↓ Décalage vertical de la couverture (rendu “posée”)
-const ROOF_DROP = 0.12; // ajuste si besoin (0.08 → 0.18)
+// Toiture abaissée (écart vertical par rapport au haut de structure)
+const ROOF_DROP_RATIO = 0.02; // 2% de la hauteur totale
 
 // Three globals
 let scene, camera, renderer, controls;
@@ -410,8 +410,8 @@ let cladTex = null;
 
 // Fullscreen helpers
 let lastInlineCanvasHeight = 0;
+let fsPrevStyle = null;
 
-// Utilitaires couleurs RAL depuis les pastilles (CSS)
 function getRALColorFromRadio(name) {
   const input = document.querySelector(`input[name="${name}"]:checked`);
   if (!input) return "#666666";
@@ -437,15 +437,6 @@ function getBayCount(length) {
   return 6;
 }
 
-// Options -> faîtière
-function isRidgeSelected() {
-  return !!(
-    $("optFaitiereSolin")?.checked ||
-    $("optFaitiereSimple")?.checked ||
-    $("optFaitiereDouble")?.checked
-  );
-}
-
 function initThree() {
   const canvas = $("viewer3d");
   if (!canvas) return;
@@ -459,26 +450,25 @@ function initThree() {
   camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 2000);
   camera.position.set(8, 5, 10);
 
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
   renderer.setPixelRatio(window.devicePixelRatio || 1);
   renderer.setSize(w, h, false);
 
-  // ✅ ombres réalistes
+  // ✅ Ombres réalistes
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   // lumières
-  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.65));
 
   const dir = new THREE.DirectionalLight(0xffffff, 0.95);
-  dir.position.set(10, 20, 10);
-
-  // ✅ shadow tuning
+  dir.position.set(10, 18, 10);
   dir.castShadow = true;
-  dir.shadow.mapSize.width = 2048;
-  dir.shadow.mapSize.height = 2048;
-  dir.shadow.bias = -0.0002;
-
+  dir.shadow.mapSize.set(2048, 2048);
+  dir.shadow.camera.left = -20;
+  dir.shadow.camera.right = 20;
+  dir.shadow.camera.top = 20;
+  dir.shadow.camera.bottom = -20;
   scene.add(dir);
 
   // sol
@@ -488,7 +478,7 @@ function initThree() {
   );
   groundDisc.rotation.x = -Math.PI / 2;
   groundDisc.position.y = 0;
-  groundDisc.receiveShadow = true; // ✅
+  groundDisc.receiveShadow = true;
   scene.add(groundDisc);
 
   padMesh = new THREE.Mesh(
@@ -497,7 +487,7 @@ function initThree() {
   );
   padMesh.rotation.x = -Math.PI / 2;
   padMesh.position.y = 0.01;
-  padMesh.receiveShadow = true; // ✅
+  padMesh.receiveShadow = true;
   scene.add(padMesh);
 
   // controls
@@ -506,10 +496,12 @@ function initThree() {
   controls.dampingFactor = 0.08;
   controls.target.set(0, 1.5, 0);
 
-  // ✅ limiter les vues “impossibles”
+  // ✅ Bloquer vues “impossibles”
   controls.enablePan = false;
-  controls.minPolarAngle = 0.25;
-  controls.maxPolarAngle = Math.PI / 2.05;
+  controls.minPolarAngle = Math.PI / 6;     // ~30°
+  controls.maxPolarAngle = Math.PI / 2.15;  // ~83°
+  controls.minDistance = 4;
+  controls.maxDistance = 40;
 
   // textures
   const tl = new THREE.TextureLoader();
@@ -524,7 +516,6 @@ function initThree() {
       groundDisc.material.needsUpdate = true;
 
       const tex2 = tex.clone();
-      tex2.wrapS = tex2.wrapT = THREE.RepeatWrapping;
       tex2.repeat.set(4, 4);
       padMesh.material.map = tex2;
       padMesh.material.needsUpdate = true;
@@ -660,7 +651,7 @@ function materialWithTexture({ color, tex, opacity }) {
     transparent: true,
     opacity,
     side: THREE.DoubleSide,
-    metalness: 0.05,
+    metalness: 0.08,
     roughness: 0.85,
   });
 
@@ -669,6 +660,14 @@ function materialWithTexture({ color, tex, opacity }) {
     mat.map.needsUpdate = true;
   }
   return mat;
+}
+
+function hasAnyFaitiereOption() {
+  return (
+    $("optFaitiereSimple")?.checked ||
+    $("optFaitiereSolin")?.checked ||
+    $("optFaitiereDouble")?.checked
+  );
 }
 
 function rebuildOverlays(bbox) {
@@ -689,7 +688,6 @@ function rebuildOverlays(bbox) {
   const cx = (min.x + max.x) / 2;
   const cz = (min.z + max.z) / 2;
 
-  // matériaux nervurés + couleurs RAL + faible transparence
   const roofMat = materialWithTexture({
     color: getRoofColor3D(),
     tex: roofTex,
@@ -702,72 +700,85 @@ function rebuildOverlays(bbox) {
     opacity: CLAD_OPACITY,
   });
 
-// ===== TOITURE MONOPENTE (pente vers façade C) =====
-if (slopeType === "mono") {
+  // ===== TOITURE =====
+  const slopeType = getSelectedType();
 
-  const deltaY = widthZ * PITCH_RATIO;      // hauteur créée par la pente
-  const angle = Math.atan(deltaY / widthZ);
+  if (slopeType === "mono") {
+    // ✅ Monopente : haut côté façade A (+Z), bas côté façade C (-Z)
+    const deltaY = widthZ * PITCH_RATIO;
+    const angle = Math.atan(deltaY / widthZ);
 
-  const overhang = widthZ * ROOF_OVERHANG_RATIO;
+    const overhang = widthZ * ROOF_OVERHANG_RATIO;
 
-  const roofGeo = new THREE.PlaneGeometry(
-    lenX,
-    widthZ + overhang
-  );
+    const roofGeo = new THREE.PlaneGeometry(lenX, widthZ + overhang);
+    const roof = new THREE.Mesh(roofGeo, roofMat);
 
-  const roof = new THREE.Mesh(roofGeo, roofMat);
+    // ✅ sens corrigé : on soustrait l’angle
+    roof.rotation.x = -Math.PI / 2 - angle;
 
-  // 👉 IMPORTANT :
-  // - Plan à plat = -PI/2
-  // - On SOUSTRAIT l’angle pour que le haut soit côté +Z (façade A)
-  roof.rotation.x = -Math.PI / 2 - angle;
+    // ✅ couverture abaissée
+    const roofDrop = heightY * ROOF_DROP_RATIO;
 
-  // 👉 Position :
-  // - un peu plus bas que la structure
-  // - débord côté façade C (Z négatif)
-  roof.position.set(
-    cx,
-    max.y - deltaY * 0.35,        // couverture plus basse
-    cz - overhang * 0.4
-  );
+    // ✅ débord côté bas de pente (façade C, Z négatif)
+    roof.position.set(
+      cx,
+      max.y + eps - roofDrop - deltaY * 0.15,
+      cz - overhang * 0.4
+    );
 
-  roof.castShadow = true;
-  roof.receiveShadow = true;
+    roof.castShadow = true;
+    roof.receiveShadow = true;
+    roof.userData.kind = "roof";
+    overlayGroup.add(roof);
 
-  overlayGroup.add(roof);
-}
-
-  // ===== FAÎTIÈRE (option) =====
-  if (isRidgeSelected()) {
-    const ridgeMat = materialWithTexture({
-      color: getRoofColor3D(),
-      tex: roofTex,
-      opacity: 1,
-    });
-
-    const ridgeHeight = Math.max(0.04, heightY * 0.03);
-    const ridgeWidth  = Math.max(0.06, widthZ * 0.03);
-
-    if (getSelectedType() === "bi") {
-      // faîtière au centre
-      const geo = new THREE.BoxGeometry(lenX * 0.98, ridgeHeight, ridgeWidth);
-      const ridge = new THREE.Mesh(geo, ridgeMat);
-      ridge.userData.part = "roof"; // ✅ pour suivre couleur toiture
-      ridge.position.set(cx, (max.y - ROOF_DROP) + eps + ridgeHeight * 0.6, cz);
+    // ✅ Faîtière visible si option cochée (côté haut : façade A)
+    if (hasAnyFaitiereOption()) {
+      const ridgeGeo = new THREE.BoxGeometry(lenX * 0.98, 0.06, 0.12);
+      const ridgeMat = new THREE.MeshStandardMaterial({
+        color: getRoofColor3D(),
+        roughness: 0.65,
+        metalness: 0.18,
+      });
+      const ridge = new THREE.Mesh(ridgeGeo, ridgeMat);
+      ridge.position.set(cx, max.y + eps - roofDrop + 0.02, max.z - 0.08);
       ridge.castShadow = true;
-      ridge.receiveShadow = true;
+      ridge.userData.kind = "ridge";
       overlayGroup.add(ridge);
-    } else {
-      // ✅ MONOPENTE : haut de toiture côté façade A
-      // Dans ton repère actuel : Façade A = +Z = max.z
-      const zHigh = max.z;
+    }
 
-      const geo = new THREE.BoxGeometry(lenX * 0.98, ridgeHeight, ridgeWidth);
-      const ridge = new THREE.Mesh(geo, ridgeMat);
-      ridge.userData.part = "roof";
-      ridge.position.set(cx, (max.y - ROOF_DROP) + eps + ridgeHeight * 0.6, zHigh);
+  } else {
+    // bipente : 2 pans (simple)
+    const angle = Math.atan(PITCH_RATIO);
+    const halfW = widthZ / 2;
+    const roofDrop = heightY * ROOF_DROP_RATIO;
+
+    const roofL = new THREE.Mesh(new THREE.PlaneGeometry(lenX, halfW), roofMat.clone());
+    roofL.rotation.x = -Math.PI / 2 + angle;
+    roofL.position.set(cx, max.y + eps - roofDrop, cz - halfW / 2);
+    roofL.castShadow = true;
+    roofL.receiveShadow = true;
+    roofL.userData.kind = "roof";
+    overlayGroup.add(roofL);
+
+    const roofR = new THREE.Mesh(new THREE.PlaneGeometry(lenX, halfW), roofMat.clone());
+    roofR.rotation.x = -Math.PI / 2 - angle;
+    roofR.position.set(cx, max.y + eps - roofDrop, cz + halfW / 2);
+    roofR.castShadow = true;
+    roofR.receiveShadow = true;
+    roofR.userData.kind = "roof";
+    overlayGroup.add(roofR);
+
+    if (hasAnyFaitiereOption()) {
+      const ridgeGeo = new THREE.BoxGeometry(lenX * 0.98, 0.06, 0.12);
+      const ridgeMat = new THREE.MeshStandardMaterial({
+        color: getRoofColor3D(),
+        roughness: 0.65,
+        metalness: 0.18,
+      });
+      const ridge = new THREE.Mesh(ridgeGeo, ridgeMat);
+      ridge.position.set(cx, max.y + eps - roofDrop + 0.02, cz);
       ridge.castShadow = true;
-      ridge.receiveShadow = true;
+      ridge.userData.kind = "ridge";
       overlayGroup.add(ridge);
     }
   }
@@ -777,34 +788,34 @@ if (slopeType === "mono") {
   const geoShort = new THREE.PlaneGeometry(widthZ, heightY);
 
   const cladA = new THREE.Mesh(geoLong, cladMat.clone());
-  cladA.userData.part = "cladding";
-  cladA.castShadow = true;
-  cladA.receiveShadow = false;
   cladA.position.set(cx, (min.y + max.y) / 2, max.z + eps);
+  cladA.castShadow = true;
+  cladA.receiveShadow = true;
+  cladA.userData.kind = "clad";
   overlayGroup.add(cladA);
 
   const cladC = new THREE.Mesh(geoLong, cladMat.clone());
-  cladC.userData.part = "cladding";
-  cladC.castShadow = true;
-  cladC.receiveShadow = false;
   cladC.position.set(cx, (min.y + max.y) / 2, min.z - eps);
   cladC.rotation.y = Math.PI;
+  cladC.castShadow = true;
+  cladC.receiveShadow = true;
+  cladC.userData.kind = "clad";
   overlayGroup.add(cladC);
 
   const cladB = new THREE.Mesh(geoShort, cladMat.clone());
-  cladB.userData.part = "cladding";
-  cladB.castShadow = true;
-  cladB.receiveShadow = false;
   cladB.position.set(min.x - eps, (min.y + max.y) / 2, cz);
   cladB.rotation.y = Math.PI / 2;
+  cladB.castShadow = true;
+  cladB.receiveShadow = true;
+  cladB.userData.kind = "clad";
   overlayGroup.add(cladB);
 
   const cladD = new THREE.Mesh(geoShort, cladMat.clone());
-  cladD.userData.part = "cladding";
-  cladD.castShadow = true;
-  cladD.receiveShadow = false;
   cladD.position.set(max.x + eps, (min.y + max.y) / 2, cz);
   cladD.rotation.y = -Math.PI / 2;
+  cladD.castShadow = true;
+  cladD.receiveShadow = true;
+  cladD.userData.kind = "clad";
   overlayGroup.add(cladD);
 
   function applyCladdingVisibility() {
@@ -837,21 +848,15 @@ if (slopeType === "mono") {
     backgroundPlane.scale.set(1.3, 1.3, 1);
   }
 
-  // ===== CAMÉRA + LIMITES =====
+  // ===== CAMÉRA =====
   if (controls && camera) {
     const center = new THREE.Vector3(cx, (min.y + max.y) / 2, cz);
     controls.target.set(center.x, center.y * 0.7, center.z);
-
     camera.position.set(
       center.x + lenX * 0.9,
       center.y + heightY * 1.1,
       center.z + widthZ * 1.0
     );
-
-    // ✅ distances limites (adaptatives)
-    const size = Math.max(lenX, widthZ, heightY);
-    controls.minDistance = size * 0.6;
-    controls.maxDistance = size * 3.0;
   }
 }
 
@@ -860,19 +865,17 @@ function updateOverlayStylesOnly() {
 
   const roofColor = getRoofColor3D();
   const cladColor = getCladdingColor3D();
-  const showRidge = isRidgeSelected();
 
   overlayGroup.traverse((obj) => {
     if (!obj.isMesh) return;
     const mat = obj.material;
     if (!mat || Array.isArray(mat)) return;
 
-    if (obj.userData.part === "roof") {
+    if (obj.userData.kind === "roof" || obj.userData.kind === "ridge") {
       mat.color.set(roofColor);
-      mat.opacity = (obj.geometry?.type === "BoxGeometry") ? 1 : ROOF_OPACITY; // faîtière opaque
+      mat.opacity = ROOF_OPACITY;
       if (roofTex) mat.map = roofTex;
-      obj.visible = obj.geometry?.type === "BoxGeometry" ? showRidge : true; // faîtière on/off
-    } else {
+    } else if (obj.userData.kind === "clad") {
       mat.color.set(cladColor);
       mat.opacity = CLAD_OPACITY;
       if (cladTex) mat.map = cladTex;
@@ -901,25 +904,15 @@ function setup3DFullscreenUI() {
   const btnClose = $("btnClose3D");
   const btnZoomIn = $("btnZoomIn3D");
   const btnZoomOut = $("btnZoomOut3D");
+  const toolbar = wrapper?.querySelector(".viewer-toolbar");
 
   if (!wrapper || !canvas || !btnFS) return;
 
-  const toolbar = wrapper.querySelector(".viewer-toolbar");
-
-  function setToolbarVisible(visible) {
-    if (!toolbar) return;
-    toolbar.style.display = visible ? "flex" : "none";
-  }
-
-  function resize3D() {
+  function resize3D(forceHeight = null) {
     if (!renderer || !camera) return;
 
     const w = wrapper.clientWidth || 420;
-    const isFS = wrapper.classList.contains("is-fullscreen");
-
-    const h = isFS
-      ? Math.max(320, window.innerHeight - 140)
-      : (lastInlineCanvasHeight || canvas.clientHeight || 320);
+    const h = forceHeight ?? (canvas.clientHeight || 320);
 
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
@@ -927,26 +920,71 @@ function setup3DFullscreenUI() {
     controls?.update?.();
   }
 
-  btnFS.addEventListener("click", () => {
+  function enterFullscreen() {
     lastInlineCanvasHeight = canvas.clientHeight || lastInlineCanvasHeight || 320;
-    wrapper.classList.add("is-fullscreen");
-    setToolbarVisible(true);
-    setTimeout(resize3D, 80);
-  });
 
-  btnClose?.addEventListener("click", () => {
+    // Sauvegarde styles wrapper pour restauration
+    fsPrevStyle = {
+      position: wrapper.style.position,
+      inset: wrapper.style.inset,
+      top: wrapper.style.top,
+      left: wrapper.style.left,
+      right: wrapper.style.right,
+      bottom: wrapper.style.bottom,
+      zIndex: wrapper.style.zIndex,
+      background: wrapper.style.background,
+      padding: wrapper.style.padding,
+      borderRadius: wrapper.style.borderRadius,
+      boxShadow: wrapper.style.boxShadow,
+      maxWidth: wrapper.style.maxWidth,
+      width: wrapper.style.width,
+    };
+
+    // Plein écran “CSS-less”
+    wrapper.classList.add("is-fullscreen");
+    wrapper.style.position = "fixed";
+    wrapper.style.inset = "18px";
+    wrapper.style.zIndex = "9999";
+    wrapper.style.background = "#fff";
+    wrapper.style.padding = "12px";
+    wrapper.style.borderRadius = "18px";
+    wrapper.style.boxShadow = "0 18px 60px rgba(0,0,0,.25)";
+    wrapper.style.width = "auto";
+    wrapper.style.maxWidth = "none";
+
+    if (toolbar) toolbar.style.display = "flex";
+    btnFS.style.display = "none";
+
+    // hauteur canvas
+    const wantedH = Math.max(360, window.innerHeight - 200);
+    canvas.style.minHeight = wantedH + "px";
+
+    setTimeout(() => resize3D(wantedH), 50);
+  }
+
+  function exitFullscreen() {
     wrapper.classList.remove("is-fullscreen");
-    setToolbarVisible(false);
-    setTimeout(resize3D, 80);
-  });
+    btnFS.style.display = "";
+    if (toolbar) toolbar.style.display = "none";
+
+    // Restore styles
+    if (fsPrevStyle) {
+      Object.assign(wrapper.style, fsPrevStyle);
+      fsPrevStyle = null;
+    } else {
+      wrapper.removeAttribute("style");
+    }
+
+    canvas.style.minHeight = "";
+    setTimeout(() => resize3D(lastInlineCanvasHeight), 60);
+  }
+
+  btnFS.addEventListener("click", enterFullscreen);
+  btnClose?.addEventListener("click", exitFullscreen);
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      if (wrapper.classList.contains("is-fullscreen")) {
-        wrapper.classList.remove("is-fullscreen");
-        setToolbarVisible(false);
-        setTimeout(resize3D, 80);
-      }
+    if (e.key === "Escape" && wrapper.classList.contains("is-fullscreen")) {
+      exitFullscreen();
     }
   });
 
@@ -961,11 +999,17 @@ function setup3DFullscreenUI() {
   btnZoomIn?.addEventListener("click", () => zoom(0.8));
   btnZoomOut?.addEventListener("click", () => zoom(-0.8));
 
-  window.addEventListener("resize", () => setTimeout(resize3D, 60));
-  setTimeout(() => {
-    setToolbarVisible(false);
-    resize3D();
-  }, 180);
+  window.addEventListener("resize", () => {
+    if (wrapper.classList.contains("is-fullscreen")) {
+      const wantedH = Math.max(360, window.innerHeight - 200);
+      canvas.style.minHeight = wantedH + "px";
+      setTimeout(() => resize3D(wantedH), 60);
+    } else {
+      setTimeout(() => resize3D(lastInlineCanvasHeight || 320), 60);
+    }
+  });
+
+  setTimeout(() => resize3D(canvas.clientHeight || 320), 200);
 }
 
 /* ---------------------------
@@ -1044,12 +1088,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     "optRejetEau",
     "optFaitiereDouble",
     "optFaitiereSimple",
-  ].forEach((id) =>
+  ].forEach((id) => {
     $(id)?.addEventListener("change", () => {
       calculatePriceAndRecap();
-      updateOverlayStylesOnly(); // ✅ faîtière on/off + couleurs
-    })
-  );
+      // faîtière dépend des options => rebuild complet
+      update3DFromConfig();
+    });
+  });
 
   $("btnCalculate")?.addEventListener("click", calculatePriceAndRecap);
 
