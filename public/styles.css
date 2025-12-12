@@ -465,155 +465,152 @@ select:focus {
 }
 
 /* =========================
-   OPTIONS – cartes horizontales compactes
+   OPTIONS COMPLÉMENTAIRES
+   (uniquement la grille premium)
 ========================= */
 
-/* carte option */
+/* carte option (par défaut = comme avant, ne touche pas aux autres) */
 .option-card {
-  position: relative; /* pour la coche */
+  position: relative; /* ✅ pour la coche */
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
 
-  display: grid;
-  grid-template-columns: 74px 1fr; /* image | texte */
-  align-items: center;
-  gap: 14px;
-
-  /* fond ton sur ton (identique vignette) */
   background: var(--option-thumb-bg);
-
   border: 1px solid rgba(0, 0, 0, 0.10);
   border-radius: 16px;
-  padding: 12px 14px;              /* ⬅️ plus compact */
-  min-height: 82px;                /* ⬅️ réduit la hauteur */
+  padding: 14px;
 
   box-shadow: var(--shadow-light);
-  transition: transform 0.15s ease,
-              box-shadow 0.15s ease,
-              border-color 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
-/* titres / descriptions */
 .option-card .bardage-label-main,
 .option-title {
   font-size: 0.95rem;
   font-weight: 700;
   color: #111;
-  line-height: 1.15;
 }
 
 .option-card .bardage-label-sub,
 .option-desc {
   font-size: 0.82rem;
   color: var(--text-muted);
-  line-height: 1.25;
+  line-height: 1.35;
 }
 
-/* hover */
 .option-card:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
   box-shadow: 0 14px 28px rgba(0, 0, 0, 0.12);
   border-color: var(--accent);
 }
 
-/* survol label */
 .option-choice:hover .option-card {
   border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.10);
 }
 
-/* sélection */
 .option-choice input:checked + .option-card {
   border-color: #111;
   background: var(--option-thumb-bg);
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.18);
 }
 
-/* =========================
-   vignette image
-========================= */
-
+/* vignette image */
 .option-thumb {
-  width: 72px;
-  height: 72px;
-  border-radius: 12px;
+  width: 86px;
+  height: 86px;
+  border-radius: 10px;
   overflow: hidden;
   flex-shrink: 0;
-
   background: var(--option-thumb-bg);
-
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .option-img {
-  width: 72px;
-  height: 72px;
+  width: 90px;
+  height: 90px;
   border-radius: 12px;
-
   background: var(--option-thumb-bg);
   object-fit: contain;
-  padding: 8px;
-
+  padding: 10px;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
 }
 
-/* =========================
-   contenu texte
-========================= */
-
+/* contenu texte */
 .option-content {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 5px;
+  gap: 4px;
 }
 
-/* =========================
-   coche visuelle
-========================= */
+.option-title { line-height: 1.2; }
+.option-desc  { line-height: 1.3; }
 
+/* coche */
 .option-check {
   position: absolute;
   top: 10px;
   right: 10px;
-
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: #111;
   color: #fff;
-
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   opacity: 0;
   transform: scale(0.8);
   transition: opacity 0.12s ease, transform 0.12s ease;
 }
-
-/* afficher la coche quand sélectionné */
 .option-choice input:checked + .option-card .option-check {
   opacity: 1;
   transform: scale(1);
 }
 
-/* =========================
-   état désactivé
-========================= */
-
+/* désactivé */
 .bardage-choice.is-disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
-
-.bardage-choice.is-disabled .option-card {
+.bardage-choice.is-disabled .bardage-card {
   transform: none !important;
   box-shadow: none !important;
 }
 
+/* =========================================================
+   ✅ MODIF UNIQUEMENT POUR "Options complémentaires"
+   (grille option-grid--premium)
+========================================================= */
+.option-grid--premium .option-card {
+  display: grid;
+  grid-template-columns: 74px 1fr; /* image à gauche, texte à droite */
+  align-items: center;
+  gap: 14px;
+
+  padding: 12px 14px;  /* plus compact */
+  min-height: 82px;    /* réduit la hauteur */
+}
+
+.option-grid--premium .option-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+}
+
+.option-grid--premium .option-img {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  padding: 8px;
+}
 
 /* =========================
    MODE DE LIVRAISON
