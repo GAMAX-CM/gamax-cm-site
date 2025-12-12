@@ -691,7 +691,7 @@ function rebuildOverlays(bbox) {
     roof.position.set(
       cx,
       max.y + eps - deltaY * 0.12,
-      cz + overhang * 0.35
+      cz - overhang * 0.35
     );
 
     // ✅ tag (important pour updateOverlayStylesOnly)
