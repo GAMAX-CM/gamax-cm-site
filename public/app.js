@@ -714,35 +714,78 @@ function rebuildOverlays(bbox) {
   const slopeType = getSelectedType();
 
   // ===== TOITURE =====
-  if (slopeType === "mono") {
-    // pente 10% : deltaY dépend de la largeur (Z)
-    const deltaY = widthZ * PITCH_RATIO;
-    const angle = Math.atan(deltaY / widthZ);
+ if (slopeType === "mono") {
+  // pente 10% : deltaY dépend de la largeur (Z)
+  const deltaY = widthZ * PITCH_RATIO;
+  const angle = Math.atan(deltaY / widthZ);
 
-    // débord bas de pente (vers façade C = -Z)
-    const overhang = widthZ * ROOF_OVERHANG_RATIO;
+  // débord bas de pente (vers façade C = -Z)
+  const overhang = widthZ * ROOF_OVERHANG_RATIO;
 
-    // épaisseur toiture (Box) + débord
-    const roofGeo = new THREE.BoxGeometry(lenX, ROOF_THICKNESS, widthZ + overhang);
-    const roof = new THREE.Mesh(roofGeo, roofMat);
+  // toiture plus proche de la structure
+  const roofDrop = heightY * ROOF_DROP_RATIO;
 
-    // IMPORTANT : haut côté façade A (+Z) => inclinaison dans ce sens
-    // (+angle ferait descendre +Z, donc on met -angle)
-    roof.rotation.x = -Math.PI / 2 - angle;
+  // ===== PAN SUPÉRIEUR (plan) =====
+  const roofGeo = new THREE.PlaneGeometry(lenX, widthZ + overhang);
+  const roofTop = new THREE.Mesh(roofGeo, roofMat);
 
-    // couverture plus proche de la structure
-    const roofDrop = heightY * ROOF_DROP_RATIO;
+  // Haut côté façade A (+Z) => inclinaison dans ce sens
+  // (on doit descendre vers -Z, donc rotation = -PI/2 - angle)
+  roofTop.rotation.x = -Math.PI / 2 - angle;
 
-    roof.position.set(
+  roofTop.position.set(
+    cx,
+    max.y + eps - roofDrop - deltaY * 0.15,
+    cz - overhang * 0.35
+  );
+
+  roofTop.castShadow = true;
+  roofTop.receiveShadow = true;
+  roofTop.userData.kind = "roof";
+  overlayGroup.add(roofTop);
+
+  // ===== PAN INFÉRIEUR (épaisseur) =====
+  const roofBottom = new THREE.Mesh(roofGeo, roofMat.clone());
+  roofBottom.material.opacity = Math.min(1, ROOF_OPACITY * 0.98);
+
+  roofBottom.rotation.copy(roofTop.rotation);
+  roofBottom.position.copy(roofTop.position);
+
+  // Décalage suivant la normale du plan (vers le bas)
+  const normal = new THREE.Vector3(0, 1, 0).applyEuler(roofTop.rotation);
+  roofBottom.position.addScaledVector(normal, -ROOF_THICKNESS);
+
+  roofBottom.castShadow = true;
+  roofBottom.receiveShadow = true;
+  roofBottom.userData.kind = "roof";
+  overlayGroup.add(roofBottom);
+
+  // ===== Faîtière / solin visible (si option cochée) =====
+  if (shouldShowRidgeCap()) {
+    const capLen = lenX * 0.98;
+    const capW = 0.12;
+    const capH = 0.05;
+
+    const capGeo = new THREE.BoxGeometry(capLen, capH, capW);
+    const capMat = roofMat.clone();
+    capMat.opacity = 0.98;
+
+    const cap = new THREE.Mesh(capGeo, capMat);
+    cap.rotation.x = roofTop.rotation.x;
+
+    // sur l’arête haute côté façade A (+Z)
+    cap.position.set(
       cx,
-      max.y + eps - roofDrop - deltaY * 0.15,
-      cz - overhang * 0.4
+      roofTop.position.y + 0.02,
+      cz + widthZ * 0.5 - 0.02
     );
 
-    roof.castShadow = true;
-    roof.receiveShadow = true;
-    roof.userData.kind = "roof";
-    overlayGroup.add(roof);
+    cap.castShadow = true;
+    cap.receiveShadow = true;
+    cap.userData.kind = "roof";
+    overlayGroup.add(cap);
+  }
+}
 
     // Faîtière / solin visible (si option cochée) — côté haut (+Z = façade A)
     if (shouldShowRidgeCap()) {
