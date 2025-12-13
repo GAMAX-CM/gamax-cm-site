@@ -348,92 +348,113 @@
             <h3>5. Options complémentaires</h3>
 
             <!-- 5.1 HABILLAGES DE FINITION -->
-            <div class="field">
-              <label>Habillages de finition</label>
-              <p class="field-help">
-                Cochez les accessoires de finition souhaités. Le coût est calculé au m² de toiture / bardage.
-              </p>
+<div class="field">
+  <label>Habillages de finition</label>
+  <p class="field-help">
+    Cochez les accessoires de finition souhaités. Le coût est calculé au m² de toiture / bardage.
+  </p>
 
-              <!-- ✅ SECTION 5.1 (CATALOGUE HAUT DE GAMME) -->
-              <div class="bardage-grid option-grid option-grid--catalogue">
-                <label class="bardage-choice option-choice">
-                  <input type="checkbox" id="optFaitiereSolin">
-                  <div class="bardage-card option-card option-card--catalogue">
-                    <img src="assets/faitiere-solin.jpg" alt="Faîtière avec solin" class="option-img">
-                    <div class="option-text">
-                      <span class="bardage-label-main">Faîtière avec solin</span>
-                      <span class="bardage-label-sub">Finition haute assurant l’étanchéité en faîtage.</span>
-                    </div>
-                  </div>
-                </label>
+  <!-- ✅ SECTION 5.1 (CATALOGUE HAUT DE GAMME) -->
+  <div class="bardage-grid option-grid option-grid--catalogue">
+    <label class="bardage-choice option-choice">
+      <input type="checkbox" id="optFaitiereSolin">
+      <div class="bardage-card option-card option-card--catalogue">
+        <div class="option-thumb">
+          <img src="assets/faitiere-solin.jpg" alt="Faîtière avec solin" class="option-img">
+        </div>
+        <div class="option-content option-text">
+          <span class="bardage-label-main">Faîtière avec solin</span>
+          <span class="bardage-label-sub">Finition haute assurant l’étanchéité en faîtage.</span>
+        </div>
+        <div class="option-check" aria-hidden="true">✓</div>
+      </div>
+    </label>
 
-                <label class="bardage-choice option-choice">
-                  <input type="checkbox" id="optRiveSolin">
-                  <div class="bardage-card option-card option-card--catalogue">
-                    <img src="assets/rive-solin.jpg" alt="Rive avec solin" class="option-img">
-                    <div class="option-text">
-                      <span class="bardage-label-main">Rive avec solin</span>
-                      <span class="bardage-label-sub">Finition latérale des tôles de couverture.</span>
-                    </div>
-                  </div>
-                </label>
+    <label class="bardage-choice option-choice">
+      <input type="checkbox" id="optRiveSolin">
+      <div class="bardage-card option-card option-card--catalogue">
+        <div class="option-thumb">
+          <img src="assets/rive-solin.jpg" alt="Rive avec solin" class="option-img">
+        </div>
+        <div class="option-content option-text">
+          <span class="bardage-label-main">Rive avec solin</span>
+          <span class="bardage-label-sub">Finition latérale des tôles de couverture.</span>
+        </div>
+        <div class="option-check" aria-hidden="true">✓</div>
+      </div>
+    </label>
 
-                <label class="bardage-choice option-choice">
-                  <input type="checkbox" id="optGrandeRive">
-                  <div class="bardage-card option-card option-card--catalogue">
-                    <img src="assets/grande-rive.jpg" alt="Grande rive" class="option-img">
-                    <div class="option-text">
-                      <span class="bardage-label-main">Grande rive</span>
-                      <span class="bardage-label-sub">Habillage périphérique renforcé des rives.</span>
-                    </div>
-                  </div>
-                </label>
+    <label class="bardage-choice option-choice">
+      <input type="checkbox" id="optGrandeRive">
+      <div class="bardage-card option-card option-card--catalogue">
+        <div class="option-thumb">
+          <img src="assets/grande-rive.jpg" alt="Grande rive" class="option-img">
+        </div>
+        <div class="option-content option-text">
+          <span class="bardage-label-main">Grande rive</span>
+          <span class="bardage-label-sub">Habillage périphérique renforcé des rives.</span>
+        </div>
+        <div class="option-check" aria-hidden="true">✓</div>
+      </div>
+    </label>
 
-                <label class="bardage-choice option-choice">
-                  <input type="checkbox" id="optAngles">
-                  <div class="bardage-card option-card option-card--catalogue">
-                    <img src="assets/angles-bardage.jpg" alt="Angles de bardage" class="option-img">
-                    <div class="option-text">
-                      <span class="bardage-label-main">Angles de bardage</span>
-                      <span class="bardage-label-sub">Finition des angles sortants / rentrants.</span>
-                    </div>
-                  </div>
-                </label>
+    <label class="bardage-choice option-choice">
+      <input type="checkbox" id="optAngles">
+      <div class="bardage-card option-card option-card--catalogue">
+        <div class="option-thumb">
+          <img src="assets/angles-bardage.jpg" alt="Angles de bardage" class="option-img">
+        </div>
+        <div class="option-content option-text">
+          <span class="bardage-label-main">Angles de bardage</span>
+          <span class="bardage-label-sub">Finition des angles sortants / rentrants.</span>
+        </div>
+        <div class="option-check" aria-hidden="true">✓</div>
+      </div>
+    </label>
 
-                <label class="bardage-choice option-choice">
-                  <input type="checkbox" id="optRejetEau">
-                  <div class="bardage-card option-card option-card--catalogue">
-                    <img src="assets/rejet-eau.png" alt="Rejet d’eau" class="option-img">
-                    <div class="option-text">
-                      <span class="bardage-label-main">Rejet d’eau</span>
-                      <span class="bardage-label-sub">Profil de rejet d’eau en pied de bardage.</span>
-                    </div>
-                  </div>
-                </label>
+    <label class="bardage-choice option-choice">
+      <input type="checkbox" id="optRejetEau">
+      <div class="bardage-card option-card option-card--catalogue">
+        <div class="option-thumb">
+          <img src="assets/rejet-eau.png" alt="Rejet d’eau" class="option-img">
+        </div>
+        <div class="option-content option-text">
+          <span class="bardage-label-main">Rejet d’eau</span>
+          <span class="bardage-label-sub">Profil de rejet d’eau en pied de bardage.</span>
+        </div>
+        <div class="option-check" aria-hidden="true">✓</div>
+      </div>
+    </label>
 
-                <label class="bardage-choice option-choice">
-                  <input type="checkbox" id="optFaitiereDouble">
-                  <div class="bardage-card option-card option-card--catalogue">
-                    <img src="assets/faitiere-double.jpg" alt="Faîtière double" class="option-img">
-                    <div class="option-text">
-                      <span class="bardage-label-main">Faîtière double</span>
-                      <span class="bardage-label-sub">Pour deux pans de toiture juxtaposés.</span>
-                    </div>
-                  </div>
-                </label>
+    <label class="bardage-choice option-choice">
+      <input type="checkbox" id="optFaitiereDouble">
+      <div class="bardage-card option-card option-card--catalogue">
+        <div class="option-thumb">
+          <img src="assets/faitiere-double.jpg" alt="Faîtière double" class="option-img">
+        </div>
+        <div class="option-content option-text">
+          <span class="bardage-label-main">Faîtière double</span>
+          <span class="bardage-label-sub">Pour deux pans de toiture juxtaposés.</span>
+        </div>
+        <div class="option-check" aria-hidden="true">✓</div>
+      </div>
+    </label>
 
-                <label class="bardage-choice option-choice">
-                  <input type="checkbox" id="optFaitiereSimple">
-                  <div class="bardage-card option-card option-card--catalogue">
-                    <img src="assets/faitiere-simple.jpg" alt="Faîtière simple" class="option-img">
-                    <div class="option-text">
-                      <span class="bardage-label-main">Faîtière simple</span>
-                      <span class="bardage-label-sub">Faîtière standard sur un seul pan.</span>
-                    </div>
-                  </div>
-                </label>
-              </div>
-            </div>
+    <label class="bardage-choice option-choice">
+      <input type="checkbox" id="optFaitiereSimple">
+      <div class="bardage-card option-card option-card--catalogue">
+        <div class="option-thumb">
+          <img src="assets/faitiere-simple.jpg" alt="Faîtière simple" class="option-img">
+        </div>
+        <div class="option-content option-text">
+          <span class="bardage-label-main">Faîtière simple</span>
+          <span class="bardage-label-sub">Faîtière standard sur un seul pan.</span>
+        </div>
+        <div class="option-check" aria-hidden="true">✓</div>
+      </div>
+    </label>
+  </div>
+</div>
 
             <!-- 5.2 POSE / MONTAGE -->
             <div class="field">
