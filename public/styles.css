@@ -829,3 +829,7 @@ select:focus {
   transform: none !important;
   box-shadow: none !important;
 }
+.recap-text strong {
+  font-weight: 600;
+  color: #ffffff;
+}
