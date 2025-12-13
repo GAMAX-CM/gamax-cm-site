@@ -720,7 +720,7 @@ function rebuildOverlays(bbox) {
 const slopeType = getSelectedType();
 
 // ✅ Réglage global : rapproche la couverture de la structure
-const ROOF_DROP = 0.12; // 12 cm (mets 0.20 si tu veux un effet plus visible)
+const ROOF_DROP = 0.40; // 40 cm (mets 0.20 si tu veux un effet plus visible)
 
 if (slopeType === "mono") {
   const angle = Math.atan(PITCH_RATIO);
