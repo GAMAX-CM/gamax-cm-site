@@ -716,59 +716,69 @@ function rebuildOverlays(bbox) {
     tex: cladTex,
     opacity: CLAD_OPACITY,
   });
+// ===== TOITURE (SANS PROFILS DE FINITION) =====
+const slopeType = getSelectedType();
 
-  // ===== TOITURE (SANS PROFILS DE FINITION) =====
-  const slopeType = getSelectedType();
+// ✅ Réglage global : rapproche la couverture de la structure
+const ROOF_DROP = 0.12; // 12 cm (mets 0.20 si tu veux un effet plus visible)
 
-  if (slopeType === "mono") {
-    const angle = Math.atan(PITCH_RATIO);
-    const overhang = widthZ * ROOF_OVERHANG_RATIO;
+if (slopeType === "mono") {
+  const angle = Math.atan(PITCH_RATIO);
+  const overhang = widthZ * ROOF_OVERHANG_RATIO;
 
-    // débord côté bas de pente -> -Z
-    const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ + overhang);
-    const roof = new THREE.Mesh(roofGeo, roofMat);
-    roof.userData.kind = "roof";
+  // débord côté bas de pente -> -Z
+  const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ + overhang);
+  const roof = new THREE.Mesh(roofGeo, roofMat);
+  roof.userData.kind = "roof";
 
-    // Haut côté façade A = +Z
-    roof.rotation.x = -angle;
+  // Haut côté façade A = +Z
+  roof.rotation.x = -angle;
 
-    // compenser l’inclinaison (pivot au centre)
-    const lift = (widthZ / 2) * Math.sin(angle);
+  // compenser l’inclinaison (pivot au centre)
+  const lift = (widthZ / 2) * Math.sin(angle);
 
-  const roofDrop = 0.03; // 3 cm (à ajuster)
-roof.position.set(
-  cx,
-  max.y + eps - roofSink + lift - roofDrop,
-  cz - (overhang / 2)
-);
+  roof.position.set(
+    cx,
+    max.y + eps - roofSink + lift - ROOF_DROP,   // ✅ baisse la toiture
+    cz - (overhang / 2)
+  );
 
-    roof.castShadow = SHADOW_ENABLED;
-    roof.receiveShadow = false;
-    overlayGroup.add(roof);
+  roof.castShadow = SHADOW_ENABLED;
+  roof.receiveShadow = false;
+  overlayGroup.add(roof);
 
-  } else {
-    const angle = Math.atan(PITCH_RATIO);
-    const halfW = widthZ / 2;
+} else {
+  const angle = Math.atan(PITCH_RATIO);
+  const halfW = widthZ / 2;
 
-    const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
-    const lift = (halfW / 2) * Math.sin(angle);
+  const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
+  const lift = (halfW / 2) * Math.sin(angle);
 
-    // côté +Z descend vers +Z => +angle
-    const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
-    roofPlusZ.userData.kind = "roof";
-    roofPlusZ.rotation.x = +angle;
-    roofPlusZ.position.set(cx, max.y + eps - roofSink + lift, cz + halfW / 2);
-    roofPlusZ.castShadow = SHADOW_ENABLED;
-    overlayGroup.add(roofPlusZ);
+  // côté +Z descend vers +Z => +angle
+  const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
+  roofPlusZ.userData.kind = "roof";
+  roofPlusZ.rotation.x = +angle;
+  roofPlusZ.position.set(
+    cx,
+    max.y + eps - roofSink + lift - ROOF_DROP,   // ✅ baisse la toiture
+    cz + halfW / 2
+  );
+  roofPlusZ.castShadow = SHADOW_ENABLED;
+  overlayGroup.add(roofPlusZ);
 
-    // côté -Z descend vers -Z => -angle
-    const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
-    roofMinusZ.userData.kind = "roof";
-    roofMinusZ.rotation.x = -angle;
-    roofMinusZ.position.set(cx, max.y + eps - roofSink + lift, cz - halfW / 2);
-    roofMinusZ.castShadow = SHADOW_ENABLED;
-    overlayGroup.add(roofMinusZ);
-  }
+  // côté -Z descend vers -Z => -angle
+  const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
+  roofMinusZ.userData.kind = "roof";
+  roofMinusZ.rotation.x = -angle;
+  roofMinusZ.position.set(
+    cx,
+    max.y + eps - roofSink + lift - ROOF_DROP,   // ✅ baisse la toiture
+    cz - halfW / 2
+  );
+  roofMinusZ.castShadow = SHADOW_ENABLED;
+  overlayGroup.add(roofMinusZ);
+}
+
 
   // ===== BARDAGE (avec double peau simple pour l'épaisseur) =====
   const geoLong = new THREE.BoxGeometry(lenX, heightY, cladThick);
