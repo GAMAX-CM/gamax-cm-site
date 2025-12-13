@@ -132,6 +132,30 @@ function populateDimensions() {
 }
 
 /* ---------------------------
+   2.5) HELPERS RÉCAP (HTML + TEXTE)
+---------------------------- */
+
+// Libellé “pro”
+function L(label) {
+  return `<strong>${label}</strong>`;
+}
+
+// Ligne HTML
+function LINE(label, value) {
+  return `${L(label)} ${value}<br>`;
+}
+
+// Ligne vide HTML
+function BLANK() {
+  return `<br>`;
+}
+
+// On garde une version texte “compatibilité” (localStorage / copier-coller)
+function LINE_TXT(label, value) {
+  return `${label} ${value}\n`;
+}
+
+/* ---------------------------
    3) LIVRAISON + VILLES
 ---------------------------- */
 
@@ -251,11 +275,8 @@ function calculatePriceAndRecap() {
   const cladUnit = CLADDING_PRICE_PER_M2[claddingType] ?? 0;
   const claddingCost = claddingArea * cladUnit;
 
-  // options (on les garde côté prix/récap si tu veux, mais plus rien n'est utilisé en 3D)
+  // options
   const optInstall = $("optInstall");
-
-  // tu avais un prix "finishingPerM2" basé sur les accessoires : on peut le laisser, mais si tu veux
-  // "laisser tomber les profils", tu peux mettre finishingSelected à false.
   const optFaitiereSolin = $("optFaitiereSolin");
   const optRiveSolin = $("optRiveSolin");
   const optGrandeRive = $("optGrandeRive");
@@ -322,40 +343,94 @@ function calculatePriceAndRecap() {
     addressText = postalCode ? (postalCode + (city ? (" " + city) : "")) : "Non renseignée";
   }
 
-  let recapText = "Devis abri métallique GAMAX-CM\n\n";
-  recapText += "Type d'abri : " + typeLabel + "\n";
-  recapText +=
-    "Dimensions : " +
+  // =========================================================
+  // ✅ RÉCAP PRO : HTML + TEXTE
+  // =========================================================
+
+  const dimTxt =
     String(width).replace(".", ",") + " m x " +
     String(length).replace(".", ",") + " m, hauteur " +
-    String(height).replace(".", ",") + " m\n";
-  recapText += "Surface : " + area.toFixed(1).replace(".", ",") + " m²\n\n";
+    String(height).replace(".", ",") + " m";
 
-  recapText += "Toiture : " + (ROOF_TYPE_LABELS[roofType] || "Non précisé") + "\n";
-  recapText += "Couleur toiture (RAL) : " + roofColor + "\n\n";
+  const roofTxt = ROOF_TYPE_LABELS[roofType] || "Non précisé";
+  const cladTxt = CLADDING_TYPE_LABELS[claddingType] || "Non précisé";
 
-  recapText += "Bardage : " + (CLADDING_TYPE_LABELS[claddingType] || "Non précisé") + "\n";
-  recapText += "Couleur bardage (RAL) : " + claddingColor + "\n";
-  recapText += "Façades bardées : " + claddingAreaText + "\n\n";
+  // ----- HTML -----
+  let recapHTML = "";
+  recapHTML += `<div style="margin-bottom:10px;">${L("Devis abri métallique")} GAMAX-CM</div>`;
 
-  recapText += "Mode : " + (deliveryMode === "retrait" ? "Retrait à Tonneins" : "Livraison sur chantier") + "\n";
-  recapText += "Adresse : " + addressText + "\n";
-  recapText += "Livraison estimative : " + (deliveryMode === "retrait" ? "0 € HT (retrait)" : (delivery ? formatCurrency(delivery) + " HT" : "À définir")) + "\n\n";
+  recapHTML += LINE("Type d'abri :", typeLabel);
+  recapHTML += LINE("Dimensions :", dimTxt);
+  recapHTML += LINE("Surface :", area.toFixed(1).replace(".", ",") + " m²");
+  recapHTML += BLANK();
 
-  recapText += "Prix estimatif : " + formatCurrency(totalHT) + " HT soit env. " + formatCurrency(totalTTC) + " TTC\n\n";
-  recapText += "Options : " + (selectedOptions.length ? selectedOptions.join(", ") : "Aucune") + "\n\n";
+  recapHTML += LINE("Toiture :", roofTxt);
+  recapHTML += LINE("Couleur toiture (RAL) :", roofColor);
+  recapHTML += BLANK();
+
+  recapHTML += LINE("Bardage :", cladTxt);
+  recapHTML += LINE("Couleur bardage (RAL) :", claddingColor);
+  recapHTML += LINE("Façades bardées :", claddingAreaText);
+  recapHTML += BLANK();
+
+  recapHTML += LINE("Mode :", (deliveryMode === "retrait" ? "Retrait à Tonneins" : "Livraison sur chantier"));
+  recapHTML += LINE("Adresse :", addressText);
+
+  const livTxt =
+    (deliveryMode === "retrait")
+      ? "0 € HT (retrait)"
+      : (delivery ? (formatCurrency(delivery) + " HT") : "À définir");
+
+  recapHTML += LINE("Livraison estimative :", livTxt);
+  recapHTML += BLANK();
+
+  recapHTML += LINE("Prix estimatif :", `${formatCurrency(totalHT)} HT soit env. ${formatCurrency(totalTTC)} TTC`);
+  recapHTML += BLANK();
+
+  recapHTML += LINE("Options :", (selectedOptions.length ? selectedOptions.join(", ") : "Aucune"));
+  recapHTML += BLANK();
+
+  recapHTML += `<div style="opacity:.9">${L("Note :")} Ce devis est une estimation indicative. Un devis définitif vous sera transmis par GAMAX-CM.</div>`;
+
+  // ----- TEXTE (compat / stockage) -----
+  let recapText = "Devis abri métallique GAMAX-CM\n\n";
+  recapText += LINE_TXT("Type d'abri :", typeLabel);
+  recapText += LINE_TXT("Dimensions :", dimTxt);
+  recapText += LINE_TXT("Surface :", area.toFixed(1).replace(".", ",") + " m²");
+  recapText += "\n";
+  recapText += LINE_TXT("Toiture :", roofTxt);
+  recapText += LINE_TXT("Couleur toiture (RAL) :", roofColor);
+  recapText += "\n";
+  recapText += LINE_TXT("Bardage :", cladTxt);
+  recapText += LINE_TXT("Couleur bardage (RAL) :", claddingColor);
+  recapText += LINE_TXT("Façades bardées :", claddingAreaText);
+  recapText += "\n";
+  recapText += LINE_TXT("Mode :", (deliveryMode === "retrait" ? "Retrait à Tonneins" : "Livraison sur chantier"));
+  recapText += LINE_TXT("Adresse :", addressText);
+  recapText += LINE_TXT("Livraison estimative :", livTxt);
+  recapText += "\n";
+  recapText += LINE_TXT("Prix estimatif :", `${formatCurrency(totalHT)} HT soit env. ${formatCurrency(totalTTC)} TTC`);
+  recapText += "\n";
+  recapText += LINE_TXT("Options :", (selectedOptions.length ? selectedOptions.join(", ") : "Aucune"));
+  recapText += "\n";
   recapText += "Ce devis est une estimation indicative. Un devis définitif vous sera transmis par GAMAX-CM.\n";
 
-  afficherRecapitulatif(recapText);
+  afficherRecapitulatif(recapHTML, recapText);
 
   // MAJ 3D
   update3DFromConfig();
 }
 
-function afficherRecapitulatif(recapText) {
+function afficherRecapitulatif(recapHTML, recapTextForStorage) {
   const el = $("recapDevis");
-  if (el) el.textContent = recapText;
-  localStorage.setItem("gamax_abri_devis_texte", recapText);
+  if (el) el.innerHTML = recapHTML; // ✅ HTML pour <strong> etc.
+
+  // ✅ on garde la version texte (comme avant)
+  if (typeof recapTextForStorage === "string") {
+    localStorage.setItem("gamax_abri_devis_texte", recapTextForStorage);
+  }
+  // ✅ optionnel : on stocke aussi le HTML (utile si tu l’affiches ailleurs)
+  localStorage.setItem("gamax_abri_devis_html", recapHTML);
 }
 
 window.goToOrderPage = function goToOrderPage() {
@@ -716,69 +791,64 @@ function rebuildOverlays(bbox) {
     tex: cladTex,
     opacity: CLAD_OPACITY,
   });
-// ===== TOITURE (SANS PROFILS DE FINITION) =====
-const slopeType = getSelectedType();
 
-// ✅ Réglage global : rapproche la couverture de la structure
-const ROOF_DROP = 0.40; // 40 cm (mets 0.20 si tu veux un effet plus visible)
+  // ===== TOITURE (SANS PROFILS DE FINITION) =====
+  const slopeType = getSelectedType();
 
-if (slopeType === "mono") {
-  const angle = Math.atan(PITCH_RATIO);
-  const overhang = widthZ * ROOF_OVERHANG_RATIO;
+  // ✅ Réglage global : rapproche la couverture de la structure
+  const ROOF_DROP = 0.40; // 40 cm (mets 0.20 si tu veux un effet plus léger)
 
-  // débord côté bas de pente -> -Z
-  const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ + overhang);
-  const roof = new THREE.Mesh(roofGeo, roofMat);
-  roof.userData.kind = "roof";
+  if (slopeType === "mono") {
+    const angle = Math.atan(PITCH_RATIO);
+    const overhang = widthZ * ROOF_OVERHANG_RATIO;
 
-  // Haut côté façade A = +Z
-  roof.rotation.x = -angle;
+    const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ + overhang);
+    const roof = new THREE.Mesh(roofGeo, roofMat);
+    roof.userData.kind = "roof";
 
-  // compenser l’inclinaison (pivot au centre)
-  const lift = (widthZ / 2) * Math.sin(angle);
+    roof.rotation.x = -angle;
 
-  roof.position.set(
-    cx,
-    max.y + eps - roofSink + lift - ROOF_DROP,   // ✅ baisse la toiture
-    cz - (overhang / 2)
-  );
+    const lift = (widthZ / 2) * Math.sin(angle);
 
-  roof.castShadow = SHADOW_ENABLED;
-  roof.receiveShadow = false;
-  overlayGroup.add(roof);
+    roof.position.set(
+      cx,
+      max.y + eps - roofSink + lift - ROOF_DROP,
+      cz - (overhang / 2)
+    );
 
-} else {
-  const angle = Math.atan(PITCH_RATIO);
-  const halfW = widthZ / 2;
+    roof.castShadow = SHADOW_ENABLED;
+    roof.receiveShadow = false;
+    overlayGroup.add(roof);
 
-  const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
-  const lift = (halfW / 2) * Math.sin(angle);
+  } else {
+    const angle = Math.atan(PITCH_RATIO);
+    const halfW = widthZ / 2;
 
-  // côté +Z descend vers +Z => +angle
-  const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
-  roofPlusZ.userData.kind = "roof";
-  roofPlusZ.rotation.x = +angle;
-  roofPlusZ.position.set(
-    cx,
-    max.y + eps - roofSink + lift - ROOF_DROP,   // ✅ baisse la toiture
-    cz + halfW / 2
-  );
-  roofPlusZ.castShadow = SHADOW_ENABLED;
-  overlayGroup.add(roofPlusZ);
+    const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
+    const lift = (halfW / 2) * Math.sin(angle);
 
-  // côté -Z descend vers -Z => -angle
-  const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
-  roofMinusZ.userData.kind = "roof";
-  roofMinusZ.rotation.x = -angle;
-  roofMinusZ.position.set(
-    cx,
-    max.y + eps - roofSink + lift - ROOF_DROP,   // ✅ baisse la toiture
-    cz - halfW / 2
-  );
-  roofMinusZ.castShadow = SHADOW_ENABLED;
-  overlayGroup.add(roofMinusZ);
-}
+    const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
+    roofPlusZ.userData.kind = "roof";
+    roofPlusZ.rotation.x = +angle;
+    roofPlusZ.position.set(
+      cx,
+      max.y + eps - roofSink + lift - ROOF_DROP,
+      cz + halfW / 2
+    );
+    roofPlusZ.castShadow = SHADOW_ENABLED;
+    overlayGroup.add(roofPlusZ);
 
+    const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
+    roofMinusZ.userData.kind = "roof";
+    roofMinusZ.rotation.x = -angle;
+    roofMinusZ.position.set(
+      cx,
+      max.y + eps - roofSink + lift - ROOF_DROP,
+      cz - halfW / 2
+    );
+    roofMinusZ.castShadow = SHADOW_ENABLED;
+    overlayGroup.add(roofMinusZ);
+  }
 
   // ===== BARDAGE (avec double peau simple pour l'épaisseur) =====
   const geoLong = new THREE.BoxGeometry(lenX, heightY, cladThick);
@@ -803,22 +873,22 @@ if (slopeType === "mono") {
     return { outer: mesh, inner };
   }
 
-  // A = +Z (OK)
+  // A = +Z
   const cladA_outer = new THREE.Mesh(geoLong, cladMat.clone());
   cladA_outer.position.set(cx, yMid, max.z + eps);
   const A = addCladPanel(cladA_outer, new THREE.Vector3(0, 0, 1));
 
-  // C = -Z (OK)
+  // C = -Z
   const cladC_outer = new THREE.Mesh(geoLong, cladMat.clone());
   cladC_outer.position.set(cx, yMid, min.z - eps);
   const C = addCladPanel(cladC_outer, new THREE.Vector3(0, 0, -1));
 
-  // B = -X (CORRIGÉ : pas de rotation)
+  // B = -X
   const cladB_outer = new THREE.Mesh(geoShort, cladMat.clone());
   cladB_outer.position.set(min.x - eps, yMid, cz);
   const B = addCladPanel(cladB_outer, new THREE.Vector3(-1, 0, 0));
 
-  // D = +X (CORRIGÉ : pas de rotation)
+  // D = +X
   const cladD_outer = new THREE.Mesh(geoShort, cladMat.clone());
   cladD_outer.position.set(max.x + eps, yMid, cz);
   const D = addCladPanel(cladD_outer, new THREE.Vector3(1, 0, 0));
