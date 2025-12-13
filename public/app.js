@@ -735,7 +735,7 @@ function rebuildOverlays(bbox) {
     // compenser l’inclinaison (pivot au centre)
     const lift = (widthZ / 2) * Math.sin(angle);
 
-  const roofDrop = 0.06; // 6 cm (à ajuster)
+  const roofDrop = 0.03; // 3 cm (à ajuster)
 roof.position.set(
   cx,
   max.y + eps - roofSink + lift - roofDrop,
