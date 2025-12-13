@@ -735,11 +735,12 @@ function rebuildOverlays(bbox) {
     // compenser l’inclinaison (pivot au centre)
     const lift = (widthZ / 2) * Math.sin(angle);
 
-    roof.position.set(
-      cx,
-      max.y + eps - roofSink + lift,
-      cz - (overhang / 2)
-    );
+  const roofDrop = 0.06; // 6 cm (à ajuster)
+roof.position.set(
+  cx,
+  max.y + eps - roofSink + lift - roofDrop,
+  cz - (overhang / 2)
+);
 
     roof.castShadow = SHADOW_ENABLED;
     roof.receiveShadow = false;
