@@ -428,15 +428,26 @@ const CLAD_TEX_PATH = "assets/texture-bac-acier.jpg";
 const PAVE_TEX_PATH = "assets/texture-pave-gris.jpg";
 const BG_TEX_PATH   = "assets/fond-jardin.jpg";
 
-// Modèle
-const MODEL_PATH = "assets/abri-monopente-3x5m.gltf";
+// ===== MODÈLES PAR TYPE =====
+const MODELS = {
+  mono: {
+    path: "assets/abri-monopente-3x5m.gltf",
+    base: {
+      length: 5,
+      width: 3,
+      height: 2.15,
+    },
+  },
+  bi: {
+    path: "assets/abri-bipente-4x5m.gltf",
+    base: {
+      length: 5,
+      width: 4,
+      height: 3,
+    },
+  },
+};
 
-// Base module dimensions (m)
-const BASE_LENGTH_M = 5;
-const BASE_WIDTH_M  = 3;
-const BASE_HEIGHT_M = 2.15;
-
-const GLOBAL_SCALE = 2.5;
 
 // Pente + débord
 const PITCH_RATIO = 0.10;          // 10%
@@ -637,9 +648,13 @@ function initThree() {
   );
 
   // modèle
+function loadModelForType(getSelectedType());
+
+  const modelCfg = MODELS[type] || MODELS.mono;
+
   const loader = new THREE.GLTFLoader();
   loader.load(
-    MODEL_PATH,
+    modelCfg.path,
     (gltf) => {
       baseModule = gltf.scene;
       baseModule.traverse((obj) => {
@@ -655,6 +670,8 @@ function initThree() {
     undefined,
     (err) => console.error("Erreur GLTF :", err)
   );
+}
+
 
   window.addEventListener("resize", () => setTimeout(onThreeResize, 40));
   animateThree();
@@ -695,9 +712,13 @@ function buildStructureFromConfig() {
   for (let i = 0; i < bays; i++) {
     const clone = baseModule.clone(true);
 
-    const scaleX = (bayLengthM / BASE_LENGTH_M) * GLOBAL_SCALE;
-    const scaleZ = (width / BASE_WIDTH_M) * GLOBAL_SCALE;
-    const scaleY = (height / BASE_HEIGHT_M) * GLOBAL_SCALE;
+ const type = getSelectedType();
+const baseCfg = MODELS[type].base;
+
+const scaleX = (bayLengthM / baseCfg.length) * GLOBAL_SCALE;
+const scaleZ = (width / baseCfg.width) * GLOBAL_SCALE;
+const scaleY = (height / baseCfg.height) * GLOBAL_SCALE;
+
 
     clone.scale.set(scaleX, scaleY, scaleZ);
 
@@ -1024,6 +1045,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.querySelectorAll('input[name="slopeType"]').forEach((el) => {
     el.addEventListener("change", () => {
       populateDimensions();
+       loadModelForType(getSelectedType());
       calculatePriceAndRecap();
     });
   });
