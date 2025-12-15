@@ -135,19 +135,10 @@ function populateDimensions() {
    2.5) HELPERS RÉCAP (HTML + TEXTE)
 ---------------------------- */
 
-// Libellé “pro”
-function L(label) {
-  return `<strong>${label}</strong>`;
-}
-function LINE(label, value) {
-  return `${L(label)} ${value}<br>`;
-}
-function BLANK() {
-  return `<br>`;
-}
-function LINE_TXT(label, value) {
-  return `${label} ${value}\n`;
-}
+function L(label) { return `<strong>${label}</strong>`; }
+function LINE(label, value) { return `${L(label)} ${value}<br>`; }
+function BLANK() { return `<br>`; }
+function LINE_TXT(label, value) { return `${label} ${value}\n`; }
 
 /* ---------------------------
    3) LIVRAISON + VILLES
@@ -432,22 +423,13 @@ const BG_TEX_PATH   = "assets/fond-jardin.jpg";
 const MODELS = {
   mono: {
     path: "assets/abri-monopente-3x5m.gltf",
-    base: {
-      length: 5,
-      width: 3,
-      height: 2.15,
-    },
+    base: { length: 5, width: 3, height: 2.15 },
   },
   bi: {
     path: "assets/abri-bipente-4x5m.gltf",
-    base: {
-      length: 5,
-      width: 4,
-      height: 3,
-    },
+    base: { length: 5, width: 4, height: 3 },
   },
 };
-
 
 // Pente + débord
 const PITCH_RATIO = 0.10;          // 10%
@@ -460,18 +442,18 @@ const ROOF_TEX_REPEAT_Z = 2;
 const CLAD_TEX_REPEAT_X = 8;
 const CLAD_TEX_REPEAT_Y = 3;
 
-// ✅ MOINS TRANSPARENT (tu disais trop transparent)
+// Opacité
 const ROOF_OPACITY = 0.98;
 const CLAD_OPACITY = 0.98;
 
-// Epaisseurs (mètres "modèle", scalées)
+// Epaisseurs
 const ROOF_THICKNESS = 0.06;
 const CLAD_THICKNESS = 0.035;
 
-// Descendre légèrement la couverture (ratio bbox)
+// Descendre légèrement la couverture
 const ROOF_DROP_RATIO = 0.05;
 
-// Limites de rotation OrbitControls
+// Limites OrbitControls
 const ORBIT_MIN_POLAR = 0.15 * Math.PI;
 const ORBIT_MAX_POLAR = 0.48 * Math.PI;
 
@@ -494,6 +476,9 @@ let cladTex = null;
 
 // Fullscreen helpers
 let lastInlineCanvasHeight = 0;
+
+// ✅ IMPORTANT : accessible depuis DOMContentLoaded
+let loadModelForType = null;
 
 function getRALColorFromRadio(name) {
   const input = document.querySelector(`input[name="${name}"]:checked`);
@@ -647,31 +632,36 @@ function initThree() {
     () => {}
   );
 
-  // modèle
-function loadModelForType(getSelectedType());
+  // =========================================================
+  // ✅ Modèle : charge le bon GLTF selon mono / bi
+  // =========================================================
+  loadModelForType = function (type) {
+    const modelCfg = MODELS[type] || MODELS.mono;
 
-  const modelCfg = MODELS[type] || MODELS.mono;
+    const loader = new THREE.GLTFLoader();
+    loader.load(
+      modelCfg.path,
+      (gltf) => {
+        baseModule = gltf.scene;
 
-  const loader = new THREE.GLTFLoader();
-  loader.load(
-    modelCfg.path,
-    (gltf) => {
-      baseModule = gltf.scene;
-      baseModule.traverse((obj) => {
-        if (obj.isMesh) {
-          obj.castShadow = SHADOW_ENABLED;
-          obj.receiveShadow = SHADOW_ENABLED;
-          obj.material = obj.material.clone();
-        }
-      });
-      baseBBox = new THREE.Box3().setFromObject(baseModule);
-      update3DFromConfig();
-    },
-    undefined,
-    (err) => console.error("Erreur GLTF :", err)
-  );
-}
+        baseModule.traverse((obj) => {
+          if (obj.isMesh) {
+            obj.castShadow = SHADOW_ENABLED;
+            obj.receiveShadow = SHADOW_ENABLED;
+            obj.material = obj.material.clone();
+          }
+        });
 
+        baseBBox = new THREE.Box3().setFromObject(baseModule);
+        update3DFromConfig();
+      },
+      undefined,
+      (err) => console.error("Erreur GLTF :", err)
+    );
+  };
+
+  // charge au démarrage
+  loadModelForType(getSelectedType());
 
   window.addEventListener("resize", () => setTimeout(onThreeResize, 40));
   animateThree();
@@ -712,13 +702,12 @@ function buildStructureFromConfig() {
   for (let i = 0; i < bays; i++) {
     const clone = baseModule.clone(true);
 
- const type = getSelectedType();
-const baseCfg = MODELS[type].base;
+    const type = getSelectedType();
+    const baseCfg = (MODELS[type] || MODELS.mono).base;
 
-const scaleX = (bayLengthM / baseCfg.length) * GLOBAL_SCALE;
-const scaleZ = (width / baseCfg.width) * GLOBAL_SCALE;
-const scaleY = (height / baseCfg.height) * GLOBAL_SCALE;
-
+    const scaleX = (bayLengthM / baseCfg.length) * 2.5; // garde ton comportement (même rendu)
+    const scaleZ = (width / baseCfg.width) * 2.5;
+    const scaleY = (height / baseCfg.height) * 2.5;
 
     clone.scale.set(scaleX, scaleY, scaleZ);
 
@@ -776,8 +765,8 @@ function rebuildOverlays(bbox) {
   const cz = (min.z + max.z) / 2;
   const yMid = (min.y + max.y) / 2;
 
-  const roofThick = ROOF_THICKNESS * GLOBAL_SCALE;
-  const cladThick = CLAD_THICKNESS * GLOBAL_SCALE;
+  const roofThick = ROOF_THICKNESS * 2.5;
+  const cladThick = CLAD_THICKNESS * 2.5;
   const roofSink = Math.max(0.03, heightY * ROOF_DROP_RATIO);
 
   const roofMat = materialWithTexture({
@@ -1045,7 +1034,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.querySelectorAll('input[name="slopeType"]').forEach((el) => {
     el.addEventListener("change", () => {
       populateDimensions();
-       loadModelForType(getSelectedType());
+      if (typeof loadModelForType === "function") {
+        loadModelForType(getSelectedType());
+      }
       calculatePriceAndRecap();
     });
   });
