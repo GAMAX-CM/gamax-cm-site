@@ -870,9 +870,52 @@ function rebuildOverlays(bbox) {
     overlayGroup.add(roofMinusZ);
   }
 
-  // ===== BARDAGE (double peau) =====
-  const geoLong = new THREE.BoxGeometry(lenX, heightY, cladThick);
-  const geoShort = new THREE.BoxGeometry(cladThick, heightY, widthZ);
+   // ===== BARDAGE (jonction sous couverture + double peau) =====
+
+  // marge pour ne pas rentrer dans la toiture (ajuste si besoin)
+  const CLAD_TOP_GAP = 0.035 * GLOBAL_SCALE;
+
+  const slopeType2 = getSelectedType();
+
+  // max.y = "haut" du bbox de la structure (au niveau faîtage / haut pente)
+  const ridgeY = max.y;
+
+  // Hauteur sous couverture au niveau des longs pans
+  function getEaveYForLongSide(isPlusZ) {
+    if (slopeType2 === "mono") {
+      // mono : pente 10% sur toute la largeur (différence haut/bas)
+      const drop = widthZ * PITCH_RATIO;
+      const highY = ridgeY;
+      const lowY = ridgeY - drop;
+
+      // IMPORTANT : chez toi A=+Z, C=-Z.
+      // Si jamais c'est inversé visuellement, tu inverseras ce return.
+      return isPlusZ ? highY : lowY;
+    }
+
+    // bipente : bas de pente constant (égouts identiques) => faîtage varie
+    const halfW = widthZ / 2;
+    return ridgeY - (halfW * PITCH_RATIO);
+  }
+
+  // fabrique panneaux avec hauteur adaptée (de min.y jusqu'à topY)
+  function makeCladPanelLong(topY, zPos) {
+    const h = Math.max(0.05, topY - min.y);
+    const yCenter = (min.y + topY) / 2;
+    const geo = new THREE.BoxGeometry(lenX, h, cladThick);
+    const mesh = new THREE.Mesh(geo, cladMat.clone());
+    mesh.position.set(cx, yCenter, zPos);
+    return mesh;
+  }
+
+  function makeCladPanelShort(topY, xPos) {
+    const h = Math.max(0.05, topY - min.y);
+    const yCenter = (min.y + topY) / 2;
+    const geo = new THREE.BoxGeometry(cladThick, h, widthZ);
+    const mesh = new THREE.Mesh(geo, cladMat.clone());
+    mesh.position.set(xPos, yCenter, cz);
+    return mesh;
+  }
 
   function addCladPanel(mesh, outwardDir) {
     mesh.castShadow = SHADOW_ENABLED;
@@ -893,24 +936,23 @@ function rebuildOverlays(bbox) {
     return { outer: mesh, inner };
   }
 
-  // A = +Z
-  const cladA_outer = new THREE.Mesh(geoLong, cladMat.clone());
-  cladA_outer.position.set(cx, yMid, max.z + eps);
+  // A = +Z (long pan avant)
+  const topY_A = getEaveYForLongSide(true) - CLAD_TOP_GAP;
+  const cladA_outer = makeCladPanelLong(topY_A, max.z + eps);
   const A = addCladPanel(cladA_outer, new THREE.Vector3(0, 0, 1));
 
-  // C = -Z
-  const cladC_outer = new THREE.Mesh(geoLong, cladMat.clone());
-  cladC_outer.position.set(cx, yMid, min.z - eps);
+  // C = -Z (long pan arrière)
+  const topY_C = getEaveYForLongSide(false) - CLAD_TOP_GAP;
+  const cladC_outer = makeCladPanelLong(topY_C, min.z - eps);
   const C = addCladPanel(cladC_outer, new THREE.Vector3(0, 0, -1));
 
-  // B = -X
-  const cladB_outer = new THREE.Mesh(geoShort, cladMat.clone());
-  cladB_outer.position.set(min.x - eps, yMid, cz);
+  // B = -X (pignon gauche) -> rectangulaire propre
+  const topY_BD = ridgeY - CLAD_TOP_GAP;
+  const cladB_outer = makeCladPanelShort(topY_BD, min.x - eps);
   const B = addCladPanel(cladB_outer, new THREE.Vector3(-1, 0, 0));
 
-  // D = +X
-  const cladD_outer = new THREE.Mesh(geoShort, cladMat.clone());
-  cladD_outer.position.set(max.x + eps, yMid, cz);
+  // D = +X (pignon droit) -> rectangulaire propre
+  const cladD_outer = makeCladPanelShort(topY_BD, max.x + eps);
   const D = addCladPanel(cladD_outer, new THREE.Vector3(1, 0, 0));
 
   function applyCladdingVisibility() {
@@ -924,6 +966,7 @@ function rebuildOverlays(bbox) {
     C.outer.visible = showC; C.inner.visible = showC;
     D.outer.visible = showD; D.inner.visible = showD;
   }
+
   applyCladdingVisibility();
   overlayGroup.userData = { applyCladdingVisibility };
 
