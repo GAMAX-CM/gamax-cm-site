@@ -463,7 +463,7 @@ const ROOF_THICKNESS = 0.06;
 const CLAD_THICKNESS = 0.035;
 
 // Descendre légèrement la couverture (ratio bbox)
-const ROOF_DROP_RATIO = 0.05;
+const ROOF_DROP_RATIO = 0.015;
 
 // Limites de rotation OrbitControls
 const ORBIT_MIN_POLAR = 0.15 * Math.PI;
@@ -503,11 +503,19 @@ function getRoofColor3D() { return getRALColorFromRadio("roofColor"); }
 function getCladdingColor3D() { return getRALColorFromRadio("claddingColor"); }
 
 function getCurrentDimensions() {
+  const type = getSelectedType();
   const width = parseFloat($("width")?.value || "3");
   const length = parseFloat($("length")?.value || "5");
-  const height = parseFloat($("height")?.value || "2.15");
+
+  // ✅ bipente : bas de pente = 3m fixe
+  const height =
+    type === "bi"
+      ? 3
+      : parseFloat($("height")?.value || "2.15");
+
   return { width, length, height };
 }
+
 
 function getBayCount(length) {
   if (length <= 6) return 1;
@@ -801,7 +809,7 @@ function rebuildOverlays(bbox) {
   // épaisseurs & placements (scalés)
   const roofThick = ROOF_THICKNESS * GLOBAL_SCALE;
   const cladThick = CLAD_THICKNESS * GLOBAL_SCALE;
-  const roofSink = Math.max(0.03, heightY * ROOF_DROP_RATIO);
+  const roofSink = Math.max(0.01, heightY * ROOF_DROP_RATIO);
 
   const roofMat = materialWithTexture({
     color: getRoofColor3D(),
@@ -817,7 +825,7 @@ function rebuildOverlays(bbox) {
 
   // ===== TOITURE =====
   const slopeType = getSelectedType();
-  const ROOF_DROP = 0.40;
+  const ROOF_DROP = 0.14;
 
   if (slopeType === "mono") {
     const angle = Math.atan(PITCH_RATIO);
