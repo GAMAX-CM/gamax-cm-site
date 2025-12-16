@@ -135,10 +135,19 @@ function populateDimensions() {
    2.5) HELPERS RÉCAP (HTML + TEXTE)
 ---------------------------- */
 
-function L(label) { return `<strong>${label}</strong>`; }
-function LINE(label, value) { return `${L(label)} ${value}<br>`; }
-function BLANK() { return `<br>`; }
-function LINE_TXT(label, value) { return `${label} ${value}\n`; }
+// Libellé “pro”
+function L(label) {
+  return `<strong>${label}</strong>`;
+}
+function LINE(label, value) {
+  return `${L(label)} ${value}<br>`;
+}
+function BLANK() {
+  return `<br>`;
+}
+function LINE_TXT(label, value) {
+  return `${label} ${value}\n`;
+}
 
 /* ---------------------------
    3) LIVRAISON + VILLES
@@ -255,7 +264,8 @@ function calculatePriceAndRecap() {
     else claddingArea += width * height;
   });
 
-  const claddingType = document.querySelector('input[name="claddingType"]:checked')?.value;
+  const claddingType =
+    document.querySelector('input[name="claddingType"]:checked')?.value;
   const cladUnit = CLADDING_PRICE_PER_M2[claddingType] ?? 0;
   const claddingCost = claddingArea * cladUnit;
 
@@ -430,7 +440,7 @@ const MODELS = {
   },
 };
 
-// Global scale (garde ton rendu identique)
+// ✅ échelle globale (indispensable)
 const GLOBAL_SCALE = 2.5;
 
 // Pente + débord
@@ -440,10 +450,11 @@ const ROOF_OVERHANG_RATIO = 0.14;  // débord vers bas de pente (-Z)
 // Visuel texture (répétition)
 const ROOF_TEX_REPEAT_X = 8;
 const ROOF_TEX_REPEAT_Z = 2;
+
 const CLAD_TEX_REPEAT_X = 8;
 const CLAD_TEX_REPEAT_Y = 3;
 
-// Opacité (moins transparent)
+// ✅ quasi opaque (moins “verre”)
 const ROOF_OPACITY = 0.98;
 const CLAD_OPACITY = 0.98;
 
@@ -475,10 +486,11 @@ let padMesh = null;
 let roofTex = null;
 let cladTex = null;
 
-let currentModelType = null;
-
 // Fullscreen helpers
 let lastInlineCanvasHeight = 0;
+
+// Pour éviter les chargements “en retard”
+let modelLoadToken = 0;
 
 function getRALColorFromRadio(name) {
   const input = document.querySelector(`input[name="${name}"]:checked`);
@@ -504,6 +516,55 @@ function getBayCount(length) {
   if (length <= 24) return 4;
   return 6;
 }
+
+/* ---------------------------
+   5.1) CHARGEMENT MODÈLE (mono / bi)
+---------------------------- */
+
+function loadModelForType(type) {
+  if (!scene || !window.THREE) return;
+
+  modelLoadToken += 1;
+  const token = modelLoadToken;
+
+  // retirer l'ancienne structure
+  if (structureGroup) {
+    scene.remove(structureGroup);
+    structureGroup = null;
+  }
+
+  baseModule = null;
+  baseBBox = null;
+
+  const cfg = MODELS[type] || MODELS.mono;
+
+  const loader = new THREE.GLTFLoader();
+  loader.load(
+    cfg.path,
+    (gltf) => {
+      // si un autre chargement a été lancé entre temps, on ignore celui-ci
+      if (token !== modelLoadToken) return;
+
+      baseModule = gltf.scene;
+      baseModule.traverse((obj) => {
+        if (obj.isMesh) {
+          obj.castShadow = SHADOW_ENABLED;
+          obj.receiveShadow = SHADOW_ENABLED;
+          obj.material = obj.material.clone();
+        }
+      });
+
+      baseBBox = new THREE.Box3().setFromObject(baseModule);
+      update3DFromConfig();
+    },
+    undefined,
+    (err) => console.error("Erreur chargement modèle :", cfg.path, err)
+  );
+}
+
+/* ---------------------------
+   5.2) INIT THREE
+---------------------------- */
 
 function initThree() {
   const canvas = $("viewer3d");
@@ -632,50 +693,11 @@ function initThree() {
     () => {}
   );
 
-  // ✅ charge le bon modèle au démarrage
+  // ✅ charge le bon modèle dès le départ
   loadModelForType(getSelectedType());
 
   window.addEventListener("resize", () => setTimeout(onThreeResize, 40));
   animateThree();
-}
-
-// ✅ charge/recharge le modèle selon mono/bi
-function loadModelForType(type) {
-  if (!scene) return;
-
-  const modelCfg = MODELS[type] || MODELS.mono;
-  currentModelType = type;
-
-  // Reset pour forcer un rebuild propre
-  baseModule = null;
-  baseBBox = null;
-
-  // Retire l’ancienne structure/overlays
-  if (structureGroup) { scene.remove(structureGroup); structureGroup = null; }
-  if (overlayGroup) { scene.remove(overlayGroup); overlayGroup = null; }
-
-  const loader = new THREE.GLTFLoader();
-  loader.load(
-    modelCfg.path,
-    (gltf) => {
-      // Si l’utilisateur a re-cliqué entre temps, on ignore le chargement précédent
-      if (currentModelType !== type) return;
-
-      baseModule = gltf.scene;
-      baseModule.traverse((obj) => {
-        if (obj.isMesh) {
-          obj.castShadow = SHADOW_ENABLED;
-          obj.receiveShadow = SHADOW_ENABLED;
-          obj.material = obj.material.clone();
-        }
-      });
-
-      baseBBox = new THREE.Box3().setFromObject(baseModule);
-      update3DFromConfig();
-    },
-    undefined,
-    (err) => console.error("Erreur GLTF :", err)
-  );
 }
 
 function onThreeResize() {
@@ -701,15 +723,15 @@ function buildStructureFromConfig() {
   structureGroup = new THREE.Group();
   scene.add(structureGroup);
 
-  const type = getSelectedType();
-  const baseCfg = (MODELS[type] || MODELS.mono).base;
-
   const { width, length, height } = getCurrentDimensions();
   const bays = getBayCount(length);
   const bayLengthM = length / bays;
 
   const baseSize = new THREE.Vector3();
   baseBBox.getSize(baseSize);
+
+  const type = getSelectedType();
+  const baseCfg = (MODELS[type] || MODELS.mono).base;
 
   let currentX = 0;
 
@@ -776,6 +798,7 @@ function rebuildOverlays(bbox) {
   const cz = (min.z + max.z) / 2;
   const yMid = (min.y + max.y) / 2;
 
+  // épaisseurs & placements (scalés)
   const roofThick = ROOF_THICKNESS * GLOBAL_SCALE;
   const cladThick = CLAD_THICKNESS * GLOBAL_SCALE;
   const roofSink = Math.max(0.03, heightY * ROOF_DROP_RATIO);
@@ -800,9 +823,11 @@ function rebuildOverlays(bbox) {
     const angle = Math.atan(PITCH_RATIO);
     const overhang = widthZ * ROOF_OVERHANG_RATIO;
 
+    // débord côté bas de pente -> -Z
     const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ + overhang);
     const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.userData.kind = "roof";
+
     roof.rotation.x = -angle;
 
     const lift = (widthZ / 2) * Math.sin(angle);
@@ -816,7 +841,6 @@ function rebuildOverlays(bbox) {
     roof.castShadow = SHADOW_ENABLED;
     roof.receiveShadow = false;
     overlayGroup.add(roof);
-
   } else {
     const angle = Math.atan(PITCH_RATIO);
     const halfW = widthZ / 2;
@@ -824,17 +848,27 @@ function rebuildOverlays(bbox) {
     const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
     const lift = (halfW / 2) * Math.sin(angle);
 
+    // côté +Z
     const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
     roofPlusZ.userData.kind = "roof";
     roofPlusZ.rotation.x = +angle;
-    roofPlusZ.position.set(cx, max.y + eps - roofSink + lift - ROOF_DROP, cz + halfW / 2);
+    roofPlusZ.position.set(
+      cx,
+      max.y + eps - roofSink + lift - ROOF_DROP,
+      cz + halfW / 2
+    );
     roofPlusZ.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roofPlusZ);
 
+    // côté -Z
     const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
     roofMinusZ.userData.kind = "roof";
     roofMinusZ.rotation.x = -angle;
-    roofMinusZ.position.set(cx, max.y + eps - roofSink + lift - ROOF_DROP, cz - halfW / 2);
+    roofMinusZ.position.set(
+      cx,
+      max.y + eps - roofSink + lift - ROOF_DROP,
+      cz - halfW / 2
+    );
     roofMinusZ.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roofMinusZ);
   }
@@ -862,18 +896,22 @@ function rebuildOverlays(bbox) {
     return { outer: mesh, inner };
   }
 
+  // A = +Z
   const cladA_outer = new THREE.Mesh(geoLong, cladMat.clone());
   cladA_outer.position.set(cx, yMid, max.z + eps);
   const A = addCladPanel(cladA_outer, new THREE.Vector3(0, 0, 1));
 
+  // C = -Z
   const cladC_outer = new THREE.Mesh(geoLong, cladMat.clone());
   cladC_outer.position.set(cx, yMid, min.z - eps);
   const C = addCladPanel(cladC_outer, new THREE.Vector3(0, 0, -1));
 
+  // B = -X
   const cladB_outer = new THREE.Mesh(geoShort, cladMat.clone());
   cladB_outer.position.set(min.x - eps, yMid, cz);
   const B = addCladPanel(cladB_outer, new THREE.Vector3(-1, 0, 0));
 
+  // D = +X
   const cladD_outer = new THREE.Mesh(geoShort, cladMat.clone());
   cladD_outer.position.set(max.x + eps, yMid, cz);
   const D = addCladPanel(cladD_outer, new THREE.Vector3(1, 0, 0));
@@ -1045,7 +1083,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.querySelectorAll('input[name="slopeType"]').forEach((el) => {
     el.addEventListener("change", () => {
       populateDimensions();
-      loadModelForType(getSelectedType()); // ✅ recharge le bon GLTF
+      loadModelForType(getSelectedType()); // ✅ charge mono/bi
       calculatePriceAndRecap();
     });
   });
