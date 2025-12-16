@@ -800,7 +800,7 @@ function rebuildOverlays(bbox) {
   const lenX = max.x - min.x;
   const widthZ = max.z - min.z;
   const heightY = max.y - min.y;
-  const eps = 0.02 * Math.max(lenX, widthZ, heightY);
+  const eps = 0.012 * Math.max(lenX, widthZ, heightY);
 
   const cx = (min.x + max.x) / 2;
   const cz = (min.z + max.z) / 2;
