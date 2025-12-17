@@ -85,9 +85,7 @@ const TVA_RATE = 0.2;
    2) HELPERS UI
 ---------------------------- */
 
-function $(id) {
-  return document.getElementById(id);
-}
+function $(id) { return document.getElementById(id); }
 
 function formatCurrency(value) {
   return new Intl.NumberFormat("fr-FR", {
@@ -386,6 +384,7 @@ function calculatePriceAndRecap() {
   recapText += "Ce devis est une estimation indicative. Un devis définitif vous sera transmis par GAMAX-CM.\n";
 
   afficherRecapitulatif(recapHTML, recapText);
+
   update3DFromConfig();
 }
 
@@ -408,8 +407,8 @@ window.goToOrderPage = function goToOrderPage() {
    5) THREE.JS — VUE 3D
 ---------------------------- */
 
-// ✅ IMPORTANT : tu es sur /public/index.html -> base relative = "actifs/"
-const ASSET_BASE = "actifs/";
+// ✅ IMPORTANT : assets/ (et pas actifs/)
+const ASSET_BASE = new URL("./assets/", window.location.href).toString();
 
 const ROOF_TEX_PATH = ASSET_BASE + "texture-bac-acier.jpg";
 const CLAD_TEX_PATH = ASSET_BASE + "texture-bac-acier.jpg";
@@ -427,31 +426,35 @@ const MODELS = {
   },
 };
 
-const PITCH_RATIO = 0.10;
-const ROOF_OVERHANG_RATIO = 0.14;
+// Pente + débord
+const PITCH_RATIO = 0.10;          // 10%
+const ROOF_OVERHANG_RATIO = 0.14;  // débord vers bas de pente (-Z)
 
+// Visuel texture (répétition)
 const ROOF_TEX_REPEAT_X = 8;
 const ROOF_TEX_REPEAT_Z = 2;
 const CLAD_TEX_REPEAT_X = 8;
 const CLAD_TEX_REPEAT_Y = 3;
 
+// rendu
 const ROOF_OPACITY = 0.98;
 const CLAD_OPACITY = 0.98;
 
 const ROOF_THICKNESS = 0.06;
 const CLAD_THICKNESS = 0.035;
 
-// Réduit l’écart visuel structure/couverture
-const ROOF_GAP = 0.06;
+// ✅ rapproche toiture / structure + recouvrement bardage → couverture
+const ROOF_GAP = 0.06;               // distance visuelle (petite)
+const CLAD_TO_ROOF_OVERLAP = 0.08;   // le bardage monte un peu sous la couverture
 
-// Recouvrement bardage -> couverture
-const CLAD_TO_ROOF_OVERLAP = 0.08;
-
+// OrbitControls
 const ORBIT_MIN_POLAR = 0.15 * Math.PI;
 const ORBIT_MAX_POLAR = 0.48 * Math.PI;
 
+// Ombres
 const SHADOW_ENABLED = true;
 
+// Three globals
 let scene, camera, renderer, controls;
 let baseModule = null;
 let baseBBox = null;
@@ -465,6 +468,7 @@ let padMesh = null;
 let roofTex = null;
 let cladTex = null;
 
+// Fullscreen helpers
 let lastInlineCanvasHeight = 0;
 
 function getRALColorFromRadio(name) {
@@ -498,6 +502,10 @@ function initThree() {
 
   if (!window.THREE) {
     console.error("THREE.js non chargé. Vérifie tes <script> (three, OrbitControls, GLTFLoader) avant app.js");
+    return;
+  }
+  if (!window.THREE.GLTFLoader) {
+    console.error("GLTFLoader non chargé. Vérifie le <script> GLTFLoader avant app.js");
     return;
   }
 
@@ -559,57 +567,37 @@ function initThree() {
 
   const tl = new THREE.TextureLoader();
 
-  tl.load(
-    PAVE_TEX_PATH,
-    (tex) => {
-      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-      tex.repeat.set(8, 8);
-      groundDisc.material.map = tex;
-      groundDisc.material.needsUpdate = true;
+  tl.load(PAVE_TEX_PATH, (tex) => {
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(8, 8);
+    groundDisc.material.map = tex;
+    groundDisc.material.needsUpdate = true;
 
-      const tex2 = tex.clone();
-      tex2.repeat.set(4, 4);
-      padMesh.material.map = tex2;
-      padMesh.material.needsUpdate = true;
-    },
-    undefined,
-    () => {}
-  );
+    const tex2 = tex.clone();
+    tex2.repeat.set(4, 4);
+    padMesh.material.map = tex2;
+    padMesh.material.needsUpdate = true;
+  });
 
-  tl.load(
-    ROOF_TEX_PATH,
-    (tex) => {
-      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-      tex.repeat.set(ROOF_TEX_REPEAT_X, ROOF_TEX_REPEAT_Z);
-      roofTex = tex;
-    },
-    undefined,
-    () => {}
-  );
+  tl.load(ROOF_TEX_PATH, (tex) => {
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(ROOF_TEX_REPEAT_X, ROOF_TEX_REPEAT_Z);
+    roofTex = tex;
+  });
 
-  tl.load(
-    CLAD_TEX_PATH,
-    (tex) => {
-      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-      tex.repeat.set(CLAD_TEX_REPEAT_X, CLAD_TEX_REPEAT_Y);
-      cladTex = tex;
-    },
-    undefined,
-    () => {}
-  );
+  tl.load(CLAD_TEX_PATH, (tex) => {
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(CLAD_TEX_REPEAT_X, CLAD_TEX_REPEAT_Y);
+    cladTex = tex;
+  });
 
-  tl.load(
-    BG_TEX_PATH,
-    (tex) => {
-      const bgGeo = new THREE.PlaneGeometry(40, 15);
-      const bgMat = new THREE.MeshBasicMaterial({ map: tex });
-      backgroundPlane = new THREE.Mesh(bgGeo, bgMat);
-      backgroundPlane.position.set(0, 7, -20);
-      scene.add(backgroundPlane);
-    },
-    undefined,
-    () => {}
-  );
+  tl.load(BG_TEX_PATH, (tex) => {
+    const bgGeo = new THREE.PlaneGeometry(40, 15);
+    const bgMat = new THREE.MeshBasicMaterial({ map: tex });
+    backgroundPlane = new THREE.Mesh(bgGeo, bgMat);
+    backgroundPlane.position.set(0, 7, -20);
+    scene.add(backgroundPlane);
+  });
 
   loadModelForType(getSelectedType());
 
@@ -634,28 +622,23 @@ function animateThree() {
 }
 
 function loadModelForType(type) {
-  if (!scene || !window.THREE || !window.THREE.GLTFLoader) return;
+  if (!scene) return;
 
   const modelCfg = MODELS[type] || MODELS.mono;
 
   baseModule = null;
   baseBBox = null;
 
-  if (structureGroup) {
-    scene.remove(structureGroup);
-    structureGroup = null;
-  }
-  if (overlayGroup) {
-    scene.remove(overlayGroup);
-    overlayGroup = null;
-  }
+  if (structureGroup) { scene.remove(structureGroup); structureGroup = null; }
+  if (overlayGroup) { scene.remove(overlayGroup); overlayGroup = null; }
 
   const loader = new THREE.GLTFLoader();
+  console.log("[GAMAX 3D] loading:", modelCfg.path);
+
   loader.load(
     modelCfg.path,
     (gltf) => {
       baseModule = gltf.scene;
-
       baseModule.traverse((obj) => {
         if (obj.isMesh) {
           obj.castShadow = SHADOW_ENABLED;
@@ -735,12 +718,11 @@ function materialWithTexture({ color, tex, opacity }) {
   return mat;
 }
 
-function makeExtrudedPanelFromShape(shapePointsYZ, thicknessX) {
+function makeExtrudedPanelFromShape(pointsZY, thicknessX) {
+  // pointsZY : [{z, y}, ...] dans le plan Z/Y
   const shape = new THREE.Shape();
-  shape.moveTo(shapePointsYZ[0].z, shapePointsYZ[0].y);
-  for (let i = 1; i < shapePointsYZ.length; i++) {
-    shape.lineTo(shapePointsYZ[i].z, shapePointsYZ[i].y);
-  }
+  shape.moveTo(pointsZY[0].z, pointsZY[0].y);
+  for (let i = 1; i < pointsZY.length; i++) shape.lineTo(pointsZY[i].z, pointsZY[i].y);
   shape.closePath();
 
   const geo = new THREE.ExtrudeGeometry(shape, {
@@ -749,6 +731,7 @@ function makeExtrudedPanelFromShape(shapePointsYZ, thicknessX) {
     steps: 1,
   });
 
+  // l’extrusion est en +X, on recentre autour de 0
   geo.translate(-thicknessX / 2, 0, 0);
   return geo;
 }
@@ -768,6 +751,7 @@ function rebuildOverlays(bbox) {
   const lenX = max.x - min.x;
   const widthZ = max.z - min.z;
   const heightY = max.y - min.y;
+
   const eps = 0.02 * Math.max(lenX, widthZ, heightY);
 
   const cx = (min.x + max.x) / 2;
@@ -789,70 +773,54 @@ function rebuildOverlays(bbox) {
   });
 
   const angle = Math.atan(PITCH_RATIO);
+  const sinA = Math.sin(angle);
+
+  // eaveY : niveau bas de pente (doit rester à la hauteur "structure")
   const eaveY = max.y - ROOF_GAP;
 
   // ===== TOITURE =====
   if (type === "mono") {
+    // pente descend vers -Z (façade C), point haut sur +Z (façade A)
     const overhang = widthZ * ROOF_OVERHANG_RATIO;
-
     const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ + overhang);
     const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.userData.kind = "roof";
 
     roof.rotation.x = -angle;
 
-    const half = (widthZ + overhang) / 2;
-    const y0 = eaveY - half * Math.sin(angle);
+    // on place le "bord bas" du toit à eaveY côté -Z
+    const halfSpan = (widthZ + overhang) / 2;
+    const centerY = eaveY + (halfSpan * sinA) / 2; // approximation visuelle
+    roof.position.set(cx, centerY, cz - overhang / 2);
 
-    roof.position.set(cx, y0, cz - overhang / 2);
     roof.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roof);
-
   } else {
+    // bipente : bas de pente = eaveY partout, faîtage varie avec largeur
     const halfW = widthZ / 2;
     const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
 
-    const lift = (halfW / 2) * Math.sin(angle);
-    const y0 = eaveY - lift;
+    // centreY pour avoir le bord bas ≈ eaveY
+    const centerY = eaveY + (halfW / 2) * sinA;
 
     const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
     roofPlusZ.userData.kind = "roof";
     roofPlusZ.rotation.x = +angle;
-    roofPlusZ.position.set(cx, y0, cz + halfW / 2);
+    roofPlusZ.position.set(cx, centerY, cz + halfW / 2);
     roofPlusZ.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roofPlusZ);
 
     const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
     roofMinusZ.userData.kind = "roof";
     roofMinusZ.rotation.x = -angle;
-    roofMinusZ.position.set(cx, y0, cz - halfW / 2);
+    roofMinusZ.position.set(cx, centerY, cz - halfW / 2);
     roofMinusZ.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roofMinusZ);
   }
 
-  // ===== BARDAGE =====
-  const riseMono = widthZ * PITCH_RATIO;
-  const riseBi = (widthZ / 2) * PITCH_RATIO;
+  // ===== BARDAGE (double peau) + pignons en forme + recouvrement =====
 
-  const minY = min.y;
-
-  let heightA = 0;
-  let heightC = 0;
-
-  if (type === "mono") {
-    const topLow = eaveY;
-    const topHigh = eaveY + riseMono;
-
-    // point haut = façade A (+Z)
-    heightC = (topLow - minY) + CLAD_TO_ROOF_OVERLAP;
-    heightA = (topHigh - minY) + CLAD_TO_ROOF_OVERLAP;
-  } else {
-    const top = eaveY;
-    heightA = (top - minY) + CLAD_TO_ROOF_OVERLAP;
-    heightC = (top - minY) + CLAD_TO_ROOF_OVERLAP;
-  }
-
-  function addCladDouble(mesh, outwardDir) {
+  function addCladPanel(mesh, outwardDir) {
     mesh.castShadow = SHADOW_ENABLED;
     mesh.receiveShadow = SHADOW_ENABLED;
     mesh.userData.kind = "clad";
@@ -871,54 +839,69 @@ function rebuildOverlays(bbox) {
     return { outer: mesh, inner };
   }
 
-  // Long pans A/C
+  const minY = min.y;
+
+  // hauteurs long pans A/C : A est le point haut en mono
+  let heightA = (eaveY - minY) + CLAD_TO_ROOF_OVERLAP;
+  let heightC = (eaveY - minY) + CLAD_TO_ROOF_OVERLAP;
+
+  if (type === "mono") {
+    const rise = widthZ * PITCH_RATIO; // hausse totale entre C(-Z) et A(+Z)
+    heightA = (eaveY + rise - minY) + CLAD_TO_ROOF_OVERLAP;
+    heightC = (eaveY - minY) + CLAD_TO_ROOF_OVERLAP;
+  }
+
   const geoLongA = new THREE.BoxGeometry(lenX, heightA, cladThick);
   const geoLongC = new THREE.BoxGeometry(lenX, heightC, cladThick);
 
+  // A = +Z
   const cladA_outer = new THREE.Mesh(geoLongA, cladMat.clone());
   cladA_outer.position.set(cx, minY + heightA / 2, max.z + eps);
-  const A = addCladDouble(cladA_outer, new THREE.Vector3(0, 0, 1));
+  const A = addCladPanel(cladA_outer, new THREE.Vector3(0, 0, 1));
 
+  // C = -Z
   const cladC_outer = new THREE.Mesh(geoLongC, cladMat.clone());
   cladC_outer.position.set(cx, minY + heightC / 2, min.z - eps);
-  const C = addCladDouble(cladC_outer, new THREE.Vector3(0, 0, -1));
+  const C = addCladPanel(cladC_outer, new THREE.Vector3(0, 0, -1));
 
-  // Pignons B/D
+  // PIGNONS B/D (formes)
   let geoGable = null;
 
   if (type === "mono") {
+    // trapèze : côté +Z (A) plus haut
     const halfW = widthZ / 2;
-    const topLow = eaveY;
-    const topHigh = eaveY + riseMono;
+    const topC = eaveY + CLAD_TO_ROOF_OVERLAP;
+    const topA = (eaveY + widthZ * PITCH_RATIO) + CLAD_TO_ROOF_OVERLAP;
 
     const pts = [
       { z: -halfW, y: minY },
       { z: +halfW, y: minY },
-      { z: +halfW, y: topHigh + CLAD_TO_ROOF_OVERLAP },
-      { z: -halfW, y: topLow + CLAD_TO_ROOF_OVERLAP },
+      { z: +halfW, y: topA },
+      { z: -halfW, y: topC },
     ];
-
     geoGable = makeExtrudedPanelFromShape(pts, cladThick);
   } else {
+    // triangle : faîtage au centre
     const halfW = widthZ / 2;
-    const ridgeY = eaveY + riseBi;
+    const ridgeY = eaveY + (halfW * PITCH_RATIO) + CLAD_TO_ROOF_OVERLAP;
 
     const pts = [
       { z: -halfW, y: minY },
       { z: +halfW, y: minY },
-      { z: 0, y: ridgeY + CLAD_TO_ROOF_OVERLAP },
+      { z: 0,     y: ridgeY },
     ];
-
     geoGable = makeExtrudedPanelFromShape(pts, cladThick);
   }
 
+  // B = -X
   const cladB_outer = new THREE.Mesh(geoGable, cladMat.clone());
   cladB_outer.position.set(min.x - eps, 0, cz);
-  const B = addCladDouble(cladB_outer, new THREE.Vector3(-1, 0, 0));
+  const B = addCladPanel(cladB_outer, new THREE.Vector3(-1, 0, 0));
 
+  // D = +X
   const cladD_outer = new THREE.Mesh(geoGable, cladMat.clone());
   cladD_outer.position.set(max.x + eps, 0, cz);
-  const D = addCladDouble(cladD_outer, new THREE.Vector3(1, 0, 0));
+  const D = addCladPanel(cladD_outer, new THREE.Vector3(1, 0, 0));
 
   function applyCladdingVisibility() {
     const showA = !!document.querySelector('input[name="claddingSide"][value="A"]:checked');
@@ -931,11 +914,10 @@ function rebuildOverlays(bbox) {
     C.outer.visible = showC; C.inner.visible = showC;
     D.outer.visible = showD; D.inner.visible = showD;
   }
-
   applyCladdingVisibility();
   overlayGroup.userData = { applyCladdingVisibility };
 
-  // Sol + fond
+  // ===== SCALE SOL + FOND =====
   const radius = Math.max(lenX, widthZ) * 0.9;
 
   if (groundDisc) {
@@ -955,11 +937,10 @@ function rebuildOverlays(bbox) {
     backgroundPlane.scale.set(1.3, 1.3, 1);
   }
 
-  // Caméra
+  // ===== CAMÉRA =====
   if (controls && camera) {
     const center = new THREE.Vector3(cx, minY + heightY * 0.55, cz);
     controls.target.set(center.x, center.y, center.z);
-
     camera.position.set(
       center.x + lenX * 0.9,
       center.y + heightY * 1.1,
@@ -1094,13 +1075,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
-["width", "length", "height"].forEach((id) => {
-  $(id)?.addEventListener("change", () => {
-    calculatePriceAndRecap();
-    update3DFromConfig();
+  ["width", "length", "height"].forEach((id) => {
+    $(id)?.addEventListener("change", () => {
+      calculatePriceAndRecap();
+      update3DFromConfig();
+    });
   });
-});
-
 
   document.querySelectorAll('input[name="deliveryMode"]').forEach((el) => {
     el.addEventListener("change", async () => {
@@ -1164,3 +1144,4 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   calculatePriceAndRecap();
 });
+
