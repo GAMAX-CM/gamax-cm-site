@@ -947,50 +947,54 @@ function rebuildOverlays(bbox) {
     cladC_inner.receiveShadow = SHADOW_ENABLED;
     cladC_inner.visible = showC;
     overlayGroup.add(cladC_inner);
+// B/D = trapèzes (plan Y/Z)
+// monopente : haut côté façade A (+Z) => hA
+//            bas côté façade C (-Z)  => hC
 
-    // B/D = trapèzes (plan Y/Z)
-    // côté gauche du trapèze = z=- (façade C) => hC
-    // côté droit  du trapèze = z=+ (façade A) => hA
-    const trapGeo = makeTrapezoidGeometry(widthZ, hC, hA);
+// ✅ D garde (hC -> hA) comme avant
+const trapGeoD = makeTrapezoidGeometry(widthZ, hC, hA);
 
-    // B = -X
-    const cladB_outer = new THREE.Mesh(trapGeo, cladMat.clone());
-    cladB_outer.userData.kind = "clad";
-    cladB_outer.rotation.y = Math.PI / 2;
-    cladB_outer.position.set(min.x - eps, min.y, cz);
-    cladB_outer.position.y = min.y; // ShapeGeometry est à partir de y=0
-    cladB_outer.castShadow = SHADOW_ENABLED;
-    cladB_outer.receiveShadow = SHADOW_ENABLED;
-    cladB_outer.visible = showB;
-    overlayGroup.add(cladB_outer);
+// ✅ B doit être inversé (hA -> hC) pour que la pente soit dans le bon sens
+const trapGeoB = makeTrapezoidGeometry(widthZ, hA, hC);
 
-    const cladB_inner = new THREE.Mesh(trapGeo, cladMat.clone());
-    cladB_inner.userData.kind = "clad";
-    cladB_inner.rotation.y = Math.PI / 2;
-    cladB_inner.position.set(min.x - eps + cladThick, min.y, cz);
-    cladB_inner.castShadow = SHADOW_ENABLED;
-    cladB_inner.receiveShadow = SHADOW_ENABLED;
-    cladB_inner.visible = showB;
-    overlayGroup.add(cladB_inner);
+// B = -X
+const cladB_outer = new THREE.Mesh(trapGeoB, cladMat.clone());
+cladB_outer.userData.kind = "clad";
+cladB_outer.rotation.y = Math.PI / 2;
+cladB_outer.position.set(min.x - eps, min.y, cz);
+cladB_outer.castShadow = SHADOW_ENABLED;
+cladB_outer.receiveShadow = SHADOW_ENABLED;
+cladB_outer.visible = showB;
+overlayGroup.add(cladB_outer);
 
-    // D = +X
-    const cladD_outer = new THREE.Mesh(trapGeo, cladMat.clone());
-    cladD_outer.userData.kind = "clad";
-    cladD_outer.rotation.y = -Math.PI / 2;
-    cladD_outer.position.set(max.x + eps, min.y, cz);
-    cladD_outer.castShadow = SHADOW_ENABLED;
-    cladD_outer.receiveShadow = SHADOW_ENABLED;
-    cladD_outer.visible = showD;
-    overlayGroup.add(cladD_outer);
+const cladB_inner = new THREE.Mesh(trapGeoB, cladMat.clone());
+cladB_inner.userData.kind = "clad";
+cladB_inner.rotation.y = Math.PI / 2;
+cladB_inner.position.set(min.x - eps + cladThick, min.y, cz);
+cladB_inner.castShadow = SHADOW_ENABLED;
+cladB_inner.receiveShadow = SHADOW_ENABLED;
+cladB_inner.visible = showB;
+overlayGroup.add(cladB_inner);
 
-    const cladD_inner = new THREE.Mesh(trapGeo, cladMat.clone());
-    cladD_inner.userData.kind = "clad";
-    cladD_inner.rotation.y = -Math.PI / 2;
-    cladD_inner.position.set(max.x + eps - cladThick, min.y, cz);
-    cladD_inner.castShadow = SHADOW_ENABLED;
-    cladD_inner.receiveShadow = SHADOW_ENABLED;
-    cladD_inner.visible = showD;
-    overlayGroup.add(cladD_inner);
+// D = +X
+const cladD_outer = new THREE.Mesh(trapGeoD, cladMat.clone());
+cladD_outer.userData.kind = "clad";
+cladD_outer.rotation.y = -Math.PI / 2;
+cladD_outer.position.set(max.x + eps, min.y, cz);
+cladD_outer.castShadow = SHADOW_ENABLED;
+cladD_outer.receiveShadow = SHADOW_ENABLED;
+cladD_outer.visible = showD;
+overlayGroup.add(cladD_outer);
+
+const cladD_inner = new THREE.Mesh(trapGeoD, cladMat.clone());
+cladD_inner.userData.kind = "clad";
+cladD_inner.rotation.y = -Math.PI / 2;
+cladD_inner.position.set(max.x + eps - cladThick, min.y, cz);
+cladD_inner.castShadow = SHADOW_ENABLED;
+cladD_inner.receiveShadow = SHADOW_ENABLED;
+cladD_inner.visible = showD;
+overlayGroup.add(cladD_inner);
+
 
     overlayGroup.userData = {
       applyCladdingVisibility: () => {
