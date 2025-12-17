@@ -1094,12 +1094,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
-  ["width", "length", "height"].forEach((id) => {
-    $(id)?.addEventListener("change", () => {
-      calculatePriceAndRecap();
-      update3DFromConfig();
-    });
+["width", "length", "height"].forEach((id) => {
+  $(id)?.addEventListener("change", () => {
+    calculatePriceAndRecap();
+    update3DFromConfig();
   });
+});
+
 
   document.querySelectorAll('input[name="deliveryMode"]').forEach((el) => {
     el.addEventListener("change", async () => {
