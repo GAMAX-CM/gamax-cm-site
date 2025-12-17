@@ -654,16 +654,12 @@ function loadModelForType(type) {
     (err) => console.error("Erreur GLTF :", err)
   );
 }
-
 function buildStructureFromConfig() {
   if (!baseModule || !baseBBox) return null;
 
   if (structureGroup) scene.remove(structureGroup);
   structureGroup = new THREE.Group();
   scene.add(structureGroup);
-
-  const type = getSelectedType();
-  const baseCfg = MODELS[type]?.base || MODELS.mono.base;
 
   const { width, length, height } = getCurrentDimensions();
   const bays = getBayCount(length);
@@ -677,9 +673,15 @@ function buildStructureFromConfig() {
   for (let i = 0; i < bays; i++) {
     const clone = baseModule.clone(true);
 
-    const scaleX = bayLengthM / baseCfg.length;
-    const scaleZ = width / baseCfg.width;
-    const scaleY = height / baseCfg.height;
+    const type = getSelectedType();
+    const baseCfg = MODELS[type]?.base || MODELS.mono.base;
+
+    // ⚠️ si tu n’as pas GLOBAL_SCALE, mets 1
+    const GS = (typeof GLOBAL_SCALE === "number") ? GLOBAL_SCALE : 1;
+
+    const scaleX = (bayLengthM / baseCfg.length) * GS;
+    const scaleZ = (width / baseCfg.width) * GS;
+    const scaleY = (height / baseCfg.height) * GS;
 
     clone.scale.set(scaleX, scaleY, scaleZ);
 
@@ -693,13 +695,23 @@ function buildStructureFromConfig() {
     currentX += segLength;
   }
 
+  // bbox brute
   let bbox = new THREE.Box3().setFromObject(structureGroup);
-  const center = bbox.getCenter(new THREE.Vector3());
-  structureGroup.position.sub(center);
 
+  // centre X/Z
+  const center = bbox.getCenter(new THREE.Vector3());
+  structureGroup.position.x -= center.x;
+  structureGroup.position.z -= center.z;
+
+  // ✅ recaler en Y pour que minY = 0 (posé au sol)
+  bbox = new THREE.Box3().setFromObject(structureGroup);
+  structureGroup.position.y -= bbox.min.y;
+
+  // bbox final
   bbox = new THREE.Box3().setFromObject(structureGroup);
   return bbox;
 }
+
 
 function materialWithTexture({ color, tex, opacity }) {
   const mat = new THREE.MeshStandardMaterial({
