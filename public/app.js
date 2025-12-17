@@ -135,18 +135,10 @@ function populateDimensions() {
    2.5) HELPERS RÉCAP (HTML + TEXTE)
 ---------------------------- */
 
-function L(label) {
-  return `<strong>${label}</strong>`;
-}
-function LINE(label, value) {
-  return `${L(label)} ${value}<br>`;
-}
-function BLANK() {
-  return `<br>`;
-}
-function LINE_TXT(label, value) {
-  return `${label} ${value}\n`;
-}
+function L(label) { return `<strong>${label}</strong>`; }
+function LINE(label, value) { return `${L(label)} ${value}<br>`; }
+function BLANK() { return `<br>`; }
+function LINE_TXT(label, value) { return `${label} ${value}\n`; }
 
 /* ---------------------------
    3) LIVRAISON + VILLES
@@ -421,7 +413,8 @@ window.goToOrderPage = function goToOrderPage() {
    5) THREE.JS — VUE 3D
 ---------------------------- */
 
-// Assets (dans public/assets/)
+// IMPORTANT : on est sur .../public/index.html
+// donc "assets/..." => .../public/assets/...
 const ROOF_TEX_PATH = "assets/texture-bac-acier.jpg";
 const CLAD_TEX_PATH = "assets/texture-bac-acier.jpg";
 const PAVE_TEX_PATH = "assets/texture-pave-gris.jpg";
@@ -439,35 +432,35 @@ const MODELS = {
   },
 };
 
-// Échelle globale (si tu veux ajuster le “gabarit” 3D)
-const GLOBAL_SCALE = 1;
+// Scale global (évite les variables manquantes)
+const GLOBAL_SCALE = 1.0;
 
-// Pente + débord
-const PITCH_RATIO = 0.10;          // 10%
-const ROOF_OVERHANG_RATIO = 0.14;  // petit débord côté bas
+// Pente = 10%
+const PITCH_RATIO = 0.10;
+
+// débords visuels
+const ROOF_OVERHANG_RATIO_MONO = 0.14; // côté bas de pente (monopente)
+const ROOF_OVERHANG_RATIO_BI   = 0.10; // léger débord (bipente)
 
 // Visuel texture (répétition)
 const ROOF_TEX_REPEAT_X = 8;
 const ROOF_TEX_REPEAT_Z = 2;
-
 const CLAD_TEX_REPEAT_X = 8;
 const CLAD_TEX_REPEAT_Y = 3;
 
-// Opacité (quasi opaque)
+// Opacité
 const ROOF_OPACITY = 0.98;
 const CLAD_OPACITY = 0.98;
 
-// Épaisseurs (mètres)
+// Epaisseurs
 const ROOF_THICKNESS = 0.06;
 const CLAD_THICKNESS = 0.035;
 
-// ✅ bardage juste un peu SOUS la couverture
-const CLAD_TOP_GAP = 0.04;  // espace entre haut bardage et sous-face couverture
+// petit “jour” sous la couverture (bardage juste en dessous)
+const CLAD_TOP_GAP = 0.05;        // bardage s'arrête 5cm sous la couverture
+const CLAD_VISUAL_OVERLAP = 0.03; // recouvrement visuel (la couverture déborde un peu)
 
-// ✅ réduire la “distance” couverture ↔ structure (visuel)
-const ROOF_GAP = 0.02;
-
-// Limites OrbitControls
+// Limites Orbit
 const ORBIT_MIN_POLAR = 0.15 * Math.PI;
 const ORBIT_MAX_POLAR = 0.48 * Math.PI;
 
@@ -514,6 +507,48 @@ function getBayCount(length) {
   if (length <= 18) return 3;
   if (length <= 24) return 4;
   return 6;
+}
+
+function safeLoadTexture(loader, url, onOk) {
+  loader.load(
+    url,
+    (tex) => onOk?.(tex),
+    undefined,
+    () => { /* ignore 404 */ }
+  );
+}
+
+/* --------- Modèle : loadModelForType --------- */
+function loadModelForType(type) {
+  if (!scene || !window.THREE || !window.THREE.GLTFLoader) return;
+
+  const modelCfg = MODELS[type] || MODELS.mono;
+
+  // cleanup ancienne structure (groupe + base)
+  if (structureGroup) { scene.remove(structureGroup); structureGroup = null; }
+  if (baseModule) { scene.remove(baseModule); baseModule = null; }
+  baseBBox = null;
+
+  const loader = new THREE.GLTFLoader();
+  loader.load(
+    modelCfg.path,
+    (gltf) => {
+      baseModule = gltf.scene;
+
+      baseModule.traverse((obj) => {
+        if (obj.isMesh) {
+          obj.castShadow = SHADOW_ENABLED;
+          obj.receiveShadow = SHADOW_ENABLED;
+          if (obj.material) obj.material = obj.material.clone();
+        }
+      });
+
+      baseBBox = new THREE.Box3().setFromObject(baseModule);
+      update3DFromConfig();
+    },
+    undefined,
+    (err) => console.error("Erreur GLTF :", err)
+  );
 }
 
 function initThree() {
@@ -588,96 +623,46 @@ function initThree() {
   const tl = new THREE.TextureLoader();
 
   // pavés
-  tl.load(
-    PAVE_TEX_PATH,
-    (tex) => {
-      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-      tex.repeat.set(8, 8);
-      groundDisc.material.map = tex;
-      groundDisc.material.needsUpdate = true;
+  safeLoadTexture(tl, PAVE_TEX_PATH, (tex) => {
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(8, 8);
+    groundDisc.material.map = tex;
+    groundDisc.material.needsUpdate = true;
 
-      const tex2 = tex.clone();
-      tex2.repeat.set(4, 4);
-      padMesh.material.map = tex2;
-      padMesh.material.needsUpdate = true;
-    },
-    undefined,
-    () => {}
-  );
+    const tex2 = tex.clone();
+    tex2.repeat.set(4, 4);
+    padMesh.material.map = tex2;
+    padMesh.material.needsUpdate = true;
+  });
 
   // bac acier toiture
-  tl.load(
-    ROOF_TEX_PATH,
-    (tex) => {
-      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-      tex.repeat.set(ROOF_TEX_REPEAT_X, ROOF_TEX_REPEAT_Z);
-      roofTex = tex;
-    },
-    undefined,
-    () => {}
-  );
+  safeLoadTexture(tl, ROOF_TEX_PATH, (tex) => {
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(ROOF_TEX_REPEAT_X, ROOF_TEX_REPEAT_Z);
+    roofTex = tex;
+  });
 
   // bac acier bardage
-  tl.load(
-    CLAD_TEX_PATH,
-    (tex) => {
-      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-      tex.repeat.set(CLAD_TEX_REPEAT_X, CLAD_TEX_REPEAT_Y);
-      cladTex = tex;
-    },
-    undefined,
-    () => {}
-  );
+  safeLoadTexture(tl, CLAD_TEX_PATH, (tex) => {
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(CLAD_TEX_REPEAT_X, CLAD_TEX_REPEAT_Y);
+    cladTex = tex;
+  });
 
   // fond
-  tl.load(
-    BG_TEX_PATH,
-    (tex) => {
-      const bgGeo = new THREE.PlaneGeometry(40, 15);
-      const bgMat = new THREE.MeshBasicMaterial({ map: tex });
-      backgroundPlane = new THREE.Mesh(bgGeo, bgMat);
-      backgroundPlane.position.set(0, 7, -20);
-      scene.add(backgroundPlane);
-    },
-    undefined,
-    () => {}
-  );
+  safeLoadTexture(tl, BG_TEX_PATH, (tex) => {
+    const bgGeo = new THREE.PlaneGeometry(40, 15);
+    const bgMat = new THREE.MeshBasicMaterial({ map: tex });
+    backgroundPlane = new THREE.Mesh(bgGeo, bgMat);
+    backgroundPlane.position.set(0, 7, -20);
+    scene.add(backgroundPlane);
+  });
 
-  // modèle initial
+  // charge modèle au démarrage
   loadModelForType(getSelectedType());
 
   window.addEventListener("resize", () => setTimeout(onThreeResize, 40));
   animateThree();
-}
-
-function loadModelForType(type) {
-  const modelCfg = MODELS[type] || MODELS.mono;
-  if (!modelCfg?.path) return;
-
-  // reset
-  if (structureGroup) { scene.remove(structureGroup); structureGroup = null; }
-  if (overlayGroup) { scene.remove(overlayGroup); overlayGroup = null; }
-  baseModule = null;
-  baseBBox = null;
-
-  const loader = new THREE.GLTFLoader();
-  loader.load(
-    modelCfg.path,
-    (gltf) => {
-      baseModule = gltf.scene;
-      baseModule.traverse((obj) => {
-        if (obj.isMesh) {
-          obj.castShadow = SHADOW_ENABLED;
-          obj.receiveShadow = SHADOW_ENABLED;
-          obj.material = obj.material.clone();
-        }
-      });
-      baseBBox = new THREE.Box3().setFromObject(baseModule);
-      update3DFromConfig();
-    },
-    undefined,
-    (err) => console.error("Erreur GLTF :", err)
-  );
 }
 
 function onThreeResize() {
@@ -696,8 +681,9 @@ function animateThree() {
   renderer?.render?.(scene, camera);
 }
 
+/* --------- Structure : répétition en travées + sol --------- */
 function buildStructureFromConfig() {
-  if (!baseModule || !baseBBox) return null;
+  if (!baseModule || !baseBBox || !scene) return null;
 
   if (structureGroup) scene.remove(structureGroup);
   structureGroup = new THREE.Group();
@@ -707,6 +693,9 @@ function buildStructureFromConfig() {
   const bays = getBayCount(length);
   const bayLengthM = length / bays;
 
+  const type = getSelectedType();
+  const baseCfg = MODELS[type]?.base || MODELS.mono.base;
+
   const baseSize = new THREE.Vector3();
   baseBBox.getSize(baseSize);
 
@@ -714,9 +703,6 @@ function buildStructureFromConfig() {
 
   for (let i = 0; i < bays; i++) {
     const clone = baseModule.clone(true);
-
-    const type = getSelectedType();
-    const baseCfg = MODELS[type]?.base || MODELS.mono.base;
 
     const scaleX = (bayLengthM / baseCfg.length) * GLOBAL_SCALE;
     const scaleZ = (width / baseCfg.width) * GLOBAL_SCALE;
@@ -734,23 +720,24 @@ function buildStructureFromConfig() {
     currentX += segLength;
   }
 
-  // bbox brute
+  // bbox + recentrage X/Z + pose au sol (Y=0)
   let bbox = new THREE.Box3().setFromObject(structureGroup);
+  const center = bbox.getCenter(new THREE.Vector3());
 
   // centre X/Z
-  const center = bbox.getCenter(new THREE.Vector3());
   structureGroup.position.x -= center.x;
   structureGroup.position.z -= center.z;
 
-  // ✅ recaler en Y pour que minY = 0 (posé au sol)
+  // pose au sol
   bbox = new THREE.Box3().setFromObject(structureGroup);
-  structureGroup.position.y -= bbox.min.y;
+  const minY = bbox.min.y;
+  structureGroup.position.y -= minY;
 
-  // bbox final
   bbox = new THREE.Box3().setFromObject(structureGroup);
   return bbox;
 }
 
+/* --------- Matériau --------- */
 function materialWithTexture({ color, tex, opacity }) {
   const mat = new THREE.MeshStandardMaterial({
     color,
@@ -768,72 +755,32 @@ function materialWithTexture({ color, tex, opacity }) {
   return mat;
 }
 
-function buildPignonGeometryMono(widthZ, yLow, yHigh) {
-  // trapèze : bas = 0, haut = yLow à -Z, yHigh à +Z
-  const half = widthZ / 2;
-
-  const p0 = new THREE.Vector3(0, 0, -half);
-  const p1 = new THREE.Vector3(0, 0, +half);
-  const p2 = new THREE.Vector3(0, yHigh, +half);
-  const p3 = new THREE.Vector3(0, yLow, -half);
-
-  const geo = new THREE.BufferGeometry();
-  const verts = new Float32Array([
-    p0.x, p0.y, p0.z,
-    p1.x, p1.y, p1.z,
-    p2.x, p2.y, p2.z,
-
-    p0.x, p0.y, p0.z,
-    p2.x, p2.y, p2.z,
-    p3.x, p3.y, p3.z,
-  ]);
-
-  // UV simples (z -> u, y -> v)
-  const uv = new Float32Array([
-    0, 0,
-    1, 0,
-    1, 1,
-
-    0, 0,
-    1, 1,
-    0, 1,
-  ]);
-
-  geo.setAttribute("position", new THREE.BufferAttribute(verts, 3));
-  geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
-  geo.computeVertexNormals();
-  return geo;
+/* --------- Helpers shapes --------- */
+function makeTriangleGeometry(width, height) {
+  // triangle dans plan (x = largeur, y = hauteur), origine au centre de la base
+  const shape = new THREE.Shape();
+  shape.moveTo(-width / 2, 0);
+  shape.lineTo(width / 2, 0);
+  shape.lineTo(0, height);
+  shape.closePath();
+  return new THREE.ShapeGeometry(shape);
 }
 
-function buildPignonGeometryBi(widthZ, ridgeY) {
-  // triangle : base 0..0, pointe au centre
-  const half = widthZ / 2;
-
-  const p0 = new THREE.Vector3(0, 0, -half);
-  const p1 = new THREE.Vector3(0, 0, +half);
-  const p2 = new THREE.Vector3(0, ridgeY, 0);
-
-  const geo = new THREE.BufferGeometry();
-  const verts = new Float32Array([
-    p0.x, p0.y, p0.z,
-    p1.x, p1.y, p1.z,
-    p2.x, p2.y, p2.z,
-  ]);
-
-  const uv = new Float32Array([
-    0, 0,
-    1, 0,
-    0.5, 1,
-  ]);
-
-  geo.setAttribute("position", new THREE.BufferAttribute(verts, 3));
-  geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
-  geo.computeVertexNormals();
-  return geo;
+function makeTrapezoidGeometry(width, h1, h2) {
+  // trapèze dans plan (x = largeur, y = hauteur)
+  // côté gauche = h1, côté droit = h2
+  const shape = new THREE.Shape();
+  shape.moveTo(-width / 2, 0);
+  shape.lineTo(width / 2, 0);
+  shape.lineTo(width / 2, h2);
+  shape.lineTo(-width / 2, h1);
+  shape.closePath();
+  return new THREE.ShapeGeometry(shape);
 }
 
+/* --------- Overlays : couverture + bardage --------- */
 function rebuildOverlays(bbox) {
-  if (!bbox) return;
+  if (!bbox || !scene) return;
 
   if (overlayGroup) scene.remove(overlayGroup);
   overlayGroup = new THREE.Group();
@@ -844,11 +791,13 @@ function rebuildOverlays(bbox) {
 
   const lenX = max.x - min.x;
   const widthZ = max.z - min.z;
+  const heightY = max.y - min.y;
 
-  const eps = 0.01 * Math.max(lenX, widthZ);
+  const eps = 0.02 * Math.max(lenX, widthZ, heightY);
 
   const cx = (min.x + max.x) / 2;
   const cz = (min.z + max.z) / 2;
+  const yMid = (min.y + max.y) / 2;
 
   const roofThick = ROOF_THICKNESS * GLOBAL_SCALE;
   const cladThick = CLAD_THICKNESS * GLOBAL_SCALE;
@@ -865,199 +814,361 @@ function rebuildOverlays(bbox) {
     opacity: CLAD_OPACITY,
   });
 
+  // ===== COUVERTURE (overlay) =====
   const type = getSelectedType();
-  const { height } = getCurrentDimensions();
-
-  const y0 = min.y; // sol (normalement 0)
   const angle = Math.atan(PITCH_RATIO);
 
-  // ========= TOITURE (pente réelle) =========
-  // monopente : hauteur sélectionnée = point haut côté A (+Z)
-  // bipente : hauteur sélectionnée = égout des 2 côtés
+  // base eave (haut structure côté bas) :
+  // on part du haut du modèle, puis on met la couverture au-dessus
+  const baseTopY = max.y + eps + 0.02; // petit “jour” au-dessus structure
 
   if (type === "mono") {
-    const rise = widthZ * PITCH_RATIO;
-    const yHigh = y0 + height * GLOBAL_SCALE;              // A (+Z)
-    const yLow  = yHigh - rise;                            // C (-Z)
+    // monopente : haut côté façade A (+Z), bas côté façade C (-Z)
+    const drop = widthZ * PITCH_RATIO;
+    const yHigh = baseTopY;          // à +Z
+    const yLow  = baseTopY - drop;   // à -Z
 
-    const overhang = widthZ * ROOF_OVERHANG_RATIO;
-    const span = widthZ + overhang;
+    const overhang = widthZ * ROOF_OVERHANG_RATIO_MONO + CLAD_VISUAL_OVERLAP;
 
-    // Box pivotée sur bas de pente (C = -Z)
-    const geo = new THREE.BoxGeometry(lenX, roofThick, span);
-    geo.translate(0, 0, +span / 2); // pivot à z=0
-
-    const roof = new THREE.Mesh(geo, roofMat);
+    const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ + overhang);
+    const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.userData.kind = "roof";
     roof.rotation.x = -angle;
 
-    // pivot bas de pente placé sur C (-Z) au niveau yLow - petit gap
-    roof.position.set(cx, (yLow - ROOF_GAP), (min.z - overhang));
+    // placer pour que le bord haut soit vers +Z
+    // rotation autour du centre → on compense avec lift
+    const lift = ((widthZ + overhang) / 2) * Math.sin(angle);
+
+    roof.position.set(
+      cx,
+      yHigh + lift,
+      cz - (overhang / 2)
+    );
 
     roof.castShadow = SHADOW_ENABLED;
+    roof.receiveShadow = false;
     overlayGroup.add(roof);
 
   } else {
+    // bipente : eaves fixes à la hauteur saisie (= 3m) → faîtage augmente avec largeur
     const halfW = widthZ / 2;
-    const riseHalf = halfW * PITCH_RATIO;
+    const ridgeRise = halfW * PITCH_RATIO;
 
-    const yEave = y0 + height * GLOBAL_SCALE;              // égouts
-    const ridgeY = yEave + riseHalf;
+    const eaveY = baseTopY; // on considère la toiture structure "à l’égout"
+    const ridgeY = eaveY + ridgeRise;
 
-    // demi-pan côté -Z (égout min.z) vers faîtage (centre)
-    {
-      const geo = new THREE.BoxGeometry(lenX, roofThick, halfW);
-      geo.translate(0, 0, +halfW / 2); // pivot z=0
-      const roofMinusZ = new THREE.Mesh(geo, roofMat.clone());
-      roofMinusZ.userData.kind = "roof";
-      roofMinusZ.rotation.x = -angle;
-      roofMinusZ.position.set(cx, (yEave - ROOF_GAP), min.z);
-      roofMinusZ.castShadow = SHADOW_ENABLED;
-      overlayGroup.add(roofMinusZ);
-    }
+    const overhang = widthZ * ROOF_OVERHANG_RATIO_BI + CLAD_VISUAL_OVERLAP;
 
-    // demi-pan côté +Z (égout max.z) vers faîtage (centre)
-    {
-      const geo = new THREE.BoxGeometry(lenX, roofThick, halfW);
-      geo.translate(0, 0, +halfW / 2); // pivot z=0
-      const roofPlusZ = new THREE.Mesh(geo, roofMat.clone());
-      roofPlusZ.userData.kind = "roof";
-      roofPlusZ.rotation.y = Math.PI; // pour que le “span” parte vers le centre
-      roofPlusZ.rotation.x = +angle;
-      roofPlusZ.position.set(cx, (yEave - ROOF_GAP), max.z);
-      roofPlusZ.castShadow = SHADOW_ENABLED;
-      overlayGroup.add(roofPlusZ);
-    }
+    const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW + overhang * 0.5);
+
+    const lift = ((halfW + overhang * 0.5) / 2) * Math.sin(angle);
+
+    const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
+    roofPlusZ.userData.kind = "roof";
+    roofPlusZ.rotation.x = +angle;
+    roofPlusZ.position.set(cx, eaveY + lift, cz + (halfW / 2));
+    roofPlusZ.castShadow = SHADOW_ENABLED;
+    overlayGroup.add(roofPlusZ);
+
+    const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
+    roofMinusZ.userData.kind = "roof";
+    roofMinusZ.rotation.x = -angle;
+    roofMinusZ.position.set(cx, eaveY + lift, cz - (halfW / 2));
+    roofMinusZ.castShadow = SHADOW_ENABLED;
+    overlayGroup.add(roofMinusZ);
+
+    // (optionnel) une faîtière “visuelle” très fine
+    const ridgeGeo = new THREE.BoxGeometry(lenX, roofThick * 0.6, cladThick * 1.4);
+    const ridge = new THREE.Mesh(ridgeGeo, roofMat.clone());
+    ridge.userData.kind = "roof";
+    ridge.position.set(cx, ridgeY + roofThick * 0.15, cz);
+    ridge.castShadow = SHADOW_ENABLED;
+    overlayGroup.add(ridge);
   }
 
-  // ========= BARDAGE =========
-  // Hauteurs (juste un peu sous la couverture)
-  let heightA = 0, heightC = 0;
-  let yHighA = 0, yHighC = 0;
+  // ===== BARDAGE =====
+  // On veut : bardage juste sous couverture (petit jour), + pignons:
+  // - mono : B/D trapèze (haut côté A), A/C rectangles
+  // - bi   : B/D rectangle + triangle (pignon), A/C rectangles (jusqu’à égout)
 
+  const showA = !!document.querySelector('input[name="claddingSide"][value="A"]:checked');
+  const showB = !!document.querySelector('input[name="claddingSide"][value="B"]:checked');
+  const showC = !!document.querySelector('input[name="claddingSide"][value="C"]:checked');
+  const showD = !!document.querySelector('input[name="claddingSide"][value="D"]:checked');
+
+  // Hauteurs utiles
   if (type === "mono") {
-    const rise = widthZ * PITCH_RATIO;
-    const yHigh = y0 + height * GLOBAL_SCALE;     // A (+Z)
-    const yLow  = yHigh - rise;                   // C (-Z)
+    // monopente : haut côté A (+Z), bas côté C (-Z)
+    const drop = widthZ * PITCH_RATIO;
+    const yHighAbs = (max.y + eps + 0.02) - CLAD_TOP_GAP; // sous couverture
+    const yLowAbs  = yHighAbs - drop;
 
-    yHighA = yHigh - CLAD_TOP_GAP;
-    yHighC = yLow  - CLAD_TOP_GAP;
+    const hA = Math.max(0.2, yHighAbs - min.y);
+    const hC = Math.max(0.2, yLowAbs - min.y);
 
-    heightA = Math.max(0.2, yHighA - y0);
-    heightC = Math.max(0.2, yHighC - y0);
+    // A/C rectangles mais avec hauteurs différentes
+    const geoA = new THREE.BoxGeometry(lenX, hA, cladThick);
+    const geoC = new THREE.BoxGeometry(lenX, hC, cladThick);
+
+    const yA = min.y + hA / 2;
+    const yC = min.y + hC / 2;
+
+    // A = +Z
+    const cladA_outer = new THREE.Mesh(geoA, cladMat.clone());
+    cladA_outer.userData.kind = "clad";
+    cladA_outer.position.set(cx, yA, max.z + eps);
+    cladA_outer.castShadow = SHADOW_ENABLED;
+    cladA_outer.receiveShadow = SHADOW_ENABLED;
+    cladA_outer.visible = showA;
+    overlayGroup.add(cladA_outer);
+
+    // inner A
+    const cladA_inner = new THREE.Mesh(geoA, cladMat.clone());
+    cladA_inner.userData.kind = "clad";
+    cladA_inner.position.set(cx, yA, max.z + eps - cladThick);
+    cladA_inner.castShadow = SHADOW_ENABLED;
+    cladA_inner.receiveShadow = SHADOW_ENABLED;
+    cladA_inner.visible = showA;
+    overlayGroup.add(cladA_inner);
+
+    // C = -Z
+    const cladC_outer = new THREE.Mesh(geoC, cladMat.clone());
+    cladC_outer.userData.kind = "clad";
+    cladC_outer.position.set(cx, yC, min.z - eps);
+    cladC_outer.castShadow = SHADOW_ENABLED;
+    cladC_outer.receiveShadow = SHADOW_ENABLED;
+    cladC_outer.visible = showC;
+    overlayGroup.add(cladC_outer);
+
+    const cladC_inner = new THREE.Mesh(geoC, cladMat.clone());
+    cladC_inner.userData.kind = "clad";
+    cladC_inner.position.set(cx, yC, min.z - eps + cladThick);
+    cladC_inner.castShadow = SHADOW_ENABLED;
+    cladC_inner.receiveShadow = SHADOW_ENABLED;
+    cladC_inner.visible = showC;
+    overlayGroup.add(cladC_inner);
+
+    // B/D = trapèzes (plan Y/Z)
+    // côté gauche du trapèze = z=- (façade C) => hC
+    // côté droit  du trapèze = z=+ (façade A) => hA
+    const trapGeo = makeTrapezoidGeometry(widthZ, hC, hA);
+
+    // B = -X
+    const cladB_outer = new THREE.Mesh(trapGeo, cladMat.clone());
+    cladB_outer.userData.kind = "clad";
+    cladB_outer.rotation.y = Math.PI / 2;
+    cladB_outer.position.set(min.x - eps, min.y, cz);
+    cladB_outer.position.y = min.y; // ShapeGeometry est à partir de y=0
+    cladB_outer.castShadow = SHADOW_ENABLED;
+    cladB_outer.receiveShadow = SHADOW_ENABLED;
+    cladB_outer.visible = showB;
+    overlayGroup.add(cladB_outer);
+
+    const cladB_inner = new THREE.Mesh(trapGeo, cladMat.clone());
+    cladB_inner.userData.kind = "clad";
+    cladB_inner.rotation.y = Math.PI / 2;
+    cladB_inner.position.set(min.x - eps + cladThick, min.y, cz);
+    cladB_inner.castShadow = SHADOW_ENABLED;
+    cladB_inner.receiveShadow = SHADOW_ENABLED;
+    cladB_inner.visible = showB;
+    overlayGroup.add(cladB_inner);
+
+    // D = +X
+    const cladD_outer = new THREE.Mesh(trapGeo, cladMat.clone());
+    cladD_outer.userData.kind = "clad";
+    cladD_outer.rotation.y = -Math.PI / 2;
+    cladD_outer.position.set(max.x + eps, min.y, cz);
+    cladD_outer.castShadow = SHADOW_ENABLED;
+    cladD_outer.receiveShadow = SHADOW_ENABLED;
+    cladD_outer.visible = showD;
+    overlayGroup.add(cladD_outer);
+
+    const cladD_inner = new THREE.Mesh(trapGeo, cladMat.clone());
+    cladD_inner.userData.kind = "clad";
+    cladD_inner.rotation.y = -Math.PI / 2;
+    cladD_inner.position.set(max.x + eps - cladThick, min.y, cz);
+    cladD_inner.castShadow = SHADOW_ENABLED;
+    cladD_inner.receiveShadow = SHADOW_ENABLED;
+    cladD_inner.visible = showD;
+    overlayGroup.add(cladD_inner);
+
+    overlayGroup.userData = {
+      applyCladdingVisibility: () => {
+        cladA_outer.visible = showA; cladA_inner.visible = showA;
+        cladC_outer.visible = showC; cladC_inner.visible = showC;
+        cladB_outer.visible = showB; cladB_inner.visible = showB;
+        cladD_outer.visible = showD; cladD_inner.visible = showD;
+      }
+    };
 
   } else {
-    const yEave = y0 + height * GLOBAL_SCALE;
-    yHighA = yEave - CLAD_TOP_GAP;
-    yHighC = yEave - CLAD_TOP_GAP;
-
-    heightA = Math.max(0.2, yHighA - y0);
-    heightC = Math.max(0.2, yHighC - y0);
-  }
-
-  // double peau : outer + inner
-  function addCladPanel(mesh, outwardDir) {
-    mesh.castShadow = SHADOW_ENABLED;
-    mesh.receiveShadow = SHADOW_ENABLED;
-    mesh.userData.kind = "clad";
-    overlayGroup.add(mesh);
-
-    const inner = new THREE.Mesh(mesh.geometry, mesh.material.clone());
-    inner.rotation.copy(mesh.rotation);
-    inner.position.copy(mesh.position);
-    inner.position.addScaledVector(outwardDir, -cladThick);
-    inner.material.opacity = Math.min(1, CLAD_OPACITY * 0.98);
-    inner.castShadow = SHADOW_ENABLED;
-    inner.receiveShadow = SHADOW_ENABLED;
-    inner.userData.kind = "clad";
-    overlayGroup.add(inner);
-
-    return { outer: mesh, inner };
-  }
-
-  // Long pans A (+Z) et C (-Z)
-  const geoA = new THREE.BoxGeometry(lenX, heightA, cladThick);
-  const cladA_outer = new THREE.Mesh(geoA, cladMat.clone());
-  cladA_outer.position.set(cx, y0 + heightA / 2, max.z + eps);
-  const A = addCladPanel(cladA_outer, new THREE.Vector3(0, 0, 1));
-
-  const geoC = new THREE.BoxGeometry(lenX, heightC, cladThick);
-  const cladC_outer = new THREE.Mesh(geoC, cladMat.clone());
-  cladC_outer.position.set(cx, y0 + heightC / 2, min.z - eps);
-  const C = addCladPanel(cladC_outer, new THREE.Vector3(0, 0, -1));
-
-  // Pignons B (-X) et D (+X) : mono trapèze, bi triangle
-  let geoPignon = null;
-
-  if (type === "mono") {
-    const rise = widthZ * PITCH_RATIO;
-    const yHigh = y0 + height * GLOBAL_SCALE;     // A
-    const yLow  = yHigh - rise;                   // C
-
-    const topHigh = Math.max(0.2, (yHigh - CLAD_TOP_GAP) - y0);
-    const topLow  = Math.max(0.2, (yLow  - CLAD_TOP_GAP) - y0);
-
-    geoPignon = buildPignonGeometryMono(widthZ, topLow, topHigh);
-  } else {
+    // ===== BIPENTE =====
+    // Egout = baseTopY - CLAD_TOP_GAP, faîtage = + halfW*PITCH
     const halfW = widthZ / 2;
-    const yEave = y0 + height * GLOBAL_SCALE;
-    const ridgeY = (yEave + (halfW * PITCH_RATIO)) - CLAD_TOP_GAP;
-    const ridgeLocal = Math.max(0.2, ridgeY - y0);
+    const eaveAbs = (max.y + eps + 0.02) - CLAD_TOP_GAP;
+    const ridgeRise = halfW * PITCH_RATIO;
+    const ridgeAbs = eaveAbs + ridgeRise;
 
-    geoPignon = buildPignonGeometryBi(widthZ, ridgeLocal);
+    const eaveH = Math.max(0.2, eaveAbs - min.y);
+    const ridgeExtra = Math.max(0.05, ridgeAbs - (min.y + eaveH));
+
+    // A/C rectangles jusqu'à égout
+    const geoLong = new THREE.BoxGeometry(lenX, eaveH, cladThick);
+    const yLong = min.y + eaveH / 2;
+
+    // A = +Z
+    const cladA_outer = new THREE.Mesh(geoLong, cladMat.clone());
+    cladA_outer.userData.kind = "clad";
+    cladA_outer.position.set(cx, yLong, max.z + eps);
+    cladA_outer.castShadow = SHADOW_ENABLED;
+    cladA_outer.receiveShadow = SHADOW_ENABLED;
+    cladA_outer.visible = showA;
+    overlayGroup.add(cladA_outer);
+
+    const cladA_inner = new THREE.Mesh(geoLong, cladMat.clone());
+    cladA_inner.userData.kind = "clad";
+    cladA_inner.position.set(cx, yLong, max.z + eps - cladThick);
+    cladA_inner.castShadow = SHADOW_ENABLED;
+    cladA_inner.receiveShadow = SHADOW_ENABLED;
+    cladA_inner.visible = showA;
+    overlayGroup.add(cladA_inner);
+
+    // C = -Z
+    const cladC_outer = new THREE.Mesh(geoLong, cladMat.clone());
+    cladC_outer.userData.kind = "clad";
+    cladC_outer.position.set(cx, yLong, min.z - eps);
+    cladC_outer.castShadow = SHADOW_ENABLED;
+    cladC_outer.receiveShadow = SHADOW_ENABLED;
+    cladC_outer.visible = showC;
+    overlayGroup.add(cladC_outer);
+
+    const cladC_inner = new THREE.Mesh(geoLong, cladMat.clone());
+    cladC_inner.userData.kind = "clad";
+    cladC_inner.position.set(cx, yLong, min.z - eps + cladThick);
+    cladC_inner.castShadow = SHADOW_ENABLED;
+    cladC_inner.receiveShadow = SHADOW_ENABLED;
+    cladC_inner.visible = showC;
+    overlayGroup.add(cladC_inner);
+
+    // B/D : rectangle + triangle (pignon)
+    const rectGeo = new THREE.PlaneGeometry(widthZ, eaveH);
+    const triGeo = makeTriangleGeometry(widthZ, ridgeExtra);
+
+    // B = -X
+    const rectB_outer = new THREE.Mesh(rectGeo, cladMat.clone());
+    rectB_outer.userData.kind = "clad";
+    rectB_outer.rotation.y = Math.PI / 2;
+    rectB_outer.position.set(min.x - eps, min.y + eaveH / 2, cz);
+    rectB_outer.castShadow = SHADOW_ENABLED;
+    rectB_outer.receiveShadow = SHADOW_ENABLED;
+    rectB_outer.visible = showB;
+    overlayGroup.add(rectB_outer);
+
+    const triB_outer = new THREE.Mesh(triGeo, cladMat.clone());
+    triB_outer.userData.kind = "clad";
+    triB_outer.rotation.y = Math.PI / 2;
+    triB_outer.position.set(min.x - eps, min.y + eaveH, cz);
+    triB_outer.castShadow = SHADOW_ENABLED;
+    triB_outer.receiveShadow = SHADOW_ENABLED;
+    triB_outer.visible = showB;
+    overlayGroup.add(triB_outer);
+
+    // inner B
+    const rectB_inner = new THREE.Mesh(rectGeo, cladMat.clone());
+    rectB_inner.userData.kind = "clad";
+    rectB_inner.rotation.y = Math.PI / 2;
+    rectB_inner.position.set(min.x - eps + cladThick, min.y + eaveH / 2, cz);
+    rectB_inner.castShadow = SHADOW_ENABLED;
+    rectB_inner.receiveShadow = SHADOW_ENABLED;
+    rectB_inner.visible = showB;
+    overlayGroup.add(rectB_inner);
+
+    const triB_inner = new THREE.Mesh(triGeo, cladMat.clone());
+    triB_inner.userData.kind = "clad";
+    triB_inner.rotation.y = Math.PI / 2;
+    triB_inner.position.set(min.x - eps + cladThick, min.y + eaveH, cz);
+    triB_inner.castShadow = SHADOW_ENABLED;
+    triB_inner.receiveShadow = SHADOW_ENABLED;
+    triB_inner.visible = showB;
+    overlayGroup.add(triB_inner);
+
+    // D = +X
+    const rectD_outer = new THREE.Mesh(rectGeo, cladMat.clone());
+    rectD_outer.userData.kind = "clad";
+    rectD_outer.rotation.y = -Math.PI / 2;
+    rectD_outer.position.set(max.x + eps, min.y + eaveH / 2, cz);
+    rectD_outer.castShadow = SHADOW_ENABLED;
+    rectD_outer.receiveShadow = SHADOW_ENABLED;
+    rectD_outer.visible = showD;
+    overlayGroup.add(rectD_outer);
+
+    const triD_outer = new THREE.Mesh(triGeo, cladMat.clone());
+    triD_outer.userData.kind = "clad";
+    triD_outer.rotation.y = -Math.PI / 2;
+    triD_outer.position.set(max.x + eps, min.y + eaveH, cz);
+    triD_outer.castShadow = SHADOW_ENABLED;
+    triD_outer.receiveShadow = SHADOW_ENABLED;
+    triD_outer.visible = showD;
+    overlayGroup.add(triD_outer);
+
+    // inner D
+    const rectD_inner = new THREE.Mesh(rectGeo, cladMat.clone());
+    rectD_inner.userData.kind = "clad";
+    rectD_inner.rotation.y = -Math.PI / 2;
+    rectD_inner.position.set(max.x + eps - cladThick, min.y + eaveH / 2, cz);
+    rectD_inner.castShadow = SHADOW_ENABLED;
+    rectD_inner.receiveShadow = SHADOW_ENABLED;
+    rectD_inner.visible = showD;
+    overlayGroup.add(rectD_inner);
+
+    const triD_inner = new THREE.Mesh(triGeo, cladMat.clone());
+    triD_inner.userData.kind = "clad";
+    triD_inner.rotation.y = -Math.PI / 2;
+    triD_inner.position.set(max.x + eps - cladThick, min.y + eaveH, cz);
+    triD_inner.castShadow = SHADOW_ENABLED;
+    triD_inner.receiveShadow = SHADOW_ENABLED;
+    triD_inner.visible = showD;
+    overlayGroup.add(triD_inner);
+
+    overlayGroup.userData = {
+      applyCladdingVisibility: () => {
+        cladA_outer.visible = showA; cladA_inner.visible = showA;
+        cladC_outer.visible = showC; cladC_inner.visible = showC;
+        rectB_outer.visible = showB; rectB_inner.visible = showB;
+        triB_outer.visible = showB;  triB_inner.visible = showB;
+        rectD_outer.visible = showD; rectD_inner.visible = showD;
+        triD_outer.visible = showD;  triD_inner.visible = showD;
+      }
+    };
   }
 
-  // B = -X
-  const cladB_outer = new THREE.Mesh(geoPignon, cladMat.clone());
-  cladB_outer.position.set(min.x - eps, y0, cz);
-  const B = addCladPanel(cladB_outer, new THREE.Vector3(-1, 0, 0));
-
-  // D = +X
-  const cladD_outer = new THREE.Mesh(geoPignon, cladMat.clone());
-  cladD_outer.position.set(max.x + eps, y0, cz);
-  const D = addCladPanel(cladD_outer, new THREE.Vector3(1, 0, 0));
-
-  function applyCladdingVisibility() {
-    const showA = !!document.querySelector('input[name="claddingSide"][value="A"]:checked');
-    const showB = !!document.querySelector('input[name="claddingSide"][value="B"]:checked');
-    const showC = !!document.querySelector('input[name="claddingSide"][value="C"]:checked');
-    const showD = !!document.querySelector('input[name="claddingSide"][value="D"]:checked');
-
-    A.outer.visible = showA; A.inner.visible = showA;
-    B.outer.visible = showB; B.inner.visible = showB;
-    C.outer.visible = showC; C.inner.visible = showC;
-    D.outer.visible = showD; D.inner.visible = showD;
-  }
-  applyCladdingVisibility();
-  overlayGroup.userData = { applyCladdingVisibility };
-
-  // ========= SCALE SOL + FOND =========
+  // ===== SCALE SOL + FOND =====
   const radius = Math.max(lenX, widthZ) * 0.9;
 
   if (groundDisc) {
     groundDisc.geometry.dispose();
     groundDisc.geometry = new THREE.CircleGeometry(radius, 80);
-    groundDisc.position.y = y0 - 0.01;
+    groundDisc.position.y = 0;
   }
 
   if (padMesh) {
     padMesh.geometry.dispose();
     padMesh.geometry = new THREE.PlaneGeometry(lenX * 1.05, widthZ * 1.15);
-    padMesh.position.y = y0;
+    padMesh.position.y = 0.01;
   }
 
   if (backgroundPlane) {
-    backgroundPlane.position.set(cx, y0 + Math.max(2.5, heightA) * 0.6, -radius * 1.2);
+    backgroundPlane.position.set(cx, Math.max(3.5, heightY * 0.6), -radius * 1.2);
     backgroundPlane.scale.set(1.3, 1.3, 1);
   }
 
-  // ========= CAMÉRA =========
+  // ===== CAMÉRA =====
   if (controls && camera) {
-    const center = new THREE.Vector3(cx, y0 + Math.max(1.0, heightA * 0.55), cz);
+    const center = new THREE.Vector3(cx, Math.max(1.2, heightY * 0.45), cz);
     controls.target.set(center.x, center.y, center.z);
     camera.position.set(
       center.x + lenX * 0.9,
-      center.y + Math.max(3, heightA) * 0.9,
+      center.y + heightY * 1.1,
       center.z + widthZ * 1.0
     );
   }
@@ -1192,7 +1303,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   ["width", "length", "height"].forEach((id) => {
     $(id)?.addEventListener("change", () => {
       calculatePriceAndRecap();
-      update3DFromConfig();
     });
   });
 
@@ -1258,5 +1368,3 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   calculatePriceAndRecap();
 });
-
-
