@@ -455,7 +455,7 @@ const CLAD_THICKNESS = 0.035;
 // ✅ Rapprocher couverture/structure
 const ROOF_SINK_RATIO = 0.015; // avant trop grand
 const ROOF_DROP = 0.08;        // avant 0.40 => énorme écart
-const ROOF_GAP = 0.02;         // petit espace visuel
+const ROOF_GAP = 0.08;         // petit espace visuel
 
 // ✅ Bardage juste sous couverture
 const CLAD_TOP_GAP = 0.06;     // cm/visuel (ajuste si besoin)
@@ -843,6 +843,7 @@ if (slopeType === "mono") {
   roofMinusZ.castShadow = SHADOW_ENABLED;
   overlayGroup.add(roofMinusZ);
 }
+
 
 
   // ===== BARDAGE =====
