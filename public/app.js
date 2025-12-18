@@ -886,8 +886,14 @@ if (slopeType === "mono") {
   // car le shape est construit dans le plan (X=Z, Y=Y)
   gableShapeB.scale.x = -1;
 
-  gableShapeB.position.set(min.x - eps, 0, cz);
-  gableShapeD.position.set(max.x + eps, 0, cz);
+const gableOffset = (cladThick / 2) + eps;
+
+// B = côté gauche (–X)
+gableShapeB.position.set(min.x - gableOffset, 0, cz);
+
+// D = côté droit (+X)
+gableShapeD.position.set(max.x + gableOffset, 0, cz);
+
 
 
 } else {
