@@ -878,25 +878,40 @@ if (slopeType === "mono") {
   gableShapeB = new THREE.Mesh(geoGable, cladMat.clone());
   gableShapeD = new THREE.Mesh(geoGable, cladMat.clone());
 
-   // IMPORTANT : même pente pour B et D (point haut vers +Z)
-  gableShapeB.rotation.y = Math.PI / 2;   // face vers -X
-  gableShapeD.rotation.y = -Math.PI / 2;  // face vers +X
+ // ===== PIGNONS B / D =====
+let gableShapeB, gableShapeD;
 
-  // ✅ FIX : inverser uniquement B (miroir du shape sur son axe X local)
-  // car le shape est construit dans le plan (X=Z, Y=Y)
-  gableShapeB.scale.x = -1;
+if (slopeType === "mono") {
+  const deltaH = widthZ * PITCH_RATIO;
 
-const gableOffset = (cladThick / 2) + eps;
+  const yLow  = min.y + panelHeight - deltaH;
+  const yHigh = min.y + panelHeight;
 
-// B = côté gauche (–X)
-gableShapeB.position.set(min.x - gableOffset, 0, cz);
+  const shape = createMonoGableShape(widthZ, min.y, yLow, yHigh);
+  const geoGable = new THREE.ShapeGeometry(shape);
 
-// D = côté droit (+X)
-gableShapeD.position.set(max.x + gableOffset, 0, cz);
+  gableShapeB = new THREE.Mesh(geoGable, cladMat.clone());
+  gableShapeD = new THREE.Mesh(geoGable, cladMat.clone());
 
+  // ✅ rotations CORRECTES (swap)
+  // B = côté gauche => normal vers -X
+  gableShapeB.rotation.y = -Math.PI / 2;
 
+  // D = côté droit => normal vers +X
+  gableShapeD.rotation.y = +Math.PI / 2;
+
+  // ❌ IMPORTANT : on SUPPRIME le miroir
+  // gableShapeB.scale.x = -1;
+
+  const gableOffset = (cladThick / 2) + eps;
+
+  gableShapeB.position.set(min.x - gableOffset, 0, cz);
+  gableShapeD.position.set(max.x + gableOffset, 0, cz);
 
 } else {
+  // ... (bipente inchangé chez toi)
+}
+
   // Bipente
   const halfW = widthZ / 2;
   const ridgeH = halfW * PITCH_RATIO;
