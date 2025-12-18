@@ -803,9 +803,9 @@ if (slopeType === "mono") {
 
   const lift = (widthZ / 2) * Math.sin(angle);
 
-  roof.position.set(
+   roof.position.set(
     cx,
-    max.y + lift - ROOF_DROP - ROOF_GAP,
+    max.y - roofSink + lift - ROOF_DROP - (ROOF_GAP * 0.5), // ✅ plus collé en mono
     cz - (overhang / 2)
   );
 
@@ -878,12 +878,17 @@ if (slopeType === "mono") {
   gableShapeB = new THREE.Mesh(geoGable, cladMat.clone());
   gableShapeD = new THREE.Mesh(geoGable, cladMat.clone());
 
-  // IMPORTANT : même pente pour B et D
-  gableShapeB.rotation.y = Math.PI / 2;
-  gableShapeD.rotation.y = -Math.PI / 2;
+   // IMPORTANT : même pente pour B et D (point haut vers +Z)
+  gableShapeB.rotation.y = Math.PI / 2;   // face vers -X
+  gableShapeD.rotation.y = -Math.PI / 2;  // face vers +X
+
+  // ✅ FIX : inverser uniquement B (miroir du shape sur son axe X local)
+  // car le shape est construit dans le plan (X=Z, Y=Y)
+  gableShapeB.scale.x = -1;
 
   gableShapeB.position.set(min.x - eps, 0, cz);
   gableShapeD.position.set(max.x + eps, 0, cz);
+
 
 } else {
   // Bipente
