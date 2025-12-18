@@ -458,7 +458,7 @@ const ROOF_DROP = 0.08;        // avant 0.40 => énorme écart
 const ROOF_GAP = 0.08;         // petit espace visuel
 
 // ✅ Bardage juste sous couverture
-const CLAD_TOP_GAP = 0.06;     // cm/visuel (ajuste si besoin)
+const CLAD_TOP_GAP = 0.03;     // cm/visuel (ajuste si besoin)
 
 // OrbitControls
 const ORBIT_MIN_POLAR = 0.15 * Math.PI;
