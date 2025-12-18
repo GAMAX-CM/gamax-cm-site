@@ -787,148 +787,163 @@ function rebuildOverlays(bbox) {
     tex: cladTex,
     opacity: CLAD_OPACITY,
   });
+// ===== TOITURE (couverture) =====
+const slopeType = getSelectedType();
+const angle = Math.atan(PITCH_RATIO);
 
-  // ===== TOITURE (couverture) =====
-  const slopeType = getSelectedType();
+if (slopeType === "mono") {
+  const overhang = widthZ * ROOF_OVERHANG_RATIO;
 
-  if (slopeType === "mono") {
-    const angle = Math.atan(PITCH_RATIO);
-    const overhang = widthZ * ROOF_OVERHANG_RATIO;
+  const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ + overhang);
+  const roof = new THREE.Mesh(roofGeo, roofMat);
+  roof.userData.kind = "roof";
 
-    const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ + overhang);
-    const roof = new THREE.Mesh(roofGeo, roofMat);
-    roof.userData.kind = "roof";
-    roof.rotation.x = -angle;
+  // pente vers -Z (point haut façade A = +Z)
+  roof.rotation.x = -angle;
 
-    const lift = (widthZ / 2) * Math.sin(angle);
+  const lift = (widthZ / 2) * Math.sin(angle);
 
-    roof.position.set(
-      cx,
-      max.y + eps - roofSink + lift - ROOF_DROP + ROOF_GAP,
-      cz - (overhang / 2)
-    );
+  roof.position.set(
+    cx,
+    max.y + lift - ROOF_DROP - ROOF_GAP,
+    cz - (overhang / 2)
+  );
 
-    roof.castShadow = SHADOW_ENABLED;
-    roof.receiveShadow = false;
-    overlayGroup.add(roof);
+  roof.castShadow = SHADOW_ENABLED;
+  roof.receiveShadow = false;
+  overlayGroup.add(roof);
 
-  } else {
-    const angle = Math.atan(PITCH_RATIO);
-    const halfW = widthZ / 2;
+} else {
+  // ===== BIPENTE =====
+  const halfW = widthZ / 2;
+  const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
+  const lift = (halfW / 2) * Math.sin(angle);
 
-    const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
-    const lift = (halfW / 2) * Math.sin(angle);
+  // pan +Z
+  const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
+  roofPlusZ.userData.kind = "roof";
+  roofPlusZ.rotation.x = +angle;
+  roofPlusZ.position.set(
+    cx,
+    max.y + lift - ROOF_DROP - ROOF_GAP,
+    cz + halfW / 2
+  );
+  roofPlusZ.castShadow = SHADOW_ENABLED;
+  overlayGroup.add(roofPlusZ);
 
-    const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
-    roofPlusZ.userData.kind = "roof";
-    roofPlusZ.rotation.x = +angle;
-    roofPlusZ.position.set(cx, max.y + eps - roofSink + lift - ROOF_DROP + ROOF_GAP, cz + halfW / 2);
-    roofPlusZ.castShadow = SHADOW_ENABLED;
-    overlayGroup.add(roofPlusZ);
+  // pan -Z
+  const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
+  roofMinusZ.userData.kind = "roof";
+  roofMinusZ.rotation.x = -angle;
+  roofMinusZ.position.set(
+    cx,
+    max.y + lift - ROOF_DROP - ROOF_GAP,
+    cz - halfW / 2
+  );
+  roofMinusZ.castShadow = SHADOW_ENABLED;
+  overlayGroup.add(roofMinusZ);
+}
 
-    const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
-    roofMinusZ.userData.kind = "roof";
-    roofMinusZ.rotation.x = -angle;
-    roofMinusZ.position.set(cx, max.y + eps - roofSink + lift - ROOF_DROP + ROOF_GAP, cz - halfW / 2);
-    roofMinusZ.castShadow = SHADOW_ENABLED;
-    overlayGroup.add(roofMinusZ);
-  }
 
   // ===== BARDAGE =====
-  // Hauteur bardage = hauteur structure - petit gap sous couverture
-  const panelHeight = Math.max(0.2, heightY - CLAD_TOP_GAP);
-  const yCenter = min.y + panelHeight / 2;
+// hauteur bardage = structure - petit jour sous couverture
+const panelHeight = Math.max(0.2, heightY - CLAD_TOP_GAP);
+const yCenter = min.y + panelHeight / 2;
 
-  // Long pans A/C (rectangles)
-  const geoLong = new THREE.BoxGeometry(lenX, panelHeight, cladThick);
+// long pans A / C
+const geoLong = new THREE.BoxGeometry(lenX, panelHeight, cladThick);
 
-  // A = +Z
-  const cladA_outer = new THREE.Mesh(geoLong, cladMat.clone());
-  cladA_outer.position.set(cx, yCenter, max.z + eps);
-  // C = -Z
-  const cladC_outer = new THREE.Mesh(geoLong, cladMat.clone());
-  cladC_outer.position.set(cx, yCenter, min.z - eps);
+// A = +Z (façade haute en monopente)
+const cladA_outer = new THREE.Mesh(geoLong, cladMat.clone());
+cladA_outer.position.set(cx, yCenter, max.z + eps);
 
-  // Pignons B/D (formes)
-  // On fabrique des shapes dans le plan (Z,Y), puis on les place sur X
-  let gableShapeB = null;
-  let gableShapeD = null;
+// C = -Z
+const cladC_outer = new THREE.Mesh(geoLong, cladMat.clone());
+cladC_outer.position.set(cx, yCenter, min.z - eps);
 
-  if (slopeType === "mono") {
-    // Monopente : point haut façade A => +Z
-    const deltaH = widthZ * PITCH_RATIO;
-    const yLowTop = (min.y + panelHeight) - deltaH * 0.15; // un peu plus bas visuellement
-    const yHighTop = yLowTop + deltaH;
+// ===== PIGNONS B / D =====
+let gableShapeB, gableShapeD;
 
-    const shape = createMonoGableShape(widthZ, min.y, yLowTop, yHighTop);
-    const geoGable = new THREE.ShapeGeometry(shape);
+if (slopeType === "mono") {
+  // Monopente : point haut = façade A (+Z)
+  const deltaH = widthZ * PITCH_RATIO;
 
-    gableShapeB = new THREE.Mesh(geoGable, cladMat.clone());
-    gableShapeD = new THREE.Mesh(geoGable, cladMat.clone());
+  const yLow = min.y + panelHeight - deltaH;
+  const yHigh = min.y + panelHeight;
 
-    // orientation : shape est (x=Z, y=Y). On le met dans le plan Y/Z et on le tourne vers X.
-    gableShapeB.rotation.y = Math.PI / 2;   // face vers -X
-    gableShapeD.rotation.y = -Math.PI / 2;  // face vers +X
+  const shape = createMonoGableShape(widthZ, min.y, yLow, yHigh);
+  const geoGable = new THREE.ShapeGeometry(shape);
 
-    gableShapeB.position.set(min.x - eps, 0, cz);
-    gableShapeD.position.set(max.x + eps, 0, cz);
+  gableShapeB = new THREE.Mesh(geoGable, cladMat.clone());
+  gableShapeD = new THREE.Mesh(geoGable, cladMat.clone());
 
-  } else {
-    // Bipente : forme maison
-    const ridgeExtra = (widthZ / 2) * PITCH_RATIO;
-    const yRidge = min.y + panelHeight;
-    const yEave = yRidge - ridgeExtra;
+  // IMPORTANT : même pente pour B et D
+  gableShapeB.rotation.y = Math.PI / 2;
+  gableShapeD.rotation.y = -Math.PI / 2;
 
-    const shape = createBiGableShape(widthZ, min.y, yEave, yRidge);
-    const geoGable = new THREE.ShapeGeometry(shape);
+  gableShapeB.position.set(min.x - eps, 0, cz);
+  gableShapeD.position.set(max.x + eps, 0, cz);
 
-    gableShapeB = new THREE.Mesh(geoGable, cladMat.clone());
-    gableShapeD = new THREE.Mesh(geoGable, cladMat.clone());
+} else {
+  // Bipente
+  const halfW = widthZ / 2;
+  const ridgeH = halfW * PITCH_RATIO;
 
-    gableShapeB.rotation.y = Math.PI / 2;
-    gableShapeD.rotation.y = -Math.PI / 2;
+  const yEave = min.y + panelHeight - ridgeH;
+  const yRidge = min.y + panelHeight;
 
-    gableShapeB.position.set(min.x - eps, 0, cz);
-    gableShapeD.position.set(max.x + eps, 0, cz);
-  }
+  const shape = createBiGableShape(widthZ, min.y, yEave, yRidge);
+  const geoGable = new THREE.ShapeGeometry(shape);
 
-  function addDoubleSkin(mesh, outwardDir) {
-    mesh.castShadow = SHADOW_ENABLED;
-    mesh.receiveShadow = SHADOW_ENABLED;
-    mesh.userData.kind = "clad";
-    overlayGroup.add(mesh);
+  gableShapeB = new THREE.Mesh(geoGable, cladMat.clone());
+  gableShapeD = new THREE.Mesh(geoGable, cladMat.clone());
 
-    const inner = new THREE.Mesh(mesh.geometry, mesh.material.clone());
-    inner.rotation.copy(mesh.rotation);
-    inner.position.copy(mesh.position);
-    inner.position.addScaledVector(outwardDir, -cladThick);
-    inner.material.opacity = Math.min(1, CLAD_OPACITY * 0.98);
-    inner.castShadow = SHADOW_ENABLED;
-    inner.receiveShadow = SHADOW_ENABLED;
-    inner.userData.kind = "clad";
-    overlayGroup.add(inner);
+  gableShapeB.rotation.y = Math.PI / 2;
+  gableShapeD.rotation.y = -Math.PI / 2;
 
-    return { outer: mesh, inner };
-  }
+  gableShapeB.position.set(min.x - eps, 0, cz);
+  gableShapeD.position.set(max.x + eps, 0, cz);
+}
 
-  const A = addDoubleSkin(cladA_outer, new THREE.Vector3(0, 0, 1));
-  const C = addDoubleSkin(cladC_outer, new THREE.Vector3(0, 0, -1));
-  const B = addDoubleSkin(gableShapeB, new THREE.Vector3(-1, 0, 0));
-  const D = addDoubleSkin(gableShapeD, new THREE.Vector3(1, 0, 0));
+// ===== DOUBLE PEAU =====
+function addDoubleSkin(mesh, outwardDir) {
+  mesh.castShadow = SHADOW_ENABLED;
+  mesh.receiveShadow = SHADOW_ENABLED;
+  mesh.userData.kind = "clad";
+  overlayGroup.add(mesh);
 
-  function applyCladdingVisibility() {
-    const showA = !!document.querySelector('input[name="claddingSide"][value="A"]:checked');
-    const showB = !!document.querySelector('input[name="claddingSide"][value="B"]:checked');
-    const showC = !!document.querySelector('input[name="claddingSide"][value="C"]:checked');
-    const showD = !!document.querySelector('input[name="claddingSide"][value="D"]:checked');
+  const inner = new THREE.Mesh(mesh.geometry, mesh.material.clone());
+  inner.rotation.copy(mesh.rotation);
+  inner.position.copy(mesh.position);
+  inner.position.addScaledVector(outwardDir, -cladThick);
+  inner.material.opacity = Math.min(1, CLAD_OPACITY * 0.98);
+  inner.castShadow = SHADOW_ENABLED;
+  inner.receiveShadow = SHADOW_ENABLED;
+  inner.userData.kind = "clad";
+  overlayGroup.add(inner);
 
-    A.outer.visible = showA; A.inner.visible = showA;
-    B.outer.visible = showB; B.inner.visible = showB;
-    C.outer.visible = showC; C.inner.visible = showC;
-    D.outer.visible = showD; D.inner.visible = showD;
-  }
-  applyCladdingVisibility();
-  overlayGroup.userData = { applyCladdingVisibility };
+  return { outer: mesh, inner };
+}
+
+const A = addDoubleSkin(cladA_outer, new THREE.Vector3(0, 0, 1));
+const C = addDoubleSkin(cladC_outer, new THREE.Vector3(0, 0, -1));
+const B = addDoubleSkin(gableShapeB, new THREE.Vector3(-1, 0, 0));
+const D = addDoubleSkin(gableShapeD, new THREE.Vector3(1, 0, 0));
+
+function applyCladdingVisibility() {
+  const showA = !!document.querySelector('input[name="claddingSide"][value="A"]:checked');
+  const showB = !!document.querySelector('input[name="claddingSide"][value="B"]:checked');
+  const showC = !!document.querySelector('input[name="claddingSide"][value="C"]:checked');
+  const showD = !!document.querySelector('input[name="claddingSide"][value="D"]:checked');
+
+  A.outer.visible = showA; A.inner.visible = showA;
+  B.outer.visible = showB; B.inner.visible = showB;
+  C.outer.visible = showC; C.inner.visible = showC;
+  D.outer.visible = showD; D.inner.visible = showD;
+}
+
+applyCladdingVisibility();
+overlayGroup.userData = { applyCladdingVisibility };
 
   // ===== SCALE SOL + FOND =====
   const radius = Math.max(lenX, widthZ) * 0.9;
