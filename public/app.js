@@ -862,22 +862,6 @@ cladA_outer.position.set(cx, yCenter, max.z + eps);
 const cladC_outer = new THREE.Mesh(geoLong, cladMat.clone());
 cladC_outer.position.set(cx, yCenter, min.z - eps);
 
-// ===== PIGNONS B / D =====
-let gableShapeB, gableShapeD;
-
-if (slopeType === "mono") {
-  // Monopente : point haut = façade A (+Z)
-  const deltaH = widthZ * PITCH_RATIO;
-
-  const yLow = min.y + panelHeight - deltaH;
-  const yHigh = min.y + panelHeight;
-
-  const shape = createMonoGableShape(widthZ, min.y, yLow, yHigh);
-  const geoGable = new THREE.ShapeGeometry(shape);
-
-  gableShapeB = new THREE.Mesh(geoGable, cladMat.clone());
-  gableShapeD = new THREE.Mesh(geoGable, cladMat.clone());
-
  // ===== PIGNONS B / D =====
 let gableShapeB, gableShapeD;
 
