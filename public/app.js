@@ -931,7 +931,7 @@ function rebuildOverlays(bbox) {
   };
    
   // ===== TOITURE =====
-  const ROOF_CONTACT_GAP = 0.004; // 4 mm : évite le z-fighting (tu peux mettre 0.002)
+  const ROOF_CONTACT_GAP = 0.002; // 4 mm : évite le z-fighting (tu peux mettre 0.002)
 
   function snapMeshMinYTo(mesh, targetY) {
     // aligne le point le plus bas du mesh sur targetY
