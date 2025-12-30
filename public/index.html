@@ -420,100 +420,72 @@
                   </label>
                 </div>
               </div>
+<!-- ✅ Habillages de finition : ordre réorganisé -->
+<div class="bardage-grid option-grid">
 
-              <!-- Options compactes + choix de côté -->
-              <div class="bardage-grid">
+  <!-- Ligne 1 : Rejet d'eau + Angles -->
+  <label class="bardage-choice">
+    <input type="checkbox" id="optRejetEau">
+    <div class="bardage-card option-card">
+      <span class="bardage-label-main">Rejet d’eau</span>
+      <span class="bardage-label-sub">Profil en pied de bardage.</span>
+    </div>
+  </label>
 
-                <!-- Faîtière avec solin (côté B/D) -->
-                <div>
-                  <label class="bardage-choice">
-                    <input type="checkbox" id="optFaitiereSolin">
-                    <div class="bardage-card option-card">
-                      <span class="bardage-label-main">Faîtière avec solin</span>
-                      <span class="bardage-label-sub">Finition haute assurant l’étanchéité.</span>
-                    </div>
-                  </label>
+  <label class="bardage-choice">
+    <input type="checkbox" id="optAngles">
+    <div class="bardage-card option-card">
+      <span class="bardage-label-main">Angles de bardage</span>
+      <span class="bardage-label-sub">Finition des angles sortants/rentrants.</span>
+    </div>
+  </label>
 
-                  <div class="field-help" style="margin:6px 0 0 6px;">
-                    Côté :
-                    <label style="margin-left:10px;"><input type="checkbox" id="faitiereSolinSideB"> B</label>
-                    <label style="margin-left:10px;"><input type="checkbox" id="faitiereSolinSideD"> D</label>
-                  </div>
-                </div>
+  <!-- Ligne 2 : Grande rive + Rive avec solin -->
+  <label class="bardage-choice">
+    <input type="checkbox" id="optGrandeRive">
+    <div class="bardage-card option-card">
+      <span class="bardage-label-main">Grande rive</span>
+      <span class="bardage-label-sub">Habillage périphérique renforcé.</span>
+    </div>
+  </label>
 
-                <!-- Rive avec solin (côté B/D) -->
-                <div>
-                  <label class="bardage-choice">
-                    <input type="checkbox" id="optRiveSolin">
-                    <div class="bardage-card option-card">
-                      <span class="bardage-label-main">Rive avec solin</span>
-                      <span class="bardage-label-sub">Finition des rives au pignon (sélectionnez le côté).</span>
-                    </div>
-                  </label>
+  <label class="bardage-choice">
+    <input type="checkbox" id="optRiveSolin">
+    <div class="bardage-card option-card">
+      <span class="bardage-label-main">Rive avec solin</span>
+      <span class="bardage-label-sub">Finition des rives (choix côté).</span>
+    </div>
+  </label>
 
-                  <div class="field-help" style="margin:6px 0 0 6px;">
-                    Côté :
-                    <label style="margin-left:10px;"><input type="checkbox" id="riveSolinSideB"> B</label>
-                    <label style="margin-left:10px;"><input type="checkbox" id="riveSolinSideD"> D</label>
-                  </div>
-                </div>
+  <!-- Ligne 3 : Faîtière avec solin + Faîtière simple -->
+  <label class="bardage-choice">
+    <input type="checkbox" id="optFaitiereSolin">
+    <div class="bardage-card option-card">
+      <span class="bardage-label-main">Faîtière avec solin</span>
+      <span class="bardage-label-sub">Étanchéité en arête haute.</span>
+    </div>
+  </label>
 
-                <!-- Grande rive (côté B/D) -->
-                <div>
-                  <label class="bardage-choice">
-                    <input type="checkbox" id="optGrandeRive">
-                    <div class="bardage-card option-card">
-                      <span class="bardage-label-main">Grande rive</span>
-                      <span class="bardage-label-sub">Habillage périphérique renforcé (sélectionnez le côté).</span>
-                    </div>
-                  </label>
+  <label class="bardage-choice">
+    <input type="checkbox" id="optFaitiereSimple">
+    <div class="bardage-card option-card">
+      <span class="bardage-label-main">Faîtière simple</span>
+      <span class="bardage-label-sub">Faîtière standard.</span>
+    </div>
+  </label>
 
-                  <div class="field-help" style="margin:6px 0 0 6px;">
-                    Côté :
-                    <label style="margin-left:10px;"><input type="checkbox" id="grandeRiveSideB"> B</label>
-                    <label style="margin-left:10px;"><input type="checkbox" id="grandeRiveSideD"> D</label>
-                  </div>
-                </div>
+  <!-- Ligne 4 : Faîtière double (seule) -->
+  <label class="bardage-choice" style="grid-column: 1 / -1;">
+    <input type="checkbox" id="optFaitiereDouble">
+    <div class="bardage-card option-card">
+      <span class="bardage-label-main">Faîtière double</span>
+      <span class="bardage-label-sub">Pour bipente (arête de faîtage).</span>
+    </div>
+  </label>
 
-                <!-- Angles -->
-                <label class="bardage-choice">
-                  <input type="checkbox" id="optAngles">
-                  <div class="bardage-card option-card">
-                    <span class="bardage-label-main">Angles de bardage</span>
-                    <span class="bardage-label-sub">Finition des angles sortants / rentrants.</span>
-                  </div>
-                </label>
+</div>
 
-                <!-- Rejet d’eau -->
-                <label class="bardage-choice">
-                  <input type="checkbox" id="optRejetEau">
-                  <div class="bardage-card option-card">
-                    <span class="bardage-label-main">Rejet d’eau</span>
-                    <span class="bardage-label-sub">Profil au pied du bardage (sur façades bardées).</span>
-                  </div>
-                </label>
-
-                <!-- Faîtière double -->
-                <label class="bardage-choice">
-                  <input type="checkbox" id="optFaitiereDouble">
-                  <div class="bardage-card option-card">
-                    <span class="bardage-label-main">Faîtière double</span>
-                    <span class="bardage-label-sub">Pour toiture bipente (arête de faîtage).</span>
-                  </div>
-                </label>
-
-                <!-- Faîtière simple -->
-                <label class="bardage-choice">
-                  <input type="checkbox" id="optFaitiereSimple">
-                  <div class="bardage-card option-card">
-                    <span class="bardage-label-main">Faîtière simple</span>
-                    <span class="bardage-label-sub">Pour toiture monopente (arête haute).</span>
-                  </div>
-                </label>
-
-              </div>
-            </div>
-
+              
             <!-- 5.2 POSE / MONTAGE -->
             <div class="field">
               <label>Pose & montage</label>
