@@ -1018,40 +1018,52 @@ function rebuildOverlays(bbox) {
   }
 
   function addDoubleSkin(mesh, outwardDir) {
-    mesh.castShadow = SHADOW_ENABLED;
-    mesh.receiveShadow = SHADOW_ENABLED;
-    mesh.userData.kind = "clad";
-    overlayGroup.add(mesh);
+  mesh.castShadow = SHADOW_ENABLED;
+  mesh.receiveShadow = SHADOW_ENABLED;
+  mesh.userData.kind = "clad";
+  overlayGroup.add(mesh);
 
-    const inner = new THREE.Mesh(mesh.geometry, mesh.material.clone());
-    inner.rotation.copy(mesh.rotation);
-    inner.position.copy(mesh.position);
-    inner.position.addScaledVector(outwardDir, -cladThick);
-    inner.material.opacity = Math.min(1, CLAD_OPACITY * 0.98);
-    inner.castShadow = SHADOW_ENABLED;
-    inner.receiveShadow = SHADOW_ENABLED;
-    inner.userData.kind = "clad";
-    overlayGroup.add(inner);
-
-    return { outer: mesh, inner };
+  // ✅ Pour les pignons (ShapeGeometry), on NE FAIT PAS de double peau
+  const isGable = (mesh.geometry?.type === "ShapeGeometry");
+  if (isGable) {
+    return { outer: mesh, inner: null };
   }
+
+  // ✅ Double peau uniquement pour A/C (BoxGeometry)
+  const inner = new THREE.Mesh(mesh.geometry, mesh.material.clone());
+  inner.rotation.copy(mesh.rotation);
+  inner.position.copy(mesh.position);
+
+  // inward
+  inner.position.addScaledVector(outwardDir, -cladThick);
+  inner.material.opacity = Math.min(1, CLAD_OPACITY * 0.98);
+
+  inner.castShadow = SHADOW_ENABLED;
+  inner.receiveShadow = SHADOW_ENABLED;
+  inner.userData.kind = "clad";
+  overlayGroup.add(inner);
+
+  return { outer: mesh, inner };
+}
+
 
   const A = addDoubleSkin(cladA_outer, new THREE.Vector3(0, 0, 1));
   const C = addDoubleSkin(cladC_outer, new THREE.Vector3(0, 0, -1));
   const B = addDoubleSkin(gableShapeB, new THREE.Vector3(-1, 0, 0));
   const D = addDoubleSkin(gableShapeD, new THREE.Vector3(1, 0, 0));
 
-  function applyCladdingVisibility() {
-    const showA = !!document.querySelector('input[name="claddingSide"][value="A"]:checked');
-    const showB = !!document.querySelector('input[name="claddingSide"][value="B"]:checked');
-    const showC = !!document.querySelector('input[name="claddingSide"][value="C"]:checked');
-    const showD = !!document.querySelector('input[name="claddingSide"][value="D"]:checked');
+function applyCladdingVisibility() {
+  const showA = !!document.querySelector('input[name="claddingSide"][value="A"]:checked');
+  const showB = !!document.querySelector('input[name="claddingSide"][value="B"]:checked');
+  const showC = !!document.querySelector('input[name="claddingSide"][value="C"]:checked');
+  const showD = !!document.querySelector('input[name="claddingSide"][value="D"]:checked');
 
-    A.outer.visible = showA; A.inner.visible = showA;
-    B.outer.visible = showB; B.inner.visible = showB;
-    C.outer.visible = showC; C.inner.visible = showC;
-    D.outer.visible = showD; D.inner.visible = showD;
-  }
+  A.outer.visible = showA; if (A.inner) A.inner.visible = showA;
+  B.outer.visible = showB; if (B.inner) B.inner.visible = showB;
+  C.outer.visible = showC; if (C.inner) C.inner.visible = showC;
+  D.outer.visible = showD; if (D.inner) D.inner.visible = showD;
+}
+
 
   applyCladdingVisibility();
   overlayGroup.userData.applyCladdingVisibility = applyCladdingVisibility;
@@ -1092,13 +1104,34 @@ function rebuildOverlays(bbox) {
     }
   }
 
-  function addLine(p1, p2, color) {
-    const geom = new THREE.BufferGeometry().setFromPoints([p1, p2]);
-    const mat = new THREE.LineBasicMaterial({ color });
-    const line = new THREE.Line(geom, mat);
-    line.renderOrder = 999;
-    highlightGroup.add(line);
-  }
+function addBand(p1, p2, color, radius = 0.045) {
+  const curve = new THREE.CatmullRomCurve3([p1, p2]);
+
+  const geom = new THREE.TubeGeometry(
+    curve,
+    1,          // tubularSegments
+    radius,     // épaisseur (augmente pour + visible)
+    10,         // radialSegments
+    false
+  );
+
+  const mat = new THREE.MeshStandardMaterial({
+    color,
+    emissive: new THREE.Color(color),
+    emissiveIntensity: 0.55,
+    transparent: true,
+    opacity: 0.95,
+    depthTest: false,
+    depthWrite: false,
+    metalness: 0.1,
+    roughness: 0.35,
+  });
+
+  const mesh = new THREE.Mesh(geom, mat);
+  mesh.renderOrder = 999;
+  highlightGroup.add(mesh);
+}
+
 
   function applyTrimHighlights() {
     clearHighlights();
@@ -1132,7 +1165,7 @@ function rebuildOverlays(bbox) {
         const yHigh = yOnMonoRoof(max.z) + 0.02;
 
         if (wantFullRidge) {
-          addLine(
+          addBand(
             new THREE.Vector3(min.x, yHigh, zHigh),
             new THREE.Vector3(max.x, yHigh, zHigh),
             trimColor
@@ -1145,14 +1178,14 @@ function rebuildOverlays(bbox) {
           const d = $("faitiereSolinSideD")?.checked;
 
           if (b) {
-            addLine(
+            addBand(
               new THREE.Vector3(min.x, yHigh, zHigh),
               new THREE.Vector3(min.x + seg, yHigh, zHigh),
               trimColor
             );
           }
           if (d) {
-            addLine(
+            addBand(
               new THREE.Vector3(max.x - seg, yHigh, zHigh),
               new THREE.Vector3(max.x, yHigh, zHigh),
               trimColor
@@ -1167,7 +1200,7 @@ function rebuildOverlays(bbox) {
 
         // en bipente, faîtière solin & simple sont désactivées
         if (wantFullRidge) {
-          addLine(
+          addBand(
             new THREE.Vector3(min.x, yR, zR),
             new THREE.Vector3(max.x, yR, zR),
             trimColor
@@ -1192,7 +1225,7 @@ function rebuildOverlays(bbox) {
           const z2 = max.z + eps * 0.2;
           const y1 = yOnMonoRoof(min.z) + 0.02;
           const y2 = yOnMonoRoof(max.z) + 0.02;
-          addLine(
+          addBand(
             new THREE.Vector3(x + outwardX, y1, z1),
             new THREE.Vector3(x + outwardX, y2, z2),
             trimColor
@@ -1210,14 +1243,14 @@ function rebuildOverlays(bbox) {
           const yEaveMinus = yOnBiRoofMinus(min.z) + 0.02;
 
           // pan +Z : (x, max.z) -> (x, cz)
-          addLine(
+          addBand(
             new THREE.Vector3(x + outwardX, yEavePlus, max.z + eps * 0.2),
             new THREE.Vector3(x + outwardX, yR, cz),
             trimColor
           );
 
           // pan -Z : (x, min.z) -> (x, cz)
-          addLine(
+          addBand(
             new THREE.Vector3(x + outwardX, yEaveMinus, min.z - eps * 0.2),
             new THREE.Vector3(x + outwardX, yR, cz),
             trimColor
@@ -1242,7 +1275,7 @@ function rebuildOverlays(bbox) {
       ];
 
       corners.forEach(([x, z]) => {
-        addLine(
+        addBand(
           new THREE.Vector3(x, y0, z),
           new THREE.Vector3(x, yTop, z),
           trimColor
@@ -1260,28 +1293,28 @@ function rebuildOverlays(bbox) {
       const showD = !!document.querySelector('input[name="claddingSide"][value="D"]:checked');
 
       if (showA) {
-        addLine(
+        addBand(
           new THREE.Vector3(min.x, yBase, max.z + eps * 0.6),
           new THREE.Vector3(max.x, yBase, max.z + eps * 0.6),
           trimColor
         );
       }
       if (showC) {
-        addLine(
+        addBand(
           new THREE.Vector3(min.x, yBase, min.z - eps * 0.6),
           new THREE.Vector3(max.x, yBase, min.z - eps * 0.6),
           trimColor
         );
       }
       if (showB) {
-        addLine(
+        addBand(
           new THREE.Vector3(min.x - eps * 0.6, yBase, min.z),
           new THREE.Vector3(min.x - eps * 0.6, yBase, max.z),
           trimColor
         );
       }
       if (showD) {
-        addLine(
+        addBand(
           new THREE.Vector3(max.x + eps * 0.6, yBase, min.z),
           new THREE.Vector3(max.x + eps * 0.6, yBase, max.z),
           trimColor
