@@ -931,14 +931,65 @@ function rebuildOverlays(bbox) {
   };
    
   // ===== TOITURE =====
-  const ROOF_CONTACT_GAP = 0.002; // 4 mm : évite le z-fighting (tu peux mettre 0.002)
-
-  function snapMeshMinYTo(mesh, targetY) {
-    // aligne le point le plus bas du mesh sur targetY
+    // ===== Helpers (snap + détection panne haute) =====
+  function snapMeshMinYTo(mesh, targetMinY) {
     const bb = new THREE.Box3().setFromObject(mesh);
-    const dy = targetY - bb.min.y;
+    const dy = targetMinY - bb.min.y;
     mesh.position.y += dy;
   }
+
+  function getRoofSeatYFromStructure(structureGroup, bbox) {
+    if (!structureGroup || !bbox) return null;
+
+    const min = bbox.min, max = bbox.max;
+    const lenX = max.x - min.x;
+    const widthZ = max.z - min.z;
+    const heightY = max.y - min.y;
+
+    const topZoneMinY = max.y - heightY * 0.35;     // zone haute
+    const thinYMax = Math.max(0.06, heightY * 0.08); // pièce "fine" en Y
+
+    let best = null;
+
+    structureGroup.traverse((obj) => {
+      if (!obj.isMesh) return;
+
+      const bb = new THREE.Box3().setFromObject(obj);
+      const size = bb.getSize(new THREE.Vector3());
+
+      // proche du haut
+      if (bb.max.y < topZoneMinY) return;
+
+      // pièce "fine" verticalement
+      if (size.y > thinYMax) return;
+
+      // plutôt longue (pannes : très longues en X, ou parfois en Z)
+      const longEnoughX = size.x > lenX * 0.35;
+      const longEnoughZ = size.z > widthZ * 0.35;
+      if (!longEnoughX && !longEnoughZ) return;
+
+      // score : on privilégie la plus haute et la plus longue
+      const score = (bb.max.y * 10) + Math.max(size.x, size.z);
+
+      if (!best || score > best.score) {
+        best = { score, yTop: bb.max.y };
+      }
+    });
+
+    return best ? best.yTop : null;
+  }
+
+  // ===== TOITURE (couverture) =====
+  const ROOF_CONTACT_GAP = 0.004; // anti scintillement (très faible)
+  const slopeType = getSelectedType();
+  const angle = Math.atan(PITCH_RATIO);
+
+  // 👉 niveau "porteur" : dessus de la panne haute (auto)
+  // bbox vient de buildStructureFromConfig() -> structureGroup est déjà en place
+  const seatY = getRoofSeatYFromStructure(structureGroup, bbox);
+  // fallback si jamais la détection ne trouve rien
+  const seatFallbackY = (max.y - roofSink) - 0.18;
+  const targetMinY = (seatY ?? seatFallbackY) - ROOF_CONTACT_GAP;
 
   if (slopeType === "mono") {
     const overhang = widthZ * ROOF_OVERHANG_RATIO;
@@ -946,46 +997,57 @@ function rebuildOverlays(bbox) {
     const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.userData.kind = "roof";
 
-    // pente vers -Z
+    // pente vers -Z (point haut façade A = +Z)
     roof.rotation.x = -angle;
 
-    // placement "approx" (on snap juste après)
+    const lift = (widthZ / 2) * Math.sin(angle);
+
+    // position "approx" (le snap finira le collage)
     roof.position.set(
       cx,
-      max.y,              // on part haut, puis on colle avec snap
+      (max.y - roofSink) + lift - ROOF_DROP, // on garde juste ROOF_DROP
       cz - (overhang / 2)
     );
 
     roof.castShadow = SHADOW_ENABLED;
+    roof.receiveShadow = false;
     overlayGroup.add(roof);
 
-    // ✅ colle vraiment la toiture au haut de structure
-    snapMeshMinYTo(roof, max.y - roofSink - ROOF_CONTACT_GAP);
+    // ✅ collage réel sur la panne haute
+    snapMeshMinYTo(roof, targetMinY);
 
     overlayGroup.userData.roof = { type: "mono", roof };
 
   } else {
     const halfW = widthZ / 2;
     const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
+    const lift = (halfW / 2) * Math.sin(angle);
 
     const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
     roofPlusZ.userData.kind = "roof";
     roofPlusZ.rotation.x = +angle;
-    roofPlusZ.position.set(cx, max.y, cz + halfW / 2);
+    roofPlusZ.position.set(
+      cx,
+      (max.y - roofSink) + lift - ROOF_DROP,
+      cz + halfW / 2
+    );
     roofPlusZ.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roofPlusZ);
 
     const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
     roofMinusZ.userData.kind = "roof";
     roofMinusZ.rotation.x = -angle;
-    roofMinusZ.position.set(cx, max.y, cz - halfW / 2);
+    roofMinusZ.position.set(
+      cx,
+      (max.y - roofSink) + lift - ROOF_DROP,
+      cz - halfW / 2
+    );
     roofMinusZ.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roofMinusZ);
 
-    // ✅ colle vraiment les 2 pans au haut de structure
-    const target = max.y - roofSink - ROOF_CONTACT_GAP;
-    snapMeshMinYTo(roofPlusZ, target);
-    snapMeshMinYTo(roofMinusZ, target);
+    // ✅ collage réel sur la panne haute (même niveau pour les 2 pans)
+    snapMeshMinYTo(roofPlusZ, targetMinY);
+    snapMeshMinYTo(roofMinusZ, targetMinY);
 
     overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ };
   }
