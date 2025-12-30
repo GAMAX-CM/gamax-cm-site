@@ -929,71 +929,67 @@ function rebuildOverlays(bbox) {
   overlayGroup.userData.ctx = {
     min, max, cx, cz, lenX, widthZ, heightY, eps, angle, roofSink, roofThick, cladThick
   };
+   
+  // ===== TOITURE =====
+  const ROOF_CONTACT_GAP = 0.004; // 4 mm : évite le z-fighting (tu peux mettre 0.002)
 
-// ===== TOITURE (couverture) =====
-if (slopeType === "mono") {
-  const overhang = widthZ * ROOF_OVERHANG_RATIO;
-  const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ + overhang);
-  const roof = new THREE.Mesh(roofGeo, roofMat);
-  roof.userData.kind = "roof";
-  roof.rotation.x = -angle;
+  function snapMeshMinYTo(mesh, targetY) {
+    // aligne le point le plus bas du mesh sur targetY
+    const bb = new THREE.Box3().setFromObject(mesh);
+    const dy = targetY - bb.min.y;
+    mesh.position.y += dy;
+  }
 
-  // lift dû à la rotation (on garde ton calcul)
-  const lift = (widthZ / 2) * Math.sin(angle);
+  if (slopeType === "mono") {
+    const overhang = widthZ * ROOF_OVERHANG_RATIO;
+    const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ + overhang);
+    const roof = new THREE.Mesh(roofGeo, roofMat);
+    roof.userData.kind = "roof";
 
-  // ✅ Calage "au contact" : la face inférieure de la couverture
-  // vient quasiment toucher le haut de la structure.
-  const microGap = Math.max(0.002, heightY * 0.003); // petit jour (quasi invisible)
-  const y = (max.y - roofSink) + lift - (roofThick / 2) - microGap;
+    // pente vers -Z
+    roof.rotation.x = -angle;
 
-  roof.position.set(
-    cx,
-    y,
-    cz - (overhang / 2)
-  );
+    // placement "approx" (on snap juste après)
+    roof.position.set(
+      cx,
+      max.y,              // on part haut, puis on colle avec snap
+      cz - (overhang / 2)
+    );
 
-  roof.castShadow = SHADOW_ENABLED;
-  roof.receiveShadow = false;
-  overlayGroup.add(roof);
+    roof.castShadow = SHADOW_ENABLED;
+    overlayGroup.add(roof);
 
-  overlayGroup.userData.roof = { type: "mono", roof };
+    // ✅ colle vraiment la toiture au haut de structure
+    snapMeshMinYTo(roof, max.y - roofSink - ROOF_CONTACT_GAP);
 
-} else {
+    overlayGroup.userData.roof = { type: "mono", roof };
 
-  const halfW = widthZ / 2;
-  const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
-  const lift = (halfW / 2) * Math.sin(angle);
+  } else {
+    const halfW = widthZ / 2;
+    const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
 
-  const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
-  roofPlusZ.userData.kind = "roof";
-  roofPlusZ.rotation.x = +angle;
+    const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
+    roofPlusZ.userData.kind = "roof";
+    roofPlusZ.rotation.x = +angle;
+    roofPlusZ.position.set(cx, max.y, cz + halfW / 2);
+    roofPlusZ.castShadow = SHADOW_ENABLED;
+    overlayGroup.add(roofPlusZ);
 
-  // ✅ recollage : on applique aussi roofSink en bipente
-  roofPlusZ.position.set(
-    cx,
-    max.y - roofSink + lift - ROOF_DROP - ROOF_GAP,
-    cz + halfW / 2
-  );
+    const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
+    roofMinusZ.userData.kind = "roof";
+    roofMinusZ.rotation.x = -angle;
+    roofMinusZ.position.set(cx, max.y, cz - halfW / 2);
+    roofMinusZ.castShadow = SHADOW_ENABLED;
+    overlayGroup.add(roofMinusZ);
 
-  roofPlusZ.castShadow = SHADOW_ENABLED;
-  overlayGroup.add(roofPlusZ);
+    // ✅ colle vraiment les 2 pans au haut de structure
+    const target = max.y - roofSink - ROOF_CONTACT_GAP;
+    snapMeshMinYTo(roofPlusZ, target);
+    snapMeshMinYTo(roofMinusZ, target);
 
-  const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
-  roofMinusZ.userData.kind = "roof";
-  roofMinusZ.rotation.x = -angle;
+    overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ };
+  }
 
-  // ✅ recollage : on applique aussi roofSink en bipente
-  roofMinusZ.position.set(
-    cx,
-    max.y - roofSink + lift - ROOF_DROP - ROOF_GAP,
-    cz - halfW / 2
-  );
-
-  roofMinusZ.castShadow = SHADOW_ENABLED;
-  overlayGroup.add(roofMinusZ);
-
-  overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ };
-}
 
   // ===== BARDAGE =====
   const panelHeight = Math.max(0.2, heightY - CLAD_TOP_GAP);
