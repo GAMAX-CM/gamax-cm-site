@@ -317,7 +317,7 @@ input[type="text"]:focus, select:focus{
 
 .bardage-label-main{
   font-size:.95rem;
-  font-weight:800;
+  font-weight:600;
 }
 
 .bardage-label-sub{
@@ -691,3 +691,77 @@ input[type="text"]:focus, select:focus{
 .viewer-wrapper.is-fullscreen .viewer-toolbar{display:flex}
 .viewer-wrapper.is-fullscreen .viewer-fullscreen-btn{display:none}
 .viewer-wrapper.is-fullscreen .viewer-caption{color:rgba(255,255,255,.75)}
+
+/* =========================================================
+   TYPOGRAPHIE DES CARTES – LISIBILITÉ OPTIMISÉE
+   (toiture / bardage / options / habillages / type abri)
+========================================================= */
+
+/* ---------- TITRES DE CARTES ---------- */
+.bardage-label-main,
+.roof-title,
+.option-card--catalogue .bardage-label-main {
+  font-weight: 600;              /* au lieu de 700–800 */
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  color: #111;
+}
+
+/* ---------- SOUS-TEXTES ---------- */
+.bardage-label-sub,
+.option-card--catalogue .bardage-label-sub {
+  font-weight: 400;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+/* ---------- CARTES SÉLECTIONNÉES ---------- */
+/* On évite le gras agressif en sélection */
+.bardage-choice input:checked + .bardage-card .bardage-label-main,
+.option-choice input:checked + .option-card--catalogue .bardage-label-main,
+.roof-card input:checked + .roof-card-inner .roof-title {
+  font-weight: 600;
+}
+
+/* ---------- CARTES FOND NOIR (type abri sélectionné) ---------- */
+.roof-card input:checked + .roof-card-inner {
+  color: #fff;
+}
+
+.roof-card input:checked + .roof-card-inner .roof-title {
+  font-weight: 600;
+  color: #fff;
+}
+
+/* ---------- RAL (pastilles) ---------- */
+.ral-box {
+  font-weight: 500;              /* au lieu de bold */
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+}
+
+/* ---------- OPTION "CATALOGUE" (habillages) ---------- */
+.option-card--catalogue {
+  font-weight: 400;
+}
+
+/* ---------- HOVER : pas de surcharge visuelle ---------- */
+.bardage-choice:hover .bardage-card,
+.option-choice:hover .option-card--catalogue {
+  border-color: var(--accent);
+}
+
+/* ---------- MOBILE : encore plus confortable ---------- */
+@media (max-width: 768px) {
+  .bardage-label-main,
+  .roof-title {
+    font-size: 0.92rem;
+  }
+
+  .bardage-label-sub {
+    font-size: 0.8rem;
+  }
+}
+
