@@ -85,9 +85,7 @@ const TVA_RATE = 0.2;
    2) HELPERS UI
 ---------------------------- */
 
-function $(id) {
-  return document.getElementById(id);
-}
+function $(id) { return document.getElementById(id); }
 
 function formatCurrency(value) {
   return new Intl.NumberFormat("fr-FR", {
@@ -129,51 +127,6 @@ function populateDimensions() {
   populateSelect($("width"), config.widths);
   populateSelect($("length"), config.lengths);
   populateSelect($("height"), config.heights);
-}
-
-/* ---------------------------
-   2.3) OPTIONS — HELPERS (mono/bi + côtés)
----------------------------- */
-
-function setInputDisabled(inputEl, disabled) {
-  if (!inputEl) return;
-
-  inputEl.disabled = disabled;
-  if (disabled && inputEl.checked) inputEl.checked = false;
-
-  // petit feedback visuel sans toucher au CSS
-  const wrap = inputEl.closest("label") || inputEl.parentElement;
-  if (wrap) {
-    wrap.style.opacity = disabled ? "0.45" : "";
-    wrap.style.pointerEvents = disabled ? "none" : "";
-    wrap.style.cursor = disabled ? "not-allowed" : "";
-  }
-}
-
-function updateFinishingAvailability() {
-  const type = getSelectedType(); // "mono" | "bi"
-
-  // Mono => interdit faitière double
-  setInputDisabled($("optFaitiereDouble"), type === "mono");
-
-  // Bi => interdit faitière simple + faitière avec solin (B/D)
-  const disableMonoOnly = type === "bi";
-  setInputDisabled($("optFaitiereSimple"), disableMonoOnly);
-  setInputDisabled($("optFaitiereSolin_B"), disableMonoOnly);
-  setInputDisabled($("optFaitiereSolin_D"), disableMonoOnly);
-}
-
-function enforceRiveExclusivityForSide(side) {
-  const rive = $(`optRiveSolin_${side}`);
-  const grande = $(`optGrandeRive_${side}`);
-  if (!rive || !grande) return;
-
-  rive.addEventListener("change", () => {
-    if (rive.checked) grande.checked = false;
-  });
-  grande.addEventListener("change", () => {
-    if (grande.checked) rive.checked = false;
-  });
 }
 
 /* ---------------------------
@@ -268,10 +221,98 @@ function updateDeliveryUI() {
 }
 
 /* ---------------------------
+   3.5) OPTIONS — LOGIQUE (désactivation + côtés + exclusivité)
+---------------------------- */
+
+function setOptionDisabled(optionId, disabled) {
+  const input = $(optionId);
+  if (!input) return;
+  input.disabled = !!disabled;
+  if (disabled) input.checked = false;
+
+  // Optionnel : si tu as une classe CSS pour griser
+  const label = input.closest("label");
+  if (label) label.classList.toggle("is-disabled", !!disabled);
+}
+
+function setSideInputsEnabled(prefix, enabled) {
+  const b = $(prefix + "SideB");
+  const d = $(prefix + "SideD");
+  if (b) b.disabled = !enabled;
+  if (d) d.disabled = !enabled;
+
+  if (!enabled) {
+    if (b) b.checked = false;
+    if (d) d.checked = false;
+  }
+}
+
+function ensureDefaultSideIfNeeded(optionId, prefix) {
+  const opt = $(optionId);
+  if (!opt) return;
+
+  const b = $(prefix + "SideB");
+  const d = $(prefix + "SideD");
+
+  if (!b || !d) return;
+
+  if (opt.checked) {
+    if (!b.checked && !d.checked) b.checked = true; // défaut : côté B
+  } else {
+    b.checked = false;
+    d.checked = false;
+  }
+}
+
+function enforceRiveExclusivity() {
+  // Sur un même côté : Rive avec solin OU Grande rive (pas les deux)
+  const riveB = $("riveSolinSideB");
+  const riveD = $("riveSolinSideD");
+  const grandeB = $("grandeRiveSideB");
+  const grandeD = $("grandeRiveSideD");
+
+  if (riveB?.checked && grandeB?.checked) grandeB.checked = false;
+  if (riveD?.checked && grandeD?.checked) grandeD.checked = false;
+}
+
+function updateOptionsAvailabilityAndUI() {
+  const type = getSelectedType();
+
+  // Monopente : faîtière double non sélectionnable
+  setOptionDisabled("optFaitiereDouble", type === "mono");
+
+  // Bipente : faîtière avec solin & faîtière simple non sélectionnables
+  setOptionDisabled("optFaitiereSolin", type === "bi");
+  setOptionDisabled("optFaitiereSimple", type === "bi");
+
+  // Activer/désactiver les sélecteurs de côté seulement si l’option est cochée
+  setSideInputsEnabled("faitiereSolin", !!$("optFaitiereSolin")?.checked && !($("optFaitiereSolin")?.disabled));
+  setSideInputsEnabled("riveSolin", !!$("optRiveSolin")?.checked);
+  setSideInputsEnabled("grandeRive", !!$("optGrandeRive")?.checked);
+
+  // Si option cochée et aucun côté : défaut B
+  ensureDefaultSideIfNeeded("optFaitiereSolin", "faitiereSolin");
+  ensureDefaultSideIfNeeded("optRiveSolin", "riveSolin");
+  ensureDefaultSideIfNeeded("optGrandeRive", "grandeRive");
+
+  // Exclusivité rive/grande rive par côté
+  enforceRiveExclusivity();
+
+  // Si un côté est coché, s’assurer que l’option correspondante est cochée
+  if ($("riveSolinSideB")?.checked || $("riveSolinSideD")?.checked) $("optRiveSolin").checked = true;
+  if ($("grandeRiveSideB")?.checked || $("grandeRiveSideD")?.checked) $("optGrandeRive").checked = true;
+  if ($("faitiereSolinSideB")?.checked || $("faitiereSolinSideD")?.checked) {
+    if (!$("optFaitiereSolin")?.disabled) $("optFaitiereSolin").checked = true;
+  }
+}
+
+/* ---------------------------
    4) CALCUL PRIX + RÉCAP
 ---------------------------- */
 
 function calculatePriceAndRecap() {
+  updateOptionsAvailabilityAndUI();
+
   const type = getSelectedType();
   const width = parseFloat($("width")?.value || "0");
   const length = parseFloat($("length")?.value || "0");
@@ -300,39 +341,29 @@ function calculatePriceAndRecap() {
     else claddingArea += width * height;
   });
 
-  const claddingType =
-    document.querySelector('input[name="claddingType"]:checked')?.value;
+  const claddingType = document.querySelector('input[name="claddingType"]:checked')?.value;
   const cladUnit = CLADDING_PRICE_PER_M2[claddingType] ?? 0;
   const claddingCost = claddingArea * cladUnit;
 
-  // options (NOUVEAUX IDs)
+  // options
   const optInstall = $("optInstall");
-
-  const optFaitiereSolin_B = $("optFaitiereSolin_B");
-  const optFaitiereSolin_D = $("optFaitiereSolin_D");
-
-  const optRiveSolin_B = $("optRiveSolin_B");
-  const optRiveSolin_D = $("optRiveSolin_D");
-
-  const optGrandeRive_B = $("optGrandeRive_B");
-  const optGrandeRive_D = $("optGrandeRive_D");
-
+  const optFaitiereSolin = $("optFaitiereSolin");
+  const optRiveSolin = $("optRiveSolin");
+  const optGrandeRive = $("optGrandeRive");
   const optAngles = $("optAngles");
   const optRejetEau = $("optRejetEau");
   const optFaitiereDouble = $("optFaitiereDouble");
   const optFaitiereSimple = $("optFaitiereSimple");
 
+  // finitions actives ?
   const finishingSelected =
-    (optFaitiereSolin_B?.checked) ||
-    (optFaitiereSolin_D?.checked) ||
-    (optRiveSolin_B?.checked) ||
-    (optRiveSolin_D?.checked) ||
-    (optGrandeRive_B?.checked) ||
-    (optGrandeRive_D?.checked) ||
+    (optFaitiereSolin?.checked && !optFaitiereSolin.disabled) ||
+    (optRiveSolin?.checked) ||
+    (optGrandeRive?.checked) ||
     (optAngles?.checked) ||
     (optRejetEau?.checked) ||
-    (optFaitiereDouble?.checked) ||
-    (optFaitiereSimple?.checked);
+    (optFaitiereDouble?.checked && !optFaitiereDouble.disabled) ||
+    (optFaitiereSimple?.checked && !optFaitiereSimple.disabled);
 
   let optionsPrice = 0;
   if (finishingSelected) optionsPrice += area * OPTIONS_PRICES.finishingPerM2;
@@ -364,23 +395,38 @@ function calculatePriceAndRecap() {
 
   const roofColor = document.querySelector('input[name="roofColor"]:checked')?.value || "Non précisée";
   const claddingColor = document.querySelector('input[name="claddingColor"]:checked')?.value || "Non précisée";
+  const trimColor = document.querySelector('input[name="trimColor"]:checked')?.value || "Non précisée";
 
   const selectedOptions = [];
 
-  // Faitière avec solin (côtés)
-  if (optFaitiereSolin_B?.checked) selectedOptions.push("Faîtière avec solin (côté B)");
-  if (optFaitiereSolin_D?.checked) selectedOptions.push("Faîtière avec solin (côté D)");
+  // Faîtière solin (avec côté)
+  if (optFaitiereSolin?.checked && !optFaitiereSolin.disabled) {
+    const b = $("faitiereSolinSideB")?.checked;
+    const d = $("faitiereSolinSideD")?.checked;
+    const sides = [b ? "B" : null, d ? "D" : null].filter(Boolean).join("/");
+    selectedOptions.push("Faîtière avec solin" + (sides ? ` (côté ${sides})` : ""));
+  }
 
-  // Rives (côtés)
-  if (optRiveSolin_B?.checked) selectedOptions.push("Rive avec solin (côté B)");
-  if (optRiveSolin_D?.checked) selectedOptions.push("Rive avec solin (côté D)");
-  if (optGrandeRive_B?.checked) selectedOptions.push("Grande rive (côté B)");
-  if (optGrandeRive_D?.checked) selectedOptions.push("Grande rive (côté D)");
+  // Rive solin / grande rive (avec côté)
+  if (optRiveSolin?.checked) {
+    const b = $("riveSolinSideB")?.checked;
+    const d = $("riveSolinSideD")?.checked;
+    const sides = [b ? "B" : null, d ? "D" : null].filter(Boolean).join("/");
+    selectedOptions.push("Rive avec solin" + (sides ? ` (côté ${sides})` : ""));
+  }
+
+  if (optGrandeRive?.checked) {
+    const b = $("grandeRiveSideB")?.checked;
+    const d = $("grandeRiveSideD")?.checked;
+    const sides = [b ? "B" : null, d ? "D" : null].filter(Boolean).join("/");
+    selectedOptions.push("Grande rive" + (sides ? ` (côté ${sides})` : ""));
+  }
 
   if (optAngles?.checked) selectedOptions.push("Angles");
   if (optRejetEau?.checked) selectedOptions.push("Rejet d’eau");
-  if (optFaitiereDouble?.checked) selectedOptions.push("Faîtière double");
-  if (optFaitiereSimple?.checked) selectedOptions.push("Faîtière simple");
+
+  if (optFaitiereDouble?.checked && !optFaitiereDouble.disabled) selectedOptions.push("Faîtière double");
+  if (optFaitiereSimple?.checked && !optFaitiereSimple.disabled) selectedOptions.push("Faîtière simple");
   if (optInstall?.checked) selectedOptions.push("Pose par nos équipes");
 
   let addressText = "";
@@ -418,13 +464,14 @@ function calculatePriceAndRecap() {
   recapHTML += LINE("Couleur bardage (RAL) :", claddingColor);
   recapHTML += LINE("Façades bardées :", claddingAreaText);
   recapHTML += BLANK();
+  recapHTML += LINE("Habillages (RAL) :", trimColor);
+  recapHTML += LINE("Options :", (selectedOptions.length ? selectedOptions.join(", ") : "Aucune"));
+  recapHTML += BLANK();
   recapHTML += LINE("Mode :", (deliveryMode === "retrait" ? "Retrait à Tonneins" : "Livraison sur chantier"));
   recapHTML += LINE("Adresse :", addressText);
   recapHTML += LINE("Livraison estimative :", livTxt);
   recapHTML += BLANK();
   recapHTML += LINE("Prix estimatif :", `${formatCurrency(totalHT)} HT soit env. ${formatCurrency(totalTTC)} TTC`);
-  recapHTML += BLANK();
-  recapHTML += LINE("Options :", (selectedOptions.length ? selectedOptions.join(", ") : "Aucune"));
   recapHTML += BLANK();
   recapHTML += `<div style="opacity:.9">${L("Note :")} Ce devis est une estimation indicative. Un devis définitif vous sera transmis par GAMAX-CM.</div>`;
 
@@ -441,13 +488,14 @@ function calculatePriceAndRecap() {
   recapText += LINE_TXT("Couleur bardage (RAL) :", claddingColor);
   recapText += LINE_TXT("Façades bardées :", claddingAreaText);
   recapText += "\n";
+  recapText += LINE_TXT("Habillages (RAL) :", trimColor);
+  recapText += LINE_TXT("Options :", (selectedOptions.length ? selectedOptions.join(", ") : "Aucune"));
+  recapText += "\n";
   recapText += LINE_TXT("Mode :", (deliveryMode === "retrait" ? "Retrait à Tonneins" : "Livraison sur chantier"));
   recapText += LINE_TXT("Adresse :", addressText);
   recapText += LINE_TXT("Livraison estimative :", livTxt);
   recapText += "\n";
   recapText += LINE_TXT("Prix estimatif :", `${formatCurrency(totalHT)} HT soit env. ${formatCurrency(totalTTC)} TTC`);
-  recapText += "\n";
-  recapText += LINE_TXT("Options :", (selectedOptions.length ? selectedOptions.join(", ") : "Aucune"));
   recapText += "\n";
   recapText += "Ce devis est une estimation indicative. Un devis définitif vous sera transmis par GAMAX-CM.\n";
 
@@ -515,13 +563,12 @@ const CLAD_OPACITY = 0.98;
 const ROOF_THICKNESS = 0.06;
 const CLAD_THICKNESS = 0.035;
 
-// ✅ Rapprocher couverture/structure
+// Couverture (collage)
 const ROOF_SINK_RATIO = 0.015;
 const ROOF_DROP = 0.08;
-// ✅ IMPORTANT : plus petit => couverture plus collée
 const ROOF_GAP = 0.03;
 
-// ✅ Bardage juste sous couverture
+// Bardage sous couverture
 const CLAD_TOP_GAP = 0.03;
 
 // OrbitControls
@@ -547,6 +594,8 @@ let cladTex = null;
 
 let lastInlineCanvasHeight = 0;
 
+/* -------- Couleurs 3D depuis RAL -------- */
+
 function getRALColorFromRadio(name) {
   const input = document.querySelector(`input[name="${name}"]:checked`);
   if (!input) return "#666666";
@@ -556,6 +605,11 @@ function getRALColorFromRadio(name) {
 }
 function getRoofColor3D() { return getRALColorFromRadio("roofColor"); }
 function getCladdingColor3D() { return getRALColorFromRadio("claddingColor"); }
+// Habillages : même palette, groupe "trimColor"
+function getTrimColor3D() {
+  const color = getRALColorFromRadio("trimColor");
+  return color || getRoofColor3D();
+}
 
 function getCurrentDimensions() {
   const width = parseFloat($("width")?.value || "3");
@@ -790,20 +844,19 @@ function materialWithTexture({ color, tex, opacity }) {
   return mat;
 }
 
-// ----- Géométrie pignon mono (trapèze) : point haut façade A (= +Z)
+// ----- Géométrie pignon mono (trapèze) : point haut côté +Z
 function createMonoGableShape(widthZ, y0, yLow, yHigh) {
   const halfW = widthZ / 2;
   const s = new THREE.Shape();
   s.moveTo(-halfW, y0);
   s.lineTo( halfW, y0);
-  // pente monte vers +Z => +halfW est haut
-  s.lineTo( halfW, yHigh);
+  s.lineTo( halfW, yHigh); // haut sur +Z
   s.lineTo(-halfW, yLow);
   s.lineTo(-halfW, y0);
   return s;
 }
 
-// ----- Géométrie pignon bi (forme maison) : rectangle + triangle
+// ----- Géométrie pignon bi (forme maison)
 function createBiGableShape(widthZ, y0, yEave, yRidge) {
   const halfW = widthZ / 2;
   const s = new THREE.Shape();
@@ -815,6 +868,8 @@ function createBiGableShape(widthZ, y0, yEave, yRidge) {
   s.lineTo(-halfW, y0);
   return s;
 }
+
+/* -------- Habillages : lignes de surbrillance -------- */
 
 function rebuildOverlays(bbox) {
   if (!bbox) return;
@@ -851,30 +906,34 @@ function rebuildOverlays(bbox) {
     opacity: CLAD_OPACITY,
   });
 
-  // ===== TOITURE (couverture) =====
   const slopeType = getSelectedType();
   const angle = Math.atan(PITCH_RATIO);
 
+  // Stockage context pour les highlights
+  overlayGroup.userData.ctx = {
+    min, max, cx, cz, lenX, widthZ, heightY, eps, angle, roofSink, roofThick, cladThick
+  };
+
+  // ===== TOITURE =====
   if (slopeType === "mono") {
     const overhang = widthZ * ROOF_OVERHANG_RATIO;
     const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ + overhang);
     const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.userData.kind = "roof";
-
-    // pente vers -Z (point haut façade A = +Z)
     roof.rotation.x = -angle;
 
     const lift = (widthZ / 2) * Math.sin(angle);
 
     roof.position.set(
       cx,
-      max.y - roofSink + lift - ROOF_DROP - ROOF_GAP, // ✅ plus collé en mono
+      max.y - roofSink + lift - ROOF_DROP - ROOF_GAP,
       cz - (overhang / 2)
     );
 
     roof.castShadow = SHADOW_ENABLED;
-    roof.receiveShadow = false;
     overlayGroup.add(roof);
+
+    overlayGroup.userData.roof = { type: "mono", roof };
 
   } else {
     const halfW = widthZ / 2;
@@ -884,38 +943,29 @@ function rebuildOverlays(bbox) {
     const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
     roofPlusZ.userData.kind = "roof";
     roofPlusZ.rotation.x = +angle;
-    roofPlusZ.position.set(
-      cx,
-      max.y + lift - ROOF_DROP - ROOF_GAP,
-      cz + halfW / 2
-    );
+    roofPlusZ.position.set(cx, max.y + lift - ROOF_DROP - ROOF_GAP, cz + halfW / 2);
     roofPlusZ.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roofPlusZ);
 
     const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
     roofMinusZ.userData.kind = "roof";
     roofMinusZ.rotation.x = -angle;
-    roofMinusZ.position.set(
-      cx,
-      max.y + lift - ROOF_DROP - ROOF_GAP,
-      cz - halfW / 2
-    );
+    roofMinusZ.position.set(cx, max.y + lift - ROOF_DROP - ROOF_GAP, cz - halfW / 2);
     roofMinusZ.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roofMinusZ);
+
+    overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ };
   }
 
   // ===== BARDAGE =====
   const panelHeight = Math.max(0.2, heightY - CLAD_TOP_GAP);
   const yCenter = min.y + panelHeight / 2;
 
-  // Long pans A/C (rectangles)
   const geoLong = new THREE.BoxGeometry(lenX, panelHeight, cladThick);
 
-  // A = +Z
   const cladA_outer = new THREE.Mesh(geoLong, cladMat.clone());
   cladA_outer.position.set(cx, yCenter, max.z + eps);
 
-  // C = -Z
   const cladC_outer = new THREE.Mesh(geoLong, cladMat.clone());
   cladC_outer.position.set(cx, yCenter, min.z - eps);
 
@@ -935,9 +985,12 @@ function rebuildOverlays(bbox) {
     gableShapeB = new THREE.Mesh(geoGable, cladMat.clone());
     gableShapeD = new THREE.Mesh(geoGable, cladMat.clone());
 
-    // ✅ rotations correctes (B et D inversées)
-    gableShapeB.rotation.y = -Math.PI / 2; // B = côté gauche
-    gableShapeD.rotation.y = +Math.PI / 2; // D = côté droit
+    // Faces : B gauche, D droite
+    gableShapeB.rotation.y = -Math.PI / 2;
+    gableShapeD.rotation.y = +Math.PI / 2;
+
+    // ✅ FIX pente façade D : on inverse le shape sur D (sinon pente inversée)
+    gableShapeD.scale.x = -1;
 
     const gableOffset = (cladThick / 2) + eps;
     gableShapeB.position.set(min.x - gableOffset, 0, cz);
@@ -1001,7 +1054,247 @@ function rebuildOverlays(bbox) {
   }
 
   applyCladdingVisibility();
-  overlayGroup.userData = { applyCladdingVisibility };
+  overlayGroup.userData.applyCladdingVisibility = applyCladdingVisibility;
+
+  // ===== GROUPE HIGHLIGHTS (habillages) =====
+  const highlightGroup = new THREE.Group();
+  highlightGroup.userData.kind = "trimHL";
+  overlayGroup.add(highlightGroup);
+  overlayGroup.userData.highlightGroup = highlightGroup;
+
+  // helpers y sur toiture
+  function yOnMonoRoof(z) {
+    const r = overlayGroup.userData.roof?.roof;
+    if (!r) return max.y;
+    // rotation -angle => y = y0 + (z - z0)*tan(angle)
+    return r.position.y + (z - r.position.z) * Math.tan(angle);
+  }
+
+  function yOnBiRoofPlus(z) {
+    const r = overlayGroup.userData.roof?.roofPlusZ;
+    if (!r) return max.y;
+    // rotation +angle => y = y0 - (z - z0)*tan(angle)
+    return r.position.y - (z - r.position.z) * Math.tan(angle);
+  }
+
+  function yOnBiRoofMinus(z) {
+    const r = overlayGroup.userData.roof?.roofMinusZ;
+    if (!r) return max.y;
+    // rotation -angle => y = y0 + (z - z0)*tan(angle)
+    return r.position.y + (z - r.position.z) * Math.tan(angle);
+  }
+
+  function clearHighlights() {
+    while (highlightGroup.children.length) {
+      const obj = highlightGroup.children.pop();
+      if (obj.geometry) obj.geometry.dispose();
+      if (obj.material) obj.material.dispose();
+    }
+  }
+
+  function addLine(p1, p2, color) {
+    const geom = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+    const mat = new THREE.LineBasicMaterial({ color });
+    const line = new THREE.Line(geom, mat);
+    line.renderOrder = 999;
+    highlightGroup.add(line);
+  }
+
+  function applyTrimHighlights() {
+    clearHighlights();
+
+    // couleur choisie pour habillages
+    const trimColor = getTrimColor3D();
+
+    const isMono = slopeType === "mono";
+
+    const optFaitiereSolin = $("optFaitiereSolin");
+    const optRiveSolin = $("optRiveSolin");
+    const optGrandeRive = $("optGrandeRive");
+    const optAngles = $("optAngles");
+    const optRejetEau = $("optRejetEau");
+    const optFaitiereDouble = $("optFaitiereDouble");
+    const optFaitiereSimple = $("optFaitiereSimple");
+
+    // ---------- FAITIÈRE (arête de faîtage / arête haute) ----------
+    // - Faîtière double / simple : ligne entière
+    // - Faîtière avec solin : segments selon côté B/D
+    const wantFullRidge =
+      (!!optFaitiereDouble?.checked && !optFaitiereDouble.disabled) ||
+      (!!optFaitiereSimple?.checked && !optFaitiereSimple.disabled);
+
+    const wantRidgeSolin = (!!optFaitiereSolin?.checked && !optFaitiereSolin.disabled);
+
+    if (wantFullRidge || wantRidgeSolin) {
+      if (isMono) {
+        // arête haute = côté +Z, sur toute la longueur (x)
+        const zHigh = max.z + eps * 0.2;
+        const yHigh = yOnMonoRoof(max.z) + 0.02;
+
+        if (wantFullRidge) {
+          addLine(
+            new THREE.Vector3(min.x, yHigh, zHigh),
+            new THREE.Vector3(max.x, yHigh, zHigh),
+            trimColor
+          );
+        }
+
+        if (wantRidgeSolin) {
+          const seg = Math.min(lenX * 0.25, 2.5);
+          const b = $("faitiereSolinSideB")?.checked;
+          const d = $("faitiereSolinSideD")?.checked;
+
+          if (b) {
+            addLine(
+              new THREE.Vector3(min.x, yHigh, zHigh),
+              new THREE.Vector3(min.x + seg, yHigh, zHigh),
+              trimColor
+            );
+          }
+          if (d) {
+            addLine(
+              new THREE.Vector3(max.x - seg, yHigh, zHigh),
+              new THREE.Vector3(max.x, yHigh, zHigh),
+              trimColor
+            );
+          }
+        }
+
+      } else {
+        // bipente : faîtage = z=cz
+        const zR = cz;
+        const yR = yOnBiRoofPlus(cz) + 0.03;
+
+        // en bipente, faîtière solin & simple sont désactivées
+        if (wantFullRidge) {
+          addLine(
+            new THREE.Vector3(min.x, yR, zR),
+            new THREE.Vector3(max.x, yR, zR),
+            trimColor
+          );
+        }
+      }
+    }
+
+    // ---------- RIVES (pignons, extrémités) ----------
+    // Rive avec solin / Grande rive : sélection de côté B / D
+    const riveB = ($("riveSolinSideB")?.checked) || ($("grandeRiveSideB")?.checked);
+    const riveD = ($("riveSolinSideD")?.checked) || ($("grandeRiveSideD")?.checked);
+
+    // seulement si une des 2 options est cochée
+    const wantRives = (!!optRiveSolin?.checked) || (!!optGrandeRive?.checked);
+
+    if (wantRives) {
+      if (isMono) {
+        // Au pignon x=min et x=max : une arête oblique (du bas vers le haut)
+        function addMonoGableRakeAtX(x, outwardX) {
+          const z1 = min.z - eps * 0.2;
+          const z2 = max.z + eps * 0.2;
+          const y1 = yOnMonoRoof(min.z) + 0.02;
+          const y2 = yOnMonoRoof(max.z) + 0.02;
+          addLine(
+            new THREE.Vector3(x + outwardX, y1, z1),
+            new THREE.Vector3(x + outwardX, y2, z2),
+            trimColor
+          );
+        }
+        if (riveB) addMonoGableRakeAtX(min.x, -eps * 0.6);
+        if (riveD) addMonoGableRakeAtX(max.x, +eps * 0.6);
+
+      } else {
+        // bipente : au pignon, 2 arêtes (eave->ridge) de chaque pan
+        function addBiGableRakesAtX(x, outwardX) {
+          const yR = yOnBiRoofPlus(cz) + 0.03;
+
+          const yEavePlus = yOnBiRoofPlus(max.z) + 0.02;
+          const yEaveMinus = yOnBiRoofMinus(min.z) + 0.02;
+
+          // pan +Z : (x, max.z) -> (x, cz)
+          addLine(
+            new THREE.Vector3(x + outwardX, yEavePlus, max.z + eps * 0.2),
+            new THREE.Vector3(x + outwardX, yR, cz),
+            trimColor
+          );
+
+          // pan -Z : (x, min.z) -> (x, cz)
+          addLine(
+            new THREE.Vector3(x + outwardX, yEaveMinus, min.z - eps * 0.2),
+            new THREE.Vector3(x + outwardX, yR, cz),
+            trimColor
+          );
+        }
+
+        if (riveB) addBiGableRakesAtX(min.x, -eps * 0.6);
+        if (riveD) addBiGableRakesAtX(max.x, +eps * 0.6);
+      }
+    }
+
+    // ---------- ANGLES (4 coins verticaux) ----------
+    if (optAngles?.checked) {
+      const y0 = min.y + 0.02;
+      const yTop = max.y - 0.02;
+
+      const corners = [
+        [min.x - eps * 0.2, min.z - eps * 0.2],
+        [min.x - eps * 0.2, max.z + eps * 0.2],
+        [max.x + eps * 0.2, min.z - eps * 0.2],
+        [max.x + eps * 0.2, max.z + eps * 0.2],
+      ];
+
+      corners.forEach(([x, z]) => {
+        addLine(
+          new THREE.Vector3(x, y0, z),
+          new THREE.Vector3(x, yTop, z),
+          trimColor
+        );
+      });
+    }
+
+    // ---------- REJET D’EAU (pied de bardage sur façades sélectionnées) ----------
+    if (optRejetEau?.checked) {
+      const yBase = min.y + 0.03;
+
+      const showA = !!document.querySelector('input[name="claddingSide"][value="A"]:checked');
+      const showB = !!document.querySelector('input[name="claddingSide"][value="B"]:checked');
+      const showC = !!document.querySelector('input[name="claddingSide"][value="C"]:checked');
+      const showD = !!document.querySelector('input[name="claddingSide"][value="D"]:checked');
+
+      if (showA) {
+        addLine(
+          new THREE.Vector3(min.x, yBase, max.z + eps * 0.6),
+          new THREE.Vector3(max.x, yBase, max.z + eps * 0.6),
+          trimColor
+        );
+      }
+      if (showC) {
+        addLine(
+          new THREE.Vector3(min.x, yBase, min.z - eps * 0.6),
+          new THREE.Vector3(max.x, yBase, min.z - eps * 0.6),
+          trimColor
+        );
+      }
+      if (showB) {
+        addLine(
+          new THREE.Vector3(min.x - eps * 0.6, yBase, min.z),
+          new THREE.Vector3(min.x - eps * 0.6, yBase, max.z),
+          trimColor
+        );
+      }
+      if (showD) {
+        addLine(
+          new THREE.Vector3(max.x + eps * 0.6, yBase, min.z),
+          new THREE.Vector3(max.x + eps * 0.6, yBase, max.z),
+          trimColor
+        );
+      }
+    }
+  }
+
+  // Exposer la fonction highlights à updateOverlayStylesOnly()
+  overlayGroup.userData.applyTrimHighlights = applyTrimHighlights;
+
+  // Appliquer tout de suite
+  applyTrimHighlights();
 
   // ===== SCALE SOL + FOND =====
   const radius = Math.max(lenX, widthZ) * 0.9;
@@ -1023,7 +1316,7 @@ function rebuildOverlays(bbox) {
     backgroundPlane.scale.set(1.3, 1.3, 1);
   }
 
-  // ===== CAMÉRA (cadrage cohérent) =====
+  // ===== CAMÉRA =====
   if (controls && camera) {
     const center = new THREE.Vector3(cx, min.y + heightY * 0.55, cz);
     controls.target.set(center.x, center.y, center.z);
@@ -1064,6 +1357,7 @@ function updateOverlayStylesOnly() {
   });
 
   overlayGroup.userData?.applyCladdingVisibility?.();
+  overlayGroup.userData?.applyTrimHighlights?.();
 }
 
 function update3DFromConfig() {
@@ -1149,21 +1443,17 @@ function setup3DFullscreenUI() {
 document.addEventListener("DOMContentLoaded", async () => {
   populateDimensions();
 
-  // ✅ options : exclusivité + mono/bi
-  enforceRiveExclusivityForSide("B");
-  enforceRiveExclusivityForSide("D");
-  updateFinishingAvailability();
-
   initThree();
   setup3DFullscreenUI();
 
   updateDeliveryUI();
   await updateCityOptions();
 
+  // Type d'abri
   document.querySelectorAll('input[name="slopeType"]').forEach((el) => {
     el.addEventListener("change", () => {
       populateDimensions();
-      updateFinishingAvailability();
+      updateOptionsAvailabilityAndUI();
       loadModelForType(getSelectedType());
       calculatePriceAndRecap();
     });
@@ -1173,6 +1463,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     $(id)?.addEventListener("change", calculatePriceAndRecap);
   });
 
+  // Livraison
   document.querySelectorAll('input[name="deliveryMode"]').forEach((el) => {
     el.addEventListener("change", async () => {
       updateDeliveryUI();
@@ -1187,6 +1478,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   $("city")?.addEventListener("change", calculatePriceAndRecap);
 
+  // Toiture
   document.querySelectorAll('input[name="roofType"]').forEach((el) =>
     el.addEventListener("change", calculatePriceAndRecap)
   );
@@ -1198,6 +1490,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     })
   );
 
+  // Bardage
   document.querySelectorAll('input[name="claddingType"]').forEach((el) =>
     el.addEventListener("change", calculatePriceAndRecap)
   );
@@ -1216,30 +1509,47 @@ document.addEventListener("DOMContentLoaded", async () => {
     })
   );
 
+  // Couleur habillages
+  document.querySelectorAll('input[name="trimColor"]').forEach((el) =>
+    el.addEventListener("change", () => {
+      calculatePriceAndRecap();
+      updateOverlayStylesOnly();
+    })
+  );
+
+  // Options (checkbox)
   [
     "optInstall",
-
-    "optFaitiereSolin_B",
-    "optFaitiereSolin_D",
-
-    "optRiveSolin_B",
-    "optRiveSolin_D",
-
-    "optGrandeRive_B",
-    "optGrandeRive_D",
-
+    "optFaitiereSolin",
+    "optRiveSolin",
+    "optGrandeRive",
     "optAngles",
     "optRejetEau",
     "optFaitiereDouble",
     "optFaitiereSimple",
   ].forEach((id) =>
     $(id)?.addEventListener("change", () => {
-      updateFinishingAvailability();
+      updateOptionsAvailabilityAndUI();
       calculatePriceAndRecap();
+      updateOverlayStylesOnly();
+    })
+  );
+
+  // Options (côtés)
+  [
+    "faitiereSolinSideB", "faitiereSolinSideD",
+    "riveSolinSideB", "riveSolinSideD",
+    "grandeRiveSideB", "grandeRiveSideD",
+  ].forEach((id) =>
+    $(id)?.addEventListener("change", () => {
+      updateOptionsAvailabilityAndUI();
+      calculatePriceAndRecap();
+      updateOverlayStylesOnly();
     })
   );
 
   $("btnCalculate")?.addEventListener("click", calculatePriceAndRecap);
 
+  updateOptionsAvailabilityAndUI();
   calculatePriceAndRecap();
 });
