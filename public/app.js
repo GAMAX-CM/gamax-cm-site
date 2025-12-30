@@ -930,7 +930,7 @@ function rebuildOverlays(bbox) {
     min, max, cx, cz, lenX, widthZ, heightY, eps, angle, roofSink, roofThick, cladThick
   };
 
- // ===== TOITURE =====
+// ===== TOITURE (couverture) =====
 if (slopeType === "mono") {
   const overhang = widthZ * ROOF_OVERHANG_RATIO;
   const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ + overhang);
@@ -938,20 +938,28 @@ if (slopeType === "mono") {
   roof.userData.kind = "roof";
   roof.rotation.x = -angle;
 
+  // lift dû à la rotation (on garde ton calcul)
   const lift = (widthZ / 2) * Math.sin(angle);
+
+  // ✅ Calage "au contact" : la face inférieure de la couverture
+  // vient quasiment toucher le haut de la structure.
+  const microGap = Math.max(0.002, heightY * 0.003); // petit jour (quasi invisible)
+  const y = (max.y - roofSink) + lift - (roofThick / 2) - microGap;
 
   roof.position.set(
     cx,
-    max.y - roofSink + lift - ROOF_DROP - ROOF_GAP,
+    y,
     cz - (overhang / 2)
   );
 
   roof.castShadow = SHADOW_ENABLED;
+  roof.receiveShadow = false;
   overlayGroup.add(roof);
 
   overlayGroup.userData.roof = { type: "mono", roof };
 
 } else {
+
   const halfW = widthZ / 2;
   const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
   const lift = (halfW / 2) * Math.sin(angle);
