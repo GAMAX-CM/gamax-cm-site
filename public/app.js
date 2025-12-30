@@ -399,13 +399,29 @@ function calculatePriceAndRecap() {
 
   const selectedOptions = [];
 
-  // Faîtière solin (avec côté)
-  if (optFaitiereSolin?.checked && !optFaitiereSolin.disabled) {
-    const b = $("faitiereSolinSideB")?.checked;
-    const d = $("faitiereSolinSideD")?.checked;
-    const sides = [b ? "B" : null, d ? "D" : null].filter(Boolean).join("/");
-    selectedOptions.push("Faîtière avec solin" + (sides ? ` (côté ${sides})` : ""));
+// ✅ Faîtière avec solin
+if (optFaitiereSolin?.checked) {
+  if (slopeType === "mono") {
+    // Monopente : arête haute façade A (+Z), sur toute la longueur
+    const yHigh = max.y;        // point haut structure
+    const zHigh = max.z + eps;  // façade A (extérieur)
+    addBand(
+      new THREE.Vector3(min.x, yHigh, zHigh),
+      new THREE.Vector3(max.x, yHigh, zHigh),
+      trimColor,
+      0.055
+    );
+  } else {
+    // Bipente : option désactivée normalement, mais si jamais => faîtage (ligne centrale z=cz)
+    addBand(
+      new THREE.Vector3(min.x, max.y, cz),
+      new THREE.Vector3(max.x, max.y, cz),
+      trimColor,
+      0.055
+    );
   }
+}
+
 
   // Rive solin / grande rive (avec côté)
   if (optRiveSolin?.checked) {
@@ -565,8 +581,8 @@ const CLAD_THICKNESS = 0.035;
 
 // Couverture (collage)
 const ROOF_SINK_RATIO = 0.015;
-const ROOF_DROP = 0.08;
-const ROOF_GAP = 0.03;
+const ROOF_DROP = 0.04;
+const ROOF_GAP = 0.01;
 
 // Bardage sous couverture
 const CLAD_TOP_GAP = 0.03;
@@ -914,48 +930,62 @@ function rebuildOverlays(bbox) {
     min, max, cx, cz, lenX, widthZ, heightY, eps, angle, roofSink, roofThick, cladThick
   };
 
-  // ===== TOITURE =====
-  if (slopeType === "mono") {
-    const overhang = widthZ * ROOF_OVERHANG_RATIO;
-    const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ + overhang);
-    const roof = new THREE.Mesh(roofGeo, roofMat);
-    roof.userData.kind = "roof";
-    roof.rotation.x = -angle;
+ // ===== TOITURE =====
+if (slopeType === "mono") {
+  const overhang = widthZ * ROOF_OVERHANG_RATIO;
+  const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ + overhang);
+  const roof = new THREE.Mesh(roofGeo, roofMat);
+  roof.userData.kind = "roof";
+  roof.rotation.x = -angle;
 
-    const lift = (widthZ / 2) * Math.sin(angle);
+  const lift = (widthZ / 2) * Math.sin(angle);
 
-    roof.position.set(
-      cx,
-      max.y - roofSink + lift - ROOF_DROP - ROOF_GAP,
-      cz - (overhang / 2)
-    );
+  roof.position.set(
+    cx,
+    max.y - roofSink + lift - ROOF_DROP - ROOF_GAP,
+    cz - (overhang / 2)
+  );
 
-    roof.castShadow = SHADOW_ENABLED;
-    overlayGroup.add(roof);
+  roof.castShadow = SHADOW_ENABLED;
+  overlayGroup.add(roof);
 
-    overlayGroup.userData.roof = { type: "mono", roof };
+  overlayGroup.userData.roof = { type: "mono", roof };
 
-  } else {
-    const halfW = widthZ / 2;
-    const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
-    const lift = (halfW / 2) * Math.sin(angle);
+} else {
+  const halfW = widthZ / 2;
+  const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
+  const lift = (halfW / 2) * Math.sin(angle);
 
-    const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
-    roofPlusZ.userData.kind = "roof";
-    roofPlusZ.rotation.x = +angle;
-    roofPlusZ.position.set(cx, max.y + lift - ROOF_DROP - ROOF_GAP, cz + halfW / 2);
-    roofPlusZ.castShadow = SHADOW_ENABLED;
-    overlayGroup.add(roofPlusZ);
+  const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
+  roofPlusZ.userData.kind = "roof";
+  roofPlusZ.rotation.x = +angle;
 
-    const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
-    roofMinusZ.userData.kind = "roof";
-    roofMinusZ.rotation.x = -angle;
-    roofMinusZ.position.set(cx, max.y + lift - ROOF_DROP - ROOF_GAP, cz - halfW / 2);
-    roofMinusZ.castShadow = SHADOW_ENABLED;
-    overlayGroup.add(roofMinusZ);
+  // ✅ recollage : on applique aussi roofSink en bipente
+  roofPlusZ.position.set(
+    cx,
+    max.y - roofSink + lift - ROOF_DROP - ROOF_GAP,
+    cz + halfW / 2
+  );
 
-    overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ };
-  }
+  roofPlusZ.castShadow = SHADOW_ENABLED;
+  overlayGroup.add(roofPlusZ);
+
+  const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
+  roofMinusZ.userData.kind = "roof";
+  roofMinusZ.rotation.x = -angle;
+
+  // ✅ recollage : on applique aussi roofSink en bipente
+  roofMinusZ.position.set(
+    cx,
+    max.y - roofSink + lift - ROOF_DROP - ROOF_GAP,
+    cz - halfW / 2
+  );
+
+  roofMinusZ.castShadow = SHADOW_ENABLED;
+  overlayGroup.add(roofMinusZ);
+
+  overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ };
+}
 
   // ===== BARDAGE =====
   const panelHeight = Math.max(0.2, heightY - CLAD_TOP_GAP);
