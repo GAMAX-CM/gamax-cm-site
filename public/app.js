@@ -221,98 +221,10 @@ function updateDeliveryUI() {
 }
 
 /* ---------------------------
-   3.5) OPTIONS — LOGIQUE (désactivation + côtés + exclusivité)
----------------------------- */
-
-function setOptionDisabled(optionId, disabled) {
-  const input = $(optionId);
-  if (!input) return;
-  input.disabled = !!disabled;
-  if (disabled) input.checked = false;
-
-  // Optionnel : si tu as une classe CSS pour griser
-  const label = input.closest("label");
-  if (label) label.classList.toggle("is-disabled", !!disabled);
-}
-
-function setSideInputsEnabled(prefix, enabled) {
-  const b = $(prefix + "SideB");
-  const d = $(prefix + "SideD");
-  if (b) b.disabled = !enabled;
-  if (d) d.disabled = !enabled;
-
-  if (!enabled) {
-    if (b) b.checked = false;
-    if (d) d.checked = false;
-  }
-}
-
-function ensureDefaultSideIfNeeded(optionId, prefix) {
-  const opt = $(optionId);
-  if (!opt) return;
-
-  const b = $(prefix + "SideB");
-  const d = $(prefix + "SideD");
-
-  if (!b || !d) return;
-
-  if (opt.checked) {
-    if (!b.checked && !d.checked) b.checked = true; // défaut : côté B
-  } else {
-    b.checked = false;
-    d.checked = false;
-  }
-}
-
-function enforceRiveExclusivity() {
-  // Sur un même côté : Rive avec solin OU Grande rive (pas les deux)
-  const riveB = $("riveSolinSideB");
-  const riveD = $("riveSolinSideD");
-  const grandeB = $("grandeRiveSideB");
-  const grandeD = $("grandeRiveSideD");
-
-  if (riveB?.checked && grandeB?.checked) grandeB.checked = false;
-  if (riveD?.checked && grandeD?.checked) grandeD.checked = false;
-}
-
-function updateOptionsAvailabilityAndUI() {
-  const type = getSelectedType();
-
-  // Monopente : faîtière double non sélectionnable
-  setOptionDisabled("optFaitiereDouble", type === "mono");
-
-  // Bipente : faîtière avec solin & faîtière simple non sélectionnables
-  setOptionDisabled("optFaitiereSolin", type === "bi");
-  setOptionDisabled("optFaitiereSimple", type === "bi");
-
-  // Activer/désactiver les sélecteurs de côté seulement si l’option est cochée
-  setSideInputsEnabled("faitiereSolin", !!$("optFaitiereSolin")?.checked && !($("optFaitiereSolin")?.disabled));
-  setSideInputsEnabled("riveSolin", !!$("optRiveSolin")?.checked);
-  setSideInputsEnabled("grandeRive", !!$("optGrandeRive")?.checked);
-
-  // Si option cochée et aucun côté : défaut B
-  ensureDefaultSideIfNeeded("optFaitiereSolin", "faitiereSolin");
-  ensureDefaultSideIfNeeded("optRiveSolin", "riveSolin");
-  ensureDefaultSideIfNeeded("optGrandeRive", "grandeRive");
-
-  // Exclusivité rive/grande rive par côté
-  enforceRiveExclusivity();
-
-  // Si un côté est coché, s’assurer que l’option correspondante est cochée
-  if ($("riveSolinSideB")?.checked || $("riveSolinSideD")?.checked) $("optRiveSolin").checked = true;
-  if ($("grandeRiveSideB")?.checked || $("grandeRiveSideD")?.checked) $("optGrandeRive").checked = true;
-  if ($("faitiereSolinSideB")?.checked || $("faitiereSolinSideD")?.checked) {
-    if (!$("optFaitiereSolin")?.disabled) $("optFaitiereSolin").checked = true;
-  }
-}
-
-/* ---------------------------
    4) CALCUL PRIX + RÉCAP
 ---------------------------- */
 
 function calculatePriceAndRecap() {
-  updateOptionsAvailabilityAndUI();
-
   const type = getSelectedType();
   const width = parseFloat($("width")?.value || "0");
   const length = parseFloat($("length")?.value || "0");
@@ -341,7 +253,8 @@ function calculatePriceAndRecap() {
     else claddingArea += width * height;
   });
 
-  const claddingType = document.querySelector('input[name="claddingType"]:checked')?.value;
+  const claddingType =
+    document.querySelector('input[name="claddingType"]:checked')?.value;
   const cladUnit = CLADDING_PRICE_PER_M2[claddingType] ?? 0;
   const claddingCost = claddingArea * cladUnit;
 
@@ -355,15 +268,14 @@ function calculatePriceAndRecap() {
   const optFaitiereDouble = $("optFaitiereDouble");
   const optFaitiereSimple = $("optFaitiereSimple");
 
-  // finitions actives ?
   const finishingSelected =
-    (optFaitiereSolin?.checked && !optFaitiereSolin.disabled) ||
+    (optFaitiereSolin?.checked) ||
     (optRiveSolin?.checked) ||
     (optGrandeRive?.checked) ||
     (optAngles?.checked) ||
     (optRejetEau?.checked) ||
-    (optFaitiereDouble?.checked && !optFaitiereDouble.disabled) ||
-    (optFaitiereSimple?.checked && !optFaitiereSimple.disabled);
+    (optFaitiereDouble?.checked) ||
+    (optFaitiereSimple?.checked);
 
   let optionsPrice = 0;
   if (finishingSelected) optionsPrice += area * OPTIONS_PRICES.finishingPerM2;
@@ -395,54 +307,16 @@ function calculatePriceAndRecap() {
 
   const roofColor = document.querySelector('input[name="roofColor"]:checked')?.value || "Non précisée";
   const claddingColor = document.querySelector('input[name="claddingColor"]:checked')?.value || "Non précisée";
-  const trimColor = document.querySelector('input[name="trimColor"]:checked')?.value || "Non précisée";
+  const trimColor = document.querySelector('input[name="trimColor"]:checked')?.value || roofColor;
 
   const selectedOptions = [];
-
-// ✅ Faîtière avec solin
-if (optFaitiereSolin?.checked) {
-  if (slopeType === "mono") {
-    // Monopente : arête haute façade A (+Z), sur toute la longueur
-    const yHigh = max.y;        // point haut structure
-    const zHigh = max.z + eps;  // façade A (extérieur)
-    addBand(
-      new THREE.Vector3(min.x, yHigh, zHigh),
-      new THREE.Vector3(max.x, yHigh, zHigh),
-      trimColor,
-      0.055
-    );
-  } else {
-    // Bipente : option désactivée normalement, mais si jamais => faîtage (ligne centrale z=cz)
-    addBand(
-      new THREE.Vector3(min.x, max.y, cz),
-      new THREE.Vector3(max.x, max.y, cz),
-      trimColor,
-      0.055
-    );
-  }
-}
-
-
-  // Rive solin / grande rive (avec côté)
-  if (optRiveSolin?.checked) {
-    const b = $("riveSolinSideB")?.checked;
-    const d = $("riveSolinSideD")?.checked;
-    const sides = [b ? "B" : null, d ? "D" : null].filter(Boolean).join("/");
-    selectedOptions.push("Rive avec solin" + (sides ? ` (côté ${sides})` : ""));
-  }
-
-  if (optGrandeRive?.checked) {
-    const b = $("grandeRiveSideB")?.checked;
-    const d = $("grandeRiveSideD")?.checked;
-    const sides = [b ? "B" : null, d ? "D" : null].filter(Boolean).join("/");
-    selectedOptions.push("Grande rive" + (sides ? ` (côté ${sides})` : ""));
-  }
-
-  if (optAngles?.checked) selectedOptions.push("Angles");
   if (optRejetEau?.checked) selectedOptions.push("Rejet d’eau");
-
-  if (optFaitiereDouble?.checked && !optFaitiereDouble.disabled) selectedOptions.push("Faîtière double");
-  if (optFaitiereSimple?.checked && !optFaitiereSimple.disabled) selectedOptions.push("Faîtière simple");
+  if (optAngles?.checked) selectedOptions.push("Angles");
+  if (optGrandeRive?.checked) selectedOptions.push("Grande rive");
+  if (optRiveSolin?.checked) selectedOptions.push("Rive avec solin");
+  if (optFaitiereSolin?.checked) selectedOptions.push("Faîtière avec solin");
+  if (optFaitiereSimple?.checked) selectedOptions.push("Faîtière simple");
+  if (optFaitiereDouble?.checked) selectedOptions.push("Faîtière double");
   if (optInstall?.checked) selectedOptions.push("Pose par nos équipes");
 
   let addressText = "";
@@ -579,12 +453,11 @@ const CLAD_OPACITY = 0.98;
 const ROOF_THICKNESS = 0.06;
 const CLAD_THICKNESS = 0.035;
 
-// Couverture (collage)
+// ✅ paramètres legacy (on garde, mais le snap panne haute gère le “collage”)
 const ROOF_SINK_RATIO = 0.015;
-const ROOF_DROP = 0.04;
-const ROOF_GAP = 0.01;
+const ROOF_DROP = 0.08;
 
-// Bardage sous couverture
+// ✅ Bardage juste sous couverture
 const CLAD_TOP_GAP = 0.03;
 
 // OrbitControls
@@ -610,8 +483,6 @@ let cladTex = null;
 
 let lastInlineCanvasHeight = 0;
 
-/* -------- Couleurs 3D depuis RAL -------- */
-
 function getRALColorFromRadio(name) {
   const input = document.querySelector(`input[name="${name}"]:checked`);
   if (!input) return "#666666";
@@ -621,11 +492,7 @@ function getRALColorFromRadio(name) {
 }
 function getRoofColor3D() { return getRALColorFromRadio("roofColor"); }
 function getCladdingColor3D() { return getRALColorFromRadio("claddingColor"); }
-// Habillages : même palette, groupe "trimColor"
-function getTrimColor3D() {
-  const color = getRALColorFromRadio("trimColor");
-  return color || getRoofColor3D();
-}
+function getTrimColor3D() { return getRALColorFromRadio("trimColor"); }
 
 function getCurrentDimensions() {
   const width = parseFloat($("width")?.value || "3");
@@ -860,13 +727,13 @@ function materialWithTexture({ color, tex, opacity }) {
   return mat;
 }
 
-// ----- Géométrie pignon mono (trapèze) : point haut côté +Z
+// ----- Géométrie pignon mono (trapèze)
 function createMonoGableShape(widthZ, y0, yLow, yHigh) {
   const halfW = widthZ / 2;
   const s = new THREE.Shape();
   s.moveTo(-halfW, y0);
   s.lineTo( halfW, y0);
-  s.lineTo( halfW, yHigh); // haut sur +Z
+  s.lineTo( halfW, yHigh);
   s.lineTo(-halfW, yLow);
   s.lineTo(-halfW, y0);
   return s;
@@ -885,7 +752,45 @@ function createBiGableShape(widthZ, y0, yEave, yRidge) {
   return s;
 }
 
-/* -------- Habillages : lignes de surbrillance -------- */
+/* ===== Helpers “panne haute” + snap couverture ===== */
+function snapMeshMinYTo(mesh, targetMinY) {
+  const bb = new THREE.Box3().setFromObject(mesh);
+  const dy = targetMinY - bb.min.y;
+  mesh.position.y += dy;
+}
+
+function getRoofSeatYFromStructure(structureGroup, bbox) {
+  if (!structureGroup || !bbox) return null;
+
+  const min = bbox.min, max = bbox.max;
+  const lenX = max.x - min.x;
+  const widthZ = max.z - min.z;
+  const heightY = max.y - min.y;
+
+  const topZoneMinY = max.y - heightY * 0.35;
+  const thinYMax = Math.max(0.06, heightY * 0.08);
+
+  let best = null;
+
+  structureGroup.traverse((obj) => {
+    if (!obj.isMesh) return;
+
+    const bb = new THREE.Box3().setFromObject(obj);
+    const size = bb.getSize(new THREE.Vector3());
+
+    if (bb.max.y < topZoneMinY) return;
+    if (size.y > thinYMax) return;
+
+    const longEnoughX = size.x > lenX * 0.35;
+    const longEnoughZ = size.z > widthZ * 0.35;
+    if (!longEnoughX && !longEnoughZ) return;
+
+    const score = (bb.max.y * 10) + Math.max(size.x, size.z);
+    if (!best || score > best.score) best = { score, yTop: bb.max.y };
+  });
+
+  return best ? best.yTop : null;
+}
 
 function rebuildOverlays(bbox) {
   if (!bbox) return;
@@ -922,72 +827,12 @@ function rebuildOverlays(bbox) {
     opacity: CLAD_OPACITY,
   });
 
+  // ===== TOITURE (couverture) — collée sur panne haute =====
   const slopeType = getSelectedType();
   const angle = Math.atan(PITCH_RATIO);
 
-  // Stockage context pour les highlights
-  overlayGroup.userData.ctx = {
-    min, max, cx, cz, lenX, widthZ, heightY, eps, angle, roofSink, roofThick, cladThick
-  };
-   
-  // ===== TOITURE =====
-    // ===== Helpers (snap + détection panne haute) =====
-  function snapMeshMinYTo(mesh, targetMinY) {
-    const bb = new THREE.Box3().setFromObject(mesh);
-    const dy = targetMinY - bb.min.y;
-    mesh.position.y += dy;
-  }
-
-  function getRoofSeatYFromStructure(structureGroup, bbox) {
-    if (!structureGroup || !bbox) return null;
-
-    const min = bbox.min, max = bbox.max;
-    const lenX = max.x - min.x;
-    const widthZ = max.z - min.z;
-    const heightY = max.y - min.y;
-
-    const topZoneMinY = max.y - heightY * 0.35;     // zone haute
-    const thinYMax = Math.max(0.06, heightY * 0.08); // pièce "fine" en Y
-
-    let best = null;
-
-    structureGroup.traverse((obj) => {
-      if (!obj.isMesh) return;
-
-      const bb = new THREE.Box3().setFromObject(obj);
-      const size = bb.getSize(new THREE.Vector3());
-
-      // proche du haut
-      if (bb.max.y < topZoneMinY) return;
-
-      // pièce "fine" verticalement
-      if (size.y > thinYMax) return;
-
-      // plutôt longue (pannes : très longues en X, ou parfois en Z)
-      const longEnoughX = size.x > lenX * 0.35;
-      const longEnoughZ = size.z > widthZ * 0.35;
-      if (!longEnoughX && !longEnoughZ) return;
-
-      // score : on privilégie la plus haute et la plus longue
-      const score = (bb.max.y * 10) + Math.max(size.x, size.z);
-
-      if (!best || score > best.score) {
-        best = { score, yTop: bb.max.y };
-      }
-    });
-
-    return best ? best.yTop : null;
-  }
-
-  // ===== TOITURE (couverture) =====
-  const ROOF_CONTACT_GAP = 0.004; // anti scintillement (très faible)
-  const slopeType = getSelectedType();
-  const angle = Math.atan(PITCH_RATIO);
-
-  // 👉 niveau "porteur" : dessus de la panne haute (auto)
-  // bbox vient de buildStructureFromConfig() -> structureGroup est déjà en place
+  const ROOF_CONTACT_GAP = 0.004; // minuscule anti-zfighting
   const seatY = getRoofSeatYFromStructure(structureGroup, bbox);
-  // fallback si jamais la détection ne trouve rien
   const seatFallbackY = (max.y - roofSink) - 0.18;
   const targetMinY = (seatY ?? seatFallbackY) - ROOF_CONTACT_GAP;
 
@@ -997,15 +842,13 @@ function rebuildOverlays(bbox) {
     const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.userData.kind = "roof";
 
-    // pente vers -Z (point haut façade A = +Z)
     roof.rotation.x = -angle;
 
     const lift = (widthZ / 2) * Math.sin(angle);
 
-    // position "approx" (le snap finira le collage)
     roof.position.set(
       cx,
-      (max.y - roofSink) + lift - ROOF_DROP, // on garde juste ROOF_DROP
+      (max.y - roofSink) + lift - ROOF_DROP,
       cz - (overhang / 2)
     );
 
@@ -1013,7 +856,7 @@ function rebuildOverlays(bbox) {
     roof.receiveShadow = false;
     overlayGroup.add(roof);
 
-    // ✅ collage réel sur la panne haute
+    // ✅ snap réel
     snapMeshMinYTo(roof, targetMinY);
 
     overlayGroup.userData.roof = { type: "mono", roof };
@@ -1045,23 +888,25 @@ function rebuildOverlays(bbox) {
     roofMinusZ.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roofMinusZ);
 
-    // ✅ collage réel sur la panne haute (même niveau pour les 2 pans)
+    // ✅ snap réel
     snapMeshMinYTo(roofPlusZ, targetMinY);
     snapMeshMinYTo(roofMinusZ, targetMinY);
 
     overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ };
   }
 
-
   // ===== BARDAGE =====
   const panelHeight = Math.max(0.2, heightY - CLAD_TOP_GAP);
   const yCenter = min.y + panelHeight / 2;
 
+  // Long pans A/C
   const geoLong = new THREE.BoxGeometry(lenX, panelHeight, cladThick);
 
+  // A = +Z
   const cladA_outer = new THREE.Mesh(geoLong, cladMat.clone());
   cladA_outer.position.set(cx, yCenter, max.z + eps);
 
+  // C = -Z
   const cladC_outer = new THREE.Mesh(geoLong, cladMat.clone());
   cladC_outer.position.set(cx, yCenter, min.z - eps);
 
@@ -1071,7 +916,6 @@ function rebuildOverlays(bbox) {
 
   if (slopeType === "mono") {
     const deltaH = widthZ * PITCH_RATIO;
-
     const yLow  = min.y + panelHeight - deltaH;
     const yHigh = min.y + panelHeight;
 
@@ -1081,12 +925,8 @@ function rebuildOverlays(bbox) {
     gableShapeB = new THREE.Mesh(geoGable, cladMat.clone());
     gableShapeD = new THREE.Mesh(geoGable, cladMat.clone());
 
-    // Faces : B gauche, D droite
     gableShapeB.rotation.y = -Math.PI / 2;
     gableShapeD.rotation.y = +Math.PI / 2;
-
-    // ✅ FIX pente façade D : on inverse le shape sur D (sinon pente inversée)
-    gableShapeD.scale.x = -1;
 
     const gableOffset = (cladThick / 2) + eps;
     gableShapeB.position.set(min.x - gableOffset, 0, cz);
@@ -1114,316 +954,43 @@ function rebuildOverlays(bbox) {
   }
 
   function addDoubleSkin(mesh, outwardDir) {
-  mesh.castShadow = SHADOW_ENABLED;
-  mesh.receiveShadow = SHADOW_ENABLED;
-  mesh.userData.kind = "clad";
-  overlayGroup.add(mesh);
+    mesh.castShadow = SHADOW_ENABLED;
+    mesh.receiveShadow = SHADOW_ENABLED;
+    mesh.userData.kind = "clad";
+    overlayGroup.add(mesh);
 
-  // ✅ Pour les pignons (ShapeGeometry), on NE FAIT PAS de double peau
-  const isGable = (mesh.geometry?.type === "ShapeGeometry");
-  if (isGable) {
-    return { outer: mesh, inner: null };
+    const inner = new THREE.Mesh(mesh.geometry, mesh.material.clone());
+    inner.rotation.copy(mesh.rotation);
+    inner.position.copy(mesh.position);
+    inner.position.addScaledVector(outwardDir, -cladThick);
+    inner.material.opacity = Math.min(1, CLAD_OPACITY * 0.98);
+    inner.castShadow = SHADOW_ENABLED;
+    inner.receiveShadow = SHADOW_ENABLED;
+    inner.userData.kind = "clad";
+    overlayGroup.add(inner);
+
+    return { outer: mesh, inner };
   }
-
-  // ✅ Double peau uniquement pour A/C (BoxGeometry)
-  const inner = new THREE.Mesh(mesh.geometry, mesh.material.clone());
-  inner.rotation.copy(mesh.rotation);
-  inner.position.copy(mesh.position);
-
-  // inward
-  inner.position.addScaledVector(outwardDir, -cladThick);
-  inner.material.opacity = Math.min(1, CLAD_OPACITY * 0.98);
-
-  inner.castShadow = SHADOW_ENABLED;
-  inner.receiveShadow = SHADOW_ENABLED;
-  inner.userData.kind = "clad";
-  overlayGroup.add(inner);
-
-  return { outer: mesh, inner };
-}
-
 
   const A = addDoubleSkin(cladA_outer, new THREE.Vector3(0, 0, 1));
   const C = addDoubleSkin(cladC_outer, new THREE.Vector3(0, 0, -1));
   const B = addDoubleSkin(gableShapeB, new THREE.Vector3(-1, 0, 0));
   const D = addDoubleSkin(gableShapeD, new THREE.Vector3(1, 0, 0));
 
-function applyCladdingVisibility() {
-  const showA = !!document.querySelector('input[name="claddingSide"][value="A"]:checked');
-  const showB = !!document.querySelector('input[name="claddingSide"][value="B"]:checked');
-  const showC = !!document.querySelector('input[name="claddingSide"][value="C"]:checked');
-  const showD = !!document.querySelector('input[name="claddingSide"][value="D"]:checked');
+  function applyCladdingVisibility() {
+    const showA = !!document.querySelector('input[name="claddingSide"][value="A"]:checked');
+    const showB = !!document.querySelector('input[name="claddingSide"][value="B"]:checked');
+    const showC = !!document.querySelector('input[name="claddingSide"][value="C"]:checked');
+    const showD = !!document.querySelector('input[name="claddingSide"][value="D"]:checked');
 
-  A.outer.visible = showA; if (A.inner) A.inner.visible = showA;
-  B.outer.visible = showB; if (B.inner) B.inner.visible = showB;
-  C.outer.visible = showC; if (C.inner) C.inner.visible = showC;
-  D.outer.visible = showD; if (D.inner) D.inner.visible = showD;
-}
-
+    A.outer.visible = showA; A.inner.visible = showA;
+    B.outer.visible = showB; B.inner.visible = showB;
+    C.outer.visible = showC; C.inner.visible = showC;
+    D.outer.visible = showD; D.inner.visible = showD;
+  }
 
   applyCladdingVisibility();
-  overlayGroup.userData.applyCladdingVisibility = applyCladdingVisibility;
-
-  // ===== GROUPE HIGHLIGHTS (habillages) =====
-  const highlightGroup = new THREE.Group();
-  highlightGroup.userData.kind = "trimHL";
-  overlayGroup.add(highlightGroup);
-  overlayGroup.userData.highlightGroup = highlightGroup;
-
-  // helpers y sur toiture
-  function yOnMonoRoof(z) {
-    const r = overlayGroup.userData.roof?.roof;
-    if (!r) return max.y;
-    // rotation -angle => y = y0 + (z - z0)*tan(angle)
-    return r.position.y + (z - r.position.z) * Math.tan(angle);
-  }
-
-  function yOnBiRoofPlus(z) {
-    const r = overlayGroup.userData.roof?.roofPlusZ;
-    if (!r) return max.y;
-    // rotation +angle => y = y0 - (z - z0)*tan(angle)
-    return r.position.y - (z - r.position.z) * Math.tan(angle);
-  }
-
-  function yOnBiRoofMinus(z) {
-    const r = overlayGroup.userData.roof?.roofMinusZ;
-    if (!r) return max.y;
-    // rotation -angle => y = y0 + (z - z0)*tan(angle)
-    return r.position.y + (z - r.position.z) * Math.tan(angle);
-  }
-
-  function clearHighlights() {
-    while (highlightGroup.children.length) {
-      const obj = highlightGroup.children.pop();
-      if (obj.geometry) obj.geometry.dispose();
-      if (obj.material) obj.material.dispose();
-    }
-  }
-
-function addBand(p1, p2, color, radius = 0.045) {
-  const curve = new THREE.CatmullRomCurve3([p1, p2]);
-
-  const geom = new THREE.TubeGeometry(
-    curve,
-    1,          // tubularSegments
-    radius,     // épaisseur (augmente pour + visible)
-    10,         // radialSegments
-    false
-  );
-
-  const mat = new THREE.MeshStandardMaterial({
-    color,
-    emissive: new THREE.Color(color),
-    emissiveIntensity: 0.55,
-    transparent: true,
-    opacity: 0.95,
-    depthTest: false,
-    depthWrite: false,
-    metalness: 0.1,
-    roughness: 0.35,
-  });
-
-  const mesh = new THREE.Mesh(geom, mat);
-  mesh.renderOrder = 999;
-  highlightGroup.add(mesh);
-}
-
-
-  function applyTrimHighlights() {
-    clearHighlights();
-
-    // couleur choisie pour habillages
-    const trimColor = getTrimColor3D();
-
-    const isMono = slopeType === "mono";
-
-    const optFaitiereSolin = $("optFaitiereSolin");
-    const optRiveSolin = $("optRiveSolin");
-    const optGrandeRive = $("optGrandeRive");
-    const optAngles = $("optAngles");
-    const optRejetEau = $("optRejetEau");
-    const optFaitiereDouble = $("optFaitiereDouble");
-    const optFaitiereSimple = $("optFaitiereSimple");
-
-    // ---------- FAITIÈRE (arête de faîtage / arête haute) ----------
-    // - Faîtière double / simple : ligne entière
-    // - Faîtière avec solin : segments selon côté B/D
-    const wantFullRidge =
-      (!!optFaitiereDouble?.checked && !optFaitiereDouble.disabled) ||
-      (!!optFaitiereSimple?.checked && !optFaitiereSimple.disabled);
-
-    const wantRidgeSolin = (!!optFaitiereSolin?.checked && !optFaitiereSolin.disabled);
-
-    if (wantFullRidge || wantRidgeSolin) {
-      if (isMono) {
-        // arête haute = côté +Z, sur toute la longueur (x)
-        const zHigh = max.z + eps * 0.2;
-        const yHigh = yOnMonoRoof(max.z) + 0.02;
-
-        if (wantFullRidge) {
-          addBand(
-            new THREE.Vector3(min.x, yHigh, zHigh),
-            new THREE.Vector3(max.x, yHigh, zHigh),
-            trimColor
-          );
-        }
-
-        if (wantRidgeSolin) {
-          const seg = Math.min(lenX * 0.25, 2.5);
-          const b = $("faitiereSolinSideB")?.checked;
-          const d = $("faitiereSolinSideD")?.checked;
-
-          if (b) {
-            addBand(
-              new THREE.Vector3(min.x, yHigh, zHigh),
-              new THREE.Vector3(min.x + seg, yHigh, zHigh),
-              trimColor
-            );
-          }
-          if (d) {
-            addBand(
-              new THREE.Vector3(max.x - seg, yHigh, zHigh),
-              new THREE.Vector3(max.x, yHigh, zHigh),
-              trimColor
-            );
-          }
-        }
-
-      } else {
-        // bipente : faîtage = z=cz
-        const zR = cz;
-        const yR = yOnBiRoofPlus(cz) + 0.03;
-
-        // en bipente, faîtière solin & simple sont désactivées
-        if (wantFullRidge) {
-          addBand(
-            new THREE.Vector3(min.x, yR, zR),
-            new THREE.Vector3(max.x, yR, zR),
-            trimColor
-          );
-        }
-      }
-    }
-
-    // ---------- RIVES (pignons, extrémités) ----------
-    // Rive avec solin / Grande rive : sélection de côté B / D
-    const riveB = ($("riveSolinSideB")?.checked) || ($("grandeRiveSideB")?.checked);
-    const riveD = ($("riveSolinSideD")?.checked) || ($("grandeRiveSideD")?.checked);
-
-    // seulement si une des 2 options est cochée
-    const wantRives = (!!optRiveSolin?.checked) || (!!optGrandeRive?.checked);
-
-    if (wantRives) {
-      if (isMono) {
-        // Au pignon x=min et x=max : une arête oblique (du bas vers le haut)
-        function addMonoGableRakeAtX(x, outwardX) {
-          const z1 = min.z - eps * 0.2;
-          const z2 = max.z + eps * 0.2;
-          const y1 = yOnMonoRoof(min.z) + 0.02;
-          const y2 = yOnMonoRoof(max.z) + 0.02;
-          addBand(
-            new THREE.Vector3(x + outwardX, y1, z1),
-            new THREE.Vector3(x + outwardX, y2, z2),
-            trimColor
-          );
-        }
-        if (riveB) addMonoGableRakeAtX(min.x, -eps * 0.6);
-        if (riveD) addMonoGableRakeAtX(max.x, +eps * 0.6);
-
-      } else {
-        // bipente : au pignon, 2 arêtes (eave->ridge) de chaque pan
-        function addBiGableRakesAtX(x, outwardX) {
-          const yR = yOnBiRoofPlus(cz) + 0.03;
-
-          const yEavePlus = yOnBiRoofPlus(max.z) + 0.02;
-          const yEaveMinus = yOnBiRoofMinus(min.z) + 0.02;
-
-          // pan +Z : (x, max.z) -> (x, cz)
-          addBand(
-            new THREE.Vector3(x + outwardX, yEavePlus, max.z + eps * 0.2),
-            new THREE.Vector3(x + outwardX, yR, cz),
-            trimColor
-          );
-
-          // pan -Z : (x, min.z) -> (x, cz)
-          addBand(
-            new THREE.Vector3(x + outwardX, yEaveMinus, min.z - eps * 0.2),
-            new THREE.Vector3(x + outwardX, yR, cz),
-            trimColor
-          );
-        }
-
-        if (riveB) addBiGableRakesAtX(min.x, -eps * 0.6);
-        if (riveD) addBiGableRakesAtX(max.x, +eps * 0.6);
-      }
-    }
-
-    // ---------- ANGLES (4 coins verticaux) ----------
-    if (optAngles?.checked) {
-      const y0 = min.y + 0.02;
-      const yTop = max.y - 0.02;
-
-      const corners = [
-        [min.x - eps * 0.2, min.z - eps * 0.2],
-        [min.x - eps * 0.2, max.z + eps * 0.2],
-        [max.x + eps * 0.2, min.z - eps * 0.2],
-        [max.x + eps * 0.2, max.z + eps * 0.2],
-      ];
-
-      corners.forEach(([x, z]) => {
-        addBand(
-          new THREE.Vector3(x, y0, z),
-          new THREE.Vector3(x, yTop, z),
-          trimColor
-        );
-      });
-    }
-
-    // ---------- REJET D’EAU (pied de bardage sur façades sélectionnées) ----------
-    if (optRejetEau?.checked) {
-      const yBase = min.y + 0.03;
-
-      const showA = !!document.querySelector('input[name="claddingSide"][value="A"]:checked');
-      const showB = !!document.querySelector('input[name="claddingSide"][value="B"]:checked');
-      const showC = !!document.querySelector('input[name="claddingSide"][value="C"]:checked');
-      const showD = !!document.querySelector('input[name="claddingSide"][value="D"]:checked');
-
-      if (showA) {
-        addBand(
-          new THREE.Vector3(min.x, yBase, max.z + eps * 0.6),
-          new THREE.Vector3(max.x, yBase, max.z + eps * 0.6),
-          trimColor
-        );
-      }
-      if (showC) {
-        addBand(
-          new THREE.Vector3(min.x, yBase, min.z - eps * 0.6),
-          new THREE.Vector3(max.x, yBase, min.z - eps * 0.6),
-          trimColor
-        );
-      }
-      if (showB) {
-        addBand(
-          new THREE.Vector3(min.x - eps * 0.6, yBase, min.z),
-          new THREE.Vector3(min.x - eps * 0.6, yBase, max.z),
-          trimColor
-        );
-      }
-      if (showD) {
-        addBand(
-          new THREE.Vector3(max.x + eps * 0.6, yBase, min.z),
-          new THREE.Vector3(max.x + eps * 0.6, yBase, max.z),
-          trimColor
-        );
-      }
-    }
-  }
-
-  // Exposer la fonction highlights à updateOverlayStylesOnly()
-  overlayGroup.userData.applyTrimHighlights = applyTrimHighlights;
-
-  // Appliquer tout de suite
-  applyTrimHighlights();
+  overlayGroup.userData = { applyCladdingVisibility };
 
   // ===== SCALE SOL + FOND =====
   const radius = Math.max(lenX, widthZ) * 0.9;
@@ -1486,7 +1053,6 @@ function updateOverlayStylesOnly() {
   });
 
   overlayGroup.userData?.applyCladdingVisibility?.();
-  overlayGroup.userData?.applyTrimHighlights?.();
 }
 
 function update3DFromConfig() {
@@ -1570,6 +1136,7 @@ function setup3DFullscreenUI() {
 ---------------------------- */
 
 document.addEventListener("DOMContentLoaded", async () => {
+  // ✅ si un élément n’existe pas, on évite de casser
   populateDimensions();
 
   initThree();
@@ -1578,11 +1145,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   updateDeliveryUI();
   await updateCityOptions();
 
-  // Type d'abri
   document.querySelectorAll('input[name="slopeType"]').forEach((el) => {
     el.addEventListener("change", () => {
       populateDimensions();
-      updateOptionsAvailabilityAndUI();
       loadModelForType(getSelectedType());
       calculatePriceAndRecap();
     });
@@ -1592,7 +1157,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     $(id)?.addEventListener("change", calculatePriceAndRecap);
   });
 
-  // Livraison
   document.querySelectorAll('input[name="deliveryMode"]').forEach((el) => {
     el.addEventListener("change", async () => {
       updateDeliveryUI();
@@ -1607,7 +1171,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   $("city")?.addEventListener("change", calculatePriceAndRecap);
 
-  // Toiture
   document.querySelectorAll('input[name="roofType"]').forEach((el) =>
     el.addEventListener("change", calculatePriceAndRecap)
   );
@@ -1619,7 +1182,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     })
   );
 
-  // Bardage
   document.querySelectorAll('input[name="claddingType"]').forEach((el) =>
     el.addEventListener("change", calculatePriceAndRecap)
   );
@@ -1631,6 +1193,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     })
   );
 
+  document.querySelectorAll('input[name="trimColor"]').forEach((el) =>
+    el.addEventListener("change", () => {
+      calculatePriceAndRecap();
+      // (si plus tard on ajoute les habillages 3D avec couleur)
+    })
+  );
+
   document.querySelectorAll('input[name="claddingSide"]').forEach((el) =>
     el.addEventListener("change", () => {
       calculatePriceAndRecap();
@@ -1638,15 +1207,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     })
   );
 
-  // Couleur habillages
-  document.querySelectorAll('input[name="trimColor"]').forEach((el) =>
-    el.addEventListener("change", () => {
-      calculatePriceAndRecap();
-      updateOverlayStylesOnly();
-    })
-  );
-
-  // Options (checkbox)
   [
     "optInstall",
     "optFaitiereSolin",
@@ -1658,27 +1218,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     "optFaitiereSimple",
   ].forEach((id) =>
     $(id)?.addEventListener("change", () => {
-      updateOptionsAvailabilityAndUI();
       calculatePriceAndRecap();
-      updateOverlayStylesOnly();
-    })
-  );
-
-  // Options (côtés)
-  [
-    "faitiereSolinSideB", "faitiereSolinSideD",
-    "riveSolinSideB", "riveSolinSideD",
-    "grandeRiveSideB", "grandeRiveSideD",
-  ].forEach((id) =>
-    $(id)?.addEventListener("change", () => {
-      updateOptionsAvailabilityAndUI();
-      calculatePriceAndRecap();
-      updateOverlayStylesOnly();
     })
   );
 
   $("btnCalculate")?.addEventListener("click", calculatePriceAndRecap);
 
-  updateOptionsAvailabilityAndUI();
+  // ✅ premier calcul
   calculatePriceAndRecap();
 });
