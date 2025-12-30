@@ -132,6 +132,51 @@ function populateDimensions() {
 }
 
 /* ---------------------------
+   2.3) OPTIONS — HELPERS (mono/bi + côtés)
+---------------------------- */
+
+function setInputDisabled(inputEl, disabled) {
+  if (!inputEl) return;
+
+  inputEl.disabled = disabled;
+  if (disabled && inputEl.checked) inputEl.checked = false;
+
+  // petit feedback visuel sans toucher au CSS
+  const wrap = inputEl.closest("label") || inputEl.parentElement;
+  if (wrap) {
+    wrap.style.opacity = disabled ? "0.45" : "";
+    wrap.style.pointerEvents = disabled ? "none" : "";
+    wrap.style.cursor = disabled ? "not-allowed" : "";
+  }
+}
+
+function updateFinishingAvailability() {
+  const type = getSelectedType(); // "mono" | "bi"
+
+  // Mono => interdit faitière double
+  setInputDisabled($("optFaitiereDouble"), type === "mono");
+
+  // Bi => interdit faitière simple + faitière avec solin (B/D)
+  const disableMonoOnly = type === "bi";
+  setInputDisabled($("optFaitiereSimple"), disableMonoOnly);
+  setInputDisabled($("optFaitiereSolin_B"), disableMonoOnly);
+  setInputDisabled($("optFaitiereSolin_D"), disableMonoOnly);
+}
+
+function enforceRiveExclusivityForSide(side) {
+  const rive = $(`optRiveSolin_${side}`);
+  const grande = $(`optGrandeRive_${side}`);
+  if (!rive || !grande) return;
+
+  rive.addEventListener("change", () => {
+    if (rive.checked) grande.checked = false;
+  });
+  grande.addEventListener("change", () => {
+    if (grande.checked) rive.checked = false;
+  });
+}
+
+/* ---------------------------
    2.5) HELPERS RÉCAP (HTML + TEXTE)
 ---------------------------- */
 
@@ -260,20 +305,30 @@ function calculatePriceAndRecap() {
   const cladUnit = CLADDING_PRICE_PER_M2[claddingType] ?? 0;
   const claddingCost = claddingArea * cladUnit;
 
-  // options
+  // options (NOUVEAUX IDs)
   const optInstall = $("optInstall");
-  const optFaitiereSolin = $("optFaitiereSolin");
-  const optRiveSolin = $("optRiveSolin");
-  const optGrandeRive = $("optGrandeRive");
+
+  const optFaitiereSolin_B = $("optFaitiereSolin_B");
+  const optFaitiereSolin_D = $("optFaitiereSolin_D");
+
+  const optRiveSolin_B = $("optRiveSolin_B");
+  const optRiveSolin_D = $("optRiveSolin_D");
+
+  const optGrandeRive_B = $("optGrandeRive_B");
+  const optGrandeRive_D = $("optGrandeRive_D");
+
   const optAngles = $("optAngles");
   const optRejetEau = $("optRejetEau");
   const optFaitiereDouble = $("optFaitiereDouble");
   const optFaitiereSimple = $("optFaitiereSimple");
 
   const finishingSelected =
-    (optFaitiereSolin?.checked) ||
-    (optRiveSolin?.checked) ||
-    (optGrandeRive?.checked) ||
+    (optFaitiereSolin_B?.checked) ||
+    (optFaitiereSolin_D?.checked) ||
+    (optRiveSolin_B?.checked) ||
+    (optRiveSolin_D?.checked) ||
+    (optGrandeRive_B?.checked) ||
+    (optGrandeRive_D?.checked) ||
     (optAngles?.checked) ||
     (optRejetEau?.checked) ||
     (optFaitiereDouble?.checked) ||
@@ -311,9 +366,17 @@ function calculatePriceAndRecap() {
   const claddingColor = document.querySelector('input[name="claddingColor"]:checked')?.value || "Non précisée";
 
   const selectedOptions = [];
-  if (optFaitiereSolin?.checked) selectedOptions.push("Faîtière avec solin");
-  if (optRiveSolin?.checked) selectedOptions.push("Rive avec solin");
-  if (optGrandeRive?.checked) selectedOptions.push("Grande rive");
+
+  // Faitière avec solin (côtés)
+  if (optFaitiereSolin_B?.checked) selectedOptions.push("Faîtière avec solin (côté B)");
+  if (optFaitiereSolin_D?.checked) selectedOptions.push("Faîtière avec solin (côté D)");
+
+  // Rives (côtés)
+  if (optRiveSolin_B?.checked) selectedOptions.push("Rive avec solin (côté B)");
+  if (optRiveSolin_D?.checked) selectedOptions.push("Rive avec solin (côté D)");
+  if (optGrandeRive_B?.checked) selectedOptions.push("Grande rive (côté B)");
+  if (optGrandeRive_D?.checked) selectedOptions.push("Grande rive (côté D)");
+
   if (optAngles?.checked) selectedOptions.push("Angles");
   if (optRejetEau?.checked) selectedOptions.push("Rejet d’eau");
   if (optFaitiereDouble?.checked) selectedOptions.push("Faîtière double");
@@ -1086,6 +1149,11 @@ function setup3DFullscreenUI() {
 document.addEventListener("DOMContentLoaded", async () => {
   populateDimensions();
 
+  // ✅ options : exclusivité + mono/bi
+  enforceRiveExclusivityForSide("B");
+  enforceRiveExclusivityForSide("D");
+  updateFinishingAvailability();
+
   initThree();
   setup3DFullscreenUI();
 
@@ -1095,6 +1163,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.querySelectorAll('input[name="slopeType"]').forEach((el) => {
     el.addEventListener("change", () => {
       populateDimensions();
+      updateFinishingAvailability();
       loadModelForType(getSelectedType());
       calculatePriceAndRecap();
     });
@@ -1149,15 +1218,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   [
     "optInstall",
-    "optFaitiereSolin",
-    "optRiveSolin",
-    "optGrandeRive",
+
+    "optFaitiereSolin_B",
+    "optFaitiereSolin_D",
+
+    "optRiveSolin_B",
+    "optRiveSolin_D",
+
+    "optGrandeRive_B",
+    "optGrandeRive_D",
+
     "optAngles",
     "optRejetEau",
     "optFaitiereDouble",
     "optFaitiereSimple",
   ].forEach((id) =>
     $(id)?.addEventListener("change", () => {
+      updateFinishingAvailability();
       calculatePriceAndRecap();
     })
   );
