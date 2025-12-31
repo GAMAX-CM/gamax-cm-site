@@ -791,6 +791,71 @@ function getRoofSeatYFromStructure(structureGroup, bbox) {
 
   return best ? best.yTop : null;
 }
+function getAllMeshes(root) {
+  const meshes = [];
+  if (!root) return meshes;
+  root.traverse((o) => { if (o.isMesh) meshes.push(o); });
+  return meshes;
+}
+
+/**
+ * Colle la couverture sur la structure en raycastant vers le bas.
+ * - sampleCount : plus il est élevé, plus c’est précis
+ * - gap : mini jour anti z-fighting (en m)
+ */
+function snapRoofByRaycast(roofMesh, structureRoot, sampleCount = 7, gap = 0.002) {
+  if (!roofMesh || !structureRoot) return;
+
+  const meshes = getAllMeshes(structureRoot);
+  if (!meshes.length) return;
+
+  const raycaster = new THREE.Raycaster();
+  raycaster.firstHitOnly = false;
+
+  // BBox monde de la couverture (après rotation/position)
+  const bbRoof = new THREE.Box3().setFromObject(roofMesh);
+  const min = bbRoof.min, max = bbRoof.max;
+
+  // points d’échantillonnage dans la surface XY (X/Z)
+  const xs = [];
+  const zs = [];
+
+  for (let i = 0; i < sampleCount; i++) {
+    const t = i / (sampleCount - 1);
+    xs.push(THREE.MathUtils.lerp(min.x + 0.05*(max.x-min.x), max.x - 0.05*(max.x-min.x), t));
+    zs.push(THREE.MathUtils.lerp(min.z + 0.08*(max.z-min.z), max.z - 0.08*(max.z-min.z), t));
+  }
+
+  let bestHitY = null;
+
+  // On part d’un peu au-dessus de la couverture, et on tire vers le bas
+  const origin = new THREE.Vector3();
+  const dir = new THREE.Vector3(0, -1, 0);
+
+  for (const x of xs) {
+    for (const z of zs) {
+      origin.set(x, max.y + 2.0, z);
+      raycaster.set(origin, dir);
+
+      const hits = raycaster.intersectObjects(meshes, true);
+      if (!hits || !hits.length) continue;
+
+      // on garde le hit le plus haut
+      for (const h of hits) {
+        if (bestHitY === null || h.point.y > bestHitY) bestHitY = h.point.y;
+      }
+    }
+  }
+
+  if (bestHitY === null) return;
+
+  // On veut que le bas de la couverture (bbox minY) touche bestHitY - gap
+  const bbAfter = new THREE.Box3().setFromObject(roofMesh);
+  const currentMinY = bbAfter.min.y;
+  const targetMinY = bestHitY - gap;
+
+  roofMesh.position.y += (targetMinY - currentMinY);
+}
 
 function rebuildOverlays(bbox) {
   if (!bbox) return;
@@ -857,7 +922,8 @@ function rebuildOverlays(bbox) {
     overlayGroup.add(roof);
 
     // ✅ snap réel
-    snapMeshMinYTo(roof, targetMinY);
+snapRoofByRaycast(roof, structureGroup, 7, 0.002);
+;
 
     overlayGroup.userData.roof = { type: "mono", roof };
 
@@ -876,6 +942,7 @@ function rebuildOverlays(bbox) {
     );
     roofPlusZ.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roofPlusZ);
+   snapRoofByRaycast(roofPlusZ, structureGroup, 7, 0.002);
 
     const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
     roofMinusZ.userData.kind = "roof";
@@ -887,6 +954,7 @@ function rebuildOverlays(bbox) {
     );
     roofMinusZ.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roofMinusZ);
+   snapRoofByRaycast(roofMinusZ, structureGroup, 7, 0.002);
 
     // ✅ snap réel
     snapMeshMinYTo(roofPlusZ, targetMinY);
