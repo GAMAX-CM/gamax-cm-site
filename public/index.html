@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <title>GAMAX-CM – Configurateur d’abri métallique</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
 
   <!-- HEADER -->
@@ -57,7 +57,6 @@
         </div>
 
         <div class="configurator-layout">
-
           <!-- FORMULAIRE À GAUCHE -->
           <div class="config-form">
 
@@ -109,23 +108,33 @@
                   <input type="radio" name="roofType" value="bac_simple" checked>
                   <div class="bardage-card type-card">
                     <span class="bardage-label-main">Bac acier simple</span>
-                    <span class="bardage-label-sub">Tôle nervurée standard, économique.</span>
+                    <span class="bardage-label-sub">
+                      Tôle nervurée standard, économique.
+                    </span>
                   </div>
                 </label>
 
                 <label class="bardage-choice">
                   <input type="radio" name="roofType" value="bac_regul">
                   <div class="bardage-card type-card">
-                    <span class="bardage-label-main">Bac acier avec régulateur de condensation</span>
-                    <span class="bardage-label-sub">Recommandé si l’abri est bardé (limite la condensation).</span>
+                    <span class="bardage-label-main">
+                      Bac acier avec régulateur de condensation
+                    </span>
+                    <span class="bardage-label-sub">
+                      Recommandé si l’abri est bardé (limite la condensation).
+                    </span>
                   </div>
                 </label>
 
                 <label class="bardage-choice">
                   <input type="radio" name="roofType" value="sandwich40">
                   <div class="bardage-card type-card">
-                    <span class="bardage-label-main">Panneau sandwich ép. 40&nbsp;mm</span>
-                    <span class="bardage-label-sub">Meilleure isolation thermique, intérieur plus confortable.</span>
+                    <span class="bardage-label-main">
+                      Panneau sandwich ép. 40&nbsp;mm
+                    </span>
+                    <span class="bardage-label-sub">
+                      Meilleure isolation thermique, intérieur plus confortable.
+                    </span>
                   </div>
                 </label>
               </div>
@@ -271,15 +280,15 @@
                 </div>
               </div>
 
-              <!-- ✅ Habillages de finition : ordre réorganisé -->
+              <!-- ✅ Habillages : ordre demandé -->
               <div class="bardage-grid option-grid">
 
-                <!-- Ligne 1 : Rejet d'eau + Angles -->
+                <!-- Ligne 1 -->
                 <label class="bardage-choice">
                   <input type="checkbox" id="optRejetEau">
                   <div class="bardage-card option-card">
                     <span class="bardage-label-main">Rejet d’eau</span>
-                    <span class="bardage-label-sub">Profil en pied de bardage.</span>
+                    <span class="bardage-label-sub">Profil en pied de bardage (sur façades bardées).</span>
                   </div>
                 </label>
 
@@ -287,33 +296,61 @@
                   <input type="checkbox" id="optAngles">
                   <div class="bardage-card option-card">
                     <span class="bardage-label-main">Angles de bardage</span>
-                    <span class="bardage-label-sub">Finition des angles sortants/rentrants.</span>
+                    <span class="bardage-label-sub">Finition des angles verticaux.</span>
                   </div>
                 </label>
 
-                <!-- Ligne 2 : Grande rive + Rive avec solin -->
-                <label class="bardage-choice">
-                  <input type="checkbox" id="optGrandeRive">
-                  <div class="bardage-card option-card">
-                    <span class="bardage-label-main">Grande rive</span>
-                    <span class="bardage-label-sub">Habillage périphérique renforcé.</span>
-                  </div>
-                </label>
+                <!-- Ligne 2 -->
+                <div>
+                  <label class="bardage-choice">
+                    <input type="checkbox" id="optGrandeRive">
+                    <div class="bardage-card option-card">
+                      <span class="bardage-label-main">Grande rive</span>
+                      <span class="bardage-label-sub">Habillage de rive sur pignon (choix côté).</span>
+                    </div>
+                  </label>
 
-                <label class="bardage-choice">
-                  <input type="checkbox" id="optRiveSolin">
-                  <div class="bardage-card option-card">
-                    <span class="bardage-label-main">Rive avec solin</span>
-                    <span class="bardage-label-sub">Finition des rives (choix côté).</span>
+                  <div class="option-sides">
+                    <span class="option-sides-label">Côté :</span>
+                    <label class="option-side">
+                      <input type="checkbox" class="side-toggle" id="optGrandeRiveB" data-side="B">
+                      <span>B</span>
+                    </label>
+                    <label class="option-side">
+                      <input type="checkbox" class="side-toggle" id="optGrandeRiveD" data-side="D">
+                      <span>D</span>
+                    </label>
                   </div>
-                </label>
+                </div>
 
-                <!-- Ligne 3 : Faîtière avec solin + Faîtière simple -->
+                <div>
+                  <label class="bardage-choice">
+                    <input type="checkbox" id="optRiveSolin">
+                    <div class="bardage-card option-card">
+                      <span class="bardage-label-main">Rive avec solin</span>
+                      <span class="bardage-label-sub">Finition de rive sur pignon (choix côté).</span>
+                    </div>
+                  </label>
+
+                  <div class="option-sides">
+                    <span class="option-sides-label">Côté :</span>
+                    <label class="option-side">
+                      <input type="checkbox" class="side-toggle" id="optRiveSolinB" data-side="B">
+                      <span>B</span>
+                    </label>
+                    <label class="option-side">
+                      <input type="checkbox" class="side-toggle" id="optRiveSolinD" data-side="D">
+                      <span>D</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Ligne 3 -->
                 <label class="bardage-choice">
                   <input type="checkbox" id="optFaitiereSolin">
                   <div class="bardage-card option-card">
                     <span class="bardage-label-main">Faîtière avec solin</span>
-                    <span class="bardage-label-sub">Étanchéité en arête haute.</span>
+                    <span class="bardage-label-sub">Mono : sur arête haute façade A (toute la longueur).</span>
                   </div>
                 </label>
 
@@ -321,21 +358,21 @@
                   <input type="checkbox" id="optFaitiereSimple">
                   <div class="bardage-card option-card">
                     <span class="bardage-label-main">Faîtière simple</span>
-                    <span class="bardage-label-sub">Faîtière standard.</span>
+                    <span class="bardage-label-sub">Mono : sur arête haute façade A (toute la longueur).</span>
                   </div>
                 </label>
 
-                <!-- Ligne 4 : Faîtière double (seule) -->
+                <!-- Ligne 4 -->
                 <label class="bardage-choice" style="grid-column: 1 / -1;">
                   <input type="checkbox" id="optFaitiereDouble">
                   <div class="bardage-card option-card">
                     <span class="bardage-label-main">Faîtière double</span>
-                    <span class="bardage-label-sub">Pour bipente (arête de faîtage).</span>
+                    <span class="bardage-label-sub">Bipente : sur arête de faîtage (toute la longueur).</span>
                   </div>
                 </label>
 
               </div>
-            </div><!-- ✅ FIN 5.1 .field (habillages) -->
+            </div>
 
             <!-- 5.2 POSE / MONTAGE -->
             <div class="field">
@@ -387,12 +424,10 @@
             <button class="btn full-width" type="button" id="btnCalculate">
               Calculer / mettre à jour le prix estimatif
             </button>
+          </div>
 
-          </div><!-- ✅ FIN .config-form -->
-
-          <!-- COLONNE DROITE : RÉCAP + VUE 3D -->
+          <!-- COLONNE DROITE -->
           <aside class="sidepanels">
-
             <div class="sidepanel recap-panel">
               <h2>Récapitulatif de votre abri</h2>
               <p class="recap-sub">Vérifiez les éléments avant de passer à la commande.</p>
@@ -424,11 +459,10 @@
                 <p class="viewer-caption">Image non contractuelle.</p>
               </div>
             </div>
+          </aside>
 
-          </aside><!-- ✅ FIN .sidepanels -->
-
-        </div><!-- ✅ FIN .configurator-layout -->
-      </div><!-- ✅ FIN .container -->
+        </div>
+      </div>
     </section>
 
     <!-- CONTACT -->
@@ -448,7 +482,7 @@
     </div>
   </footer>
 
-  <!-- === THREE.JS POUR LA 3D === -->
+  <!-- THREE -->
   <script src="https://unpkg.com/three@0.146.0/build/three.min.js"></script>
   <script src="https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://unpkg.com/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -456,3 +490,4 @@
   <script src="app.js"></script>
 </body>
 </html>
+
