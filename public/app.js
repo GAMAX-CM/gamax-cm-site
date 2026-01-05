@@ -1153,7 +1153,7 @@ function rebuildOverlays(bbox) {
     overlayGroup.userData.roof = { type: "mono", roof, centerY, eaveY };
 
     // ✅ FIX: clipping correct (sinon bug / rien ne se clippe)
-    applyStructureClipping(eaveY);
+   
 
   } else {
     const halfW = widthZ / 2;
@@ -1179,7 +1179,7 @@ function rebuildOverlays(bbox) {
     overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ, centerY, eaveY };
 
     // ✅ FIX clipping
-    applyStructureClipping(eaveY);
+
   }
 
   /* ============================
