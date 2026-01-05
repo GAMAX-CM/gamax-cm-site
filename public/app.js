@@ -555,10 +555,11 @@ const CLAD_OPACITY = 0.985;
 const ROOF_THICKNESS = 0.06;
 const CLAD_THICKNESS = 0.032;
 
-// ✅ Recollage : on “rentre” légèrement dans la structure
-// (au lieu de laisser un gap visible)
-const ROOF_GAP = -0.010;      // NEGATIF = on colle (voire on embed)
-const ROOF_SINK_RATIO = 0.004;
+// ✅ Recollage toiture (monopente surtout)
+// -> plus on descend, plus le “jour” disparaît
+const ROOF_GAP = -0.035;        // était -0.010
+const ROOF_SINK_RATIO = 0.018;  // était 0.004
+
 
 // ✅ Bardage collé sous couverture
 const CLAD_TOP_GAP = 0.006;
@@ -697,7 +698,7 @@ function initThree() {
   // ✅ rendu plus “pro”
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 1.18; // + lumineux
   renderer.physicallyCorrectLights = true;
 
   if (SHADOW_ENABLED) {
@@ -706,7 +707,7 @@ function initThree() {
   }
 
   // Lights “studio”
-  scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.52)); // + lumineux
 
   const key = new THREE.DirectionalLight(0xffffff, 1.05);
   key.position.set(12, 22, 10);
