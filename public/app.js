@@ -722,6 +722,11 @@ function initThree() {
   fill.position.set(-18, 14, 6);
   scene.add(fill);
 
+const topSoft = new THREE.DirectionalLight(0xffffff, 0.35);
+topSoft.position.set(0, 30, 0);
+scene.add(topSoft);
+
+
   const rim = new THREE.DirectionalLight(0xfff3dd, 0.25);
   rim.position.set(0, 12, -18);
   scene.add(rim);
@@ -783,14 +788,23 @@ function loadModelForType(type) {
   loader.load(
     modelCfg.path,
     (gltf) => {
-      baseModule = gltf.scene;
-      baseModule.traverse((obj) => {
-        if (obj.isMesh) {
-          obj.castShadow = SHADOW_ENABLED;
-          obj.receiveShadow = SHADOW_ENABLED;
-          obj.material = obj.material.clone();
-        }
-      });
+baseModule = gltf.scene;
+baseModule.traverse((obj) => {
+  if (!obj.isMesh) return;
+
+  obj.castShadow = SHADOW_ENABLED;
+  obj.receiveShadow = SHADOW_ENABLED;
+
+  // ✅ structure gris clair (couleur réelle)
+  const m = new THREE.MeshStandardMaterial({
+    color: 0xc9c9c9,     // gris clair
+    metalness: 0.12,
+    roughness: 0.55,
+  });
+
+  obj.material = m;
+});
+
       baseBBox = new THREE.Box3().setFromObject(baseModule);
       update3DFromConfig();
     },
