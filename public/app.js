@@ -239,7 +239,7 @@ function ensureSidesIfMainChecked(mainId, sideIds) {
   if (!main) return;
 
   if (main.checked && !anySideChecked(sideIds)) {
-    // Par défaut : B + D si aucun côté
+    // défaut : B + D
     sideIds.forEach((sid) => setChecked(sid, true));
   }
   if (!main.checked) {
@@ -256,7 +256,7 @@ function setupSideOption(mainId, sideBId, sideDId) {
   main.addEventListener("change", () => {
     ensureSidesIfMainChecked(mainId, [sideBId, sideDId]);
     calculatePriceAndRecap();
-    safeUpdate3D();
+    update3DFromConfig();
   });
 
   [sideB, sideD].forEach((sideEl) => {
@@ -264,7 +264,7 @@ function setupSideOption(mainId, sideBId, sideDId) {
       syncMainWithSides(mainId, [sideBId, sideDId]);
       ensureSidesIfMainChecked(mainId, [sideBId, sideDId]);
       calculatePriceAndRecap();
-      safeUpdate3D();
+      update3DFromConfig();
     });
   });
 
@@ -276,23 +276,14 @@ function enforceMutualExclusivePerSide() {
   const grD = $("optGrandeRiveD");
   const rsB = $("optRiveSolinB");
   const rsD = $("optRiveSolinD");
-
   if (!grB || !grD || !rsB || !rsD) return;
 
   function apply() {
-    // côté B
-    if (grB.checked) { rsB.checked = false; rsB.disabled = true; }
-    else { rsB.disabled = false; }
+    if (grB.checked) { rsB.checked = false; rsB.disabled = true; } else { rsB.disabled = false; }
+    if (grD.checked) { rsD.checked = false; rsD.disabled = true; } else { rsD.disabled = false; }
 
-    if (rsB.checked) { grB.checked = false; grB.disabled = true; }
-    else { grB.disabled = false; }
-
-    // côté D
-    if (grD.checked) { rsD.checked = false; rsD.disabled = true; }
-    else { rsD.disabled = false; }
-
-    if (rsD.checked) { grD.checked = false; grD.disabled = true; }
-    else { grD.disabled = false; }
+    if (rsB.checked) { grB.checked = false; grB.disabled = true; } else { grB.disabled = false; }
+    if (rsD.checked) { grD.checked = false; grD.disabled = true; } else { grD.disabled = false; }
 
     syncMainWithSides("optGrandeRive", ["optGrandeRiveB", "optGrandeRiveD"]);
     syncMainWithSides("optRiveSolin",  ["optRiveSolinB",  "optRiveSolinD"]);
@@ -304,7 +295,6 @@ function enforceMutualExclusivePerSide() {
 
 function applyOptionAvailabilityByType() {
   const type = getSelectedType();
-
   const optFaitiereDouble = $("optFaitiereDouble");
   const optFaitiereSimple = $("optFaitiereSimple");
   const optFaitiereSolin  = $("optFaitiereSolin");
@@ -315,7 +305,6 @@ function applyOptionAvailabilityByType() {
     if (optFaitiereSolin)  optFaitiereSolin.disabled = false;
   } else {
     if (optFaitiereDouble) optFaitiereDouble.disabled = false;
-
     if (optFaitiereSimple) { optFaitiereSimple.checked = false; optFaitiereSimple.disabled = true; }
     if (optFaitiereSolin)  { optFaitiereSolin.checked  = false; optFaitiereSolin.disabled  = true; }
   }
@@ -507,8 +496,7 @@ function calculatePriceAndRecap() {
 
   afficherRecapitulatif(recapHTML, recapText);
 
-  // MAJ 3D (safe)
-  safeUpdate3D();
+  update3DFromConfig();
 }
 
 function afficherRecapitulatif(recapHTML, recapTextForStorage) {
@@ -527,14 +515,13 @@ window.goToOrderPage = function goToOrderPage() {
 };
 
 /* ---------------------------
-   5) THREE.JS — VUE 3D
+   5) THREE.JS — VUE 3D (PRO STUDIO)
 ---------------------------- */
 
-// Assets (dans public/assets/)
+// Assets
 const ROOF_TEX_PATH = "assets/texture-bac-acier.jpg";
 const CLAD_TEX_PATH = "assets/texture-bac-acier.jpg";
 const PAVE_TEX_PATH = "assets/texture-pave-gris.jpg";
-const BG_TEX_PATH   = "assets/fond-jardin.jpg";
 
 // ===== MODÈLES PAR TYPE =====
 const MODELS = {
@@ -548,39 +535,38 @@ const MODELS = {
   },
 };
 
-// Échelle globale
 const GLOBAL_SCALE = 1;
 
 // Pente
-const PITCH_RATIO = 0.10;          // 10%
-const ROOF_OVERHANG_RATIO = 0.14;  // débord
+const PITCH_RATIO = 0.10;
+const ROOF_OVERHANG_RATIO = 0.14;
 
-// Visuel texture
+// Textures
 const ROOF_TEX_REPEAT_X = 8;
 const ROOF_TEX_REPEAT_Z = 2;
 const CLAD_TEX_REPEAT_X = 8;
 const CLAD_TEX_REPEAT_Y = 3;
 
-// Opacité
-const ROOF_OPACITY = 0.98;
-const CLAD_OPACITY = 0.98;
+// Mat opacité
+const ROOF_OPACITY = 0.985;
+const CLAD_OPACITY = 0.985;
 
-// Epaisseurs
+// Epaisseurs (visu)
 const ROOF_THICKNESS = 0.06;
-const CLAD_THICKNESS = 0.035;
+const CLAD_THICKNESS = 0.032;
 
-// ✅ Couverture collée : mini gap
-const ROOF_GAP = 0.002;        // micro jeu
-const ROOF_SINK_RATIO = 0.010; // micro-enfoncement proportionnel
+// ✅ Recollage : on “rentre” légèrement dans la structure
+// (au lieu de laisser un gap visible)
+const ROOF_GAP = -0.010;      // NEGATIF = on colle (voire on embed)
+const ROOF_SINK_RATIO = 0.004;
 
-// ✅ Bardage juste sous couverture
-const CLAD_TOP_GAP = 0.03;
+// ✅ Bardage collé sous couverture
+const CLAD_TOP_GAP = 0.006;
 
 // OrbitControls
-const ORBIT_MIN_POLAR = 0.15 * Math.PI;
-const ORBIT_MAX_POLAR = 0.48 * Math.PI;
+const ORBIT_MIN_POLAR = 0.12 * Math.PI;
+const ORBIT_MAX_POLAR = 0.52 * Math.PI;
 
-// Ombres
 const SHADOW_ENABLED = true;
 
 // Three globals
@@ -590,17 +576,15 @@ let baseBBox = null;
 let structureGroup = null;
 let overlayGroup = null;
 
-let backgroundPlane = null;
-let groundDisc = null;
-let padMesh = null;
+// studio
+let studioGroup = null;
+let groundPlane = null;
+let groundDecal = null;
 
 let roofTex = null;
 let cladTex = null;
 
 let lastInlineCanvasHeight = 0;
-
-let threeReady = false;
-let modelLoading = false;
 
 function getRALColorFromRadio(name) {
   const input = document.querySelector(`input[name="${name}"]:checked`);
@@ -628,23 +612,63 @@ function getBayCount(length) {
   return 6;
 }
 
-// ✅ Helpers pour collage toiture exact
-function meshWorldBBox(mesh) {
-  return new THREE.Box3().setFromObject(mesh);
-}
-function alignMeshBottomToY(mesh, targetY) {
-  const b = meshWorldBBox(mesh);
-  const delta = targetY - b.min.y;
-  mesh.position.y += delta;
-}
+/* ===== Studio helpers ===== */
 
-function safeUpdate3D() {
-  if (!threeReady || !baseModule || !baseBBox) return;
-  try {
-    update3DFromConfig();
-  } catch (e) {
-    console.warn("update3DFromConfig() a échoué, on ignore pour éviter de casser l’UI :", e);
+function buildStudio() {
+  if (!scene) return;
+
+  if (studioGroup) scene.remove(studioGroup);
+  studioGroup = new THREE.Group();
+  studioGroup.name = "studio";
+  scene.add(studioGroup);
+
+  // Sol : shadow catcher + léger sol texturé en dessous (plus pro)
+  if (SHADOW_ENABLED) {
+    const shadowMat = new THREE.ShadowMaterial({ opacity: 0.22 });
+    groundPlane = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), shadowMat);
+    groundPlane.rotation.x = -Math.PI / 2;
+    groundPlane.position.y = 0;
+    groundPlane.receiveShadow = true;
+    studioGroup.add(groundPlane);
   }
+
+  groundDecal = new THREE.Mesh(
+    new THREE.PlaneGeometry(200, 200),
+    new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 1,
+      metalness: 0,
+      transparent: true,
+      opacity: 0.95,
+    })
+  );
+  groundDecal.rotation.x = -Math.PI / 2;
+  groundDecal.position.y = -0.002;
+  groundDecal.receiveShadow = false;
+  studioGroup.add(groundDecal);
+
+  // Mur “cyclo” (fond studio courbe) : beaucoup plus propre que la photo
+  const radius = 70;
+  const height = 35;
+  const cyl = new THREE.CylinderGeometry(radius, radius, height, 64, 1, true, Math.PI * 0.15, Math.PI * 0.70);
+  const wallMat = new THREE.MeshStandardMaterial({
+    color: 0xf3eee6,
+    roughness: 1,
+    metalness: 0,
+    side: THREE.BackSide,
+  });
+  const wall = new THREE.Mesh(cyl, wallMat);
+  wall.position.set(0, height * 0.42, -20);
+  wall.rotation.y = Math.PI;
+  studioGroup.add(wall);
+
+  // Légère “base” claire derrière
+  const back = new THREE.Mesh(
+    new THREE.PlaneGeometry(140, 60),
+    new THREE.MeshStandardMaterial({ color: 0xf8f4ee, roughness: 1, metalness: 0 })
+  );
+  back.position.set(0, 18, -55);
+  studioGroup.add(back);
 }
 
 function initThree() {
@@ -652,7 +676,7 @@ function initThree() {
   if (!canvas) return;
 
   if (!window.THREE) {
-    console.warn("THREE.js non chargé : la vue 3D est désactivée, le configurateur reste utilisable.");
+    console.error("THREE.js non chargé. Vérifie tes <script> (three, OrbitControls, GLTFLoader) avant app.js");
     return;
   }
 
@@ -660,96 +684,90 @@ function initThree() {
   const h = canvas.clientHeight || 320;
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xf7f4ee);
+  scene.background = new THREE.Color(0xf6f2ea);
+  scene.fog = new THREE.Fog(0xf6f2ea, 35, 120);
 
-  camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 2000);
-  camera.position.set(8, 5, 10);
+  camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 2500);
+  camera.position.set(9, 5.5, 10.5);
 
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
   renderer.setPixelRatio(window.devicePixelRatio || 1);
   renderer.setSize(w, h, false);
+
+  // ✅ rendu plus “pro”
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  renderer.physicallyCorrectLights = true;
 
   if (SHADOW_ENABLED) {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   }
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.70));
+  // Lights “studio”
+  scene.add(new THREE.AmbientLight(0xffffff, 0.35));
 
-  const dir = new THREE.DirectionalLight(0xffffff, 0.95);
-  dir.position.set(10, 20, 10);
-  dir.castShadow = SHADOW_ENABLED;
-  dir.shadow.mapSize.set(2048, 2048);
-  dir.shadow.camera.near = 1;
-  dir.shadow.camera.far = 80;
-  scene.add(dir);
+  const key = new THREE.DirectionalLight(0xffffff, 1.05);
+  key.position.set(12, 22, 10);
+  key.castShadow = SHADOW_ENABLED;
+  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.camera.near = 1;
+  key.shadow.camera.far = 140;
+  key.shadow.bias = -0.0002;
+  scene.add(key);
 
-  const hemi = new THREE.HemisphereLight(0xffffff, 0xe9dcc2, 0.30);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.35);
+  fill.position.set(-18, 14, 6);
+  scene.add(fill);
+
+  const rim = new THREE.DirectionalLight(0xfff3dd, 0.25);
+  rim.position.set(0, 12, -18);
+  scene.add(rim);
+
+  const hemi = new THREE.HemisphereLight(0xffffff, 0xe9dcc2, 0.45);
   scene.add(hemi);
 
-  // sol
-  groundDisc = new THREE.Mesh(
-    new THREE.CircleGeometry(5, 64),
-    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, metalness: 0 })
-  );
-  groundDisc.rotation.x = -Math.PI / 2;
-  groundDisc.position.y = 0;
-  groundDisc.receiveShadow = SHADOW_ENABLED;
-  scene.add(groundDisc);
-
-  padMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(4, 3),
-    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, metalness: 0 })
-  );
-  padMesh.rotation.x = -Math.PI / 2;
-  padMesh.position.y = 0.01;
-  padMesh.receiveShadow = SHADOW_ENABLED;
-  scene.add(padMesh);
+  // Studio backdrop + sol
+  buildStudio();
 
   // controls
   controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
+  controls.enablePan = false;
   controls.target.set(0, 1.5, 0);
   controls.minPolarAngle = ORBIT_MIN_POLAR;
   controls.maxPolarAngle = ORBIT_MAX_POLAR;
+  controls.minDistance = 6;
+  controls.maxDistance = 45;
 
   // textures
   const tl = new THREE.TextureLoader();
 
   tl.load(PAVE_TEX_PATH, (tex) => {
+    tex.encoding = THREE.sRGBEncoding;
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(8, 8);
-    groundDisc.material.map = tex;
-    groundDisc.material.needsUpdate = true;
-
-    const tex2 = tex.clone();
-    tex2.repeat.set(4, 4);
-    padMesh.material.map = tex2;
-    padMesh.material.needsUpdate = true;
+    tex.repeat.set(14, 14);
+    if (groundDecal?.material) {
+      groundDecal.material.map = tex;
+      groundDecal.material.needsUpdate = true;
+    }
   });
 
   tl.load(ROOF_TEX_PATH, (tex) => {
+    tex.encoding = THREE.sRGBEncoding;
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(ROOF_TEX_REPEAT_X, ROOF_TEX_REPEAT_Z);
     roofTex = tex;
   });
 
   tl.load(CLAD_TEX_PATH, (tex) => {
+    tex.encoding = THREE.sRGBEncoding;
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(CLAD_TEX_REPEAT_X, CLAD_TEX_REPEAT_Y);
     cladTex = tex;
   });
-
-  tl.load(BG_TEX_PATH, (tex) => {
-    const bgGeo = new THREE.PlaneGeometry(40, 15);
-    const bgMat = new THREE.MeshBasicMaterial({ map: tex });
-    backgroundPlane = new THREE.Mesh(bgGeo, bgMat);
-    backgroundPlane.position.set(0, 7, -20);
-    scene.add(backgroundPlane);
-  });
-
-  threeReady = true;
 
   loadModelForType(getSelectedType());
 
@@ -758,15 +776,8 @@ function initThree() {
 }
 
 function loadModelForType(type) {
-  if (!threeReady || !window.THREE || !window.THREE.GLTFLoader) {
-    console.warn("GLTFLoader non chargé : modèle 3D indisponible.");
-    return;
-  }
-
   const modelCfg = MODELS[type] || MODELS.mono;
   const loader = new THREE.GLTFLoader();
-
-  modelLoading = true;
 
   loader.load(
     modelCfg.path,
@@ -780,15 +791,10 @@ function loadModelForType(type) {
         }
       });
       baseBBox = new THREE.Box3().setFromObject(baseModule);
-      modelLoading = false;
-
-      safeUpdate3D();
+      update3DFromConfig();
     },
     undefined,
-    (err) => {
-      modelLoading = false;
-      console.error("Erreur GLTF :", err);
-    }
+    (err) => console.error("Erreur GLTF :", err)
   );
 }
 
@@ -846,7 +852,6 @@ function buildStructureFromConfig() {
     currentX += segLength;
   }
 
-  // recentrage
   let bbox = new THREE.Box3().setFromObject(structureGroup);
   const center = bbox.getCenter(new THREE.Vector3());
 
@@ -866,8 +871,8 @@ function materialWithTexture({ color, tex, opacity }) {
     transparent: true,
     opacity,
     side: THREE.DoubleSide,
-    metalness: 0.05,
-    roughness: 0.88,
+    metalness: 0.08,
+    roughness: 0.78,
   });
 
   if (tex) {
@@ -916,7 +921,8 @@ function rebuildOverlays(bbox) {
   const widthZ = max.z - min.z;
   const heightY = max.y - min.y;
 
-  const eps = 0.02 * Math.max(lenX, widthZ, heightY);
+  // ✅ epsilon réduit : évite l’effet “décollé”
+  const eps = 0.004 * Math.max(lenX, widthZ, heightY);
 
   const cx = (min.x + max.x) / 2;
   const cz = (min.z + max.z) / 2;
@@ -924,7 +930,8 @@ function rebuildOverlays(bbox) {
   const roofThick = ROOF_THICKNESS * GLOBAL_SCALE;
   const cladThick = CLAD_THICKNESS * GLOBAL_SCALE;
 
-  const roofSink = Math.max(0.002, heightY * ROOF_SINK_RATIO);
+  // ✅ on enfonce légèrement la toiture dans la structure
+  const roofSink = Math.max(0.001, heightY * ROOF_SINK_RATIO);
 
   const roofMat = materialWithTexture({
     color: getRoofColor3D(),
@@ -938,10 +945,15 @@ function rebuildOverlays(bbox) {
     opacity: CLAD_OPACITY,
   });
 
-  // ===== TOITURE (collée EXACTEMENT à la structure) =====
+  const trimMat = new THREE.MeshStandardMaterial({
+    color: getTrimColor3D(),
+    metalness: 0.10,
+    roughness: 0.55,
+  });
+
+  // ===== TOITURE (recollée) =====
   const slopeType = getSelectedType();
   const angle = Math.atan(PITCH_RATIO);
-  const roofTargetBottomY = (max.y - roofSink) - ROOF_GAP;
 
   if (slopeType === "mono") {
     const overhang = widthZ * ROOF_OVERHANG_RATIO;
@@ -950,10 +962,13 @@ function rebuildOverlays(bbox) {
     roof.userData.kind = "roof";
 
     roof.rotation.x = -angle;
-    roof.position.set(cx, 0, cz - (overhang / 2));
+    const lift = (widthZ / 2) * Math.sin(angle);
 
-    // ✅ collage réel (bBox monde)
-    alignMeshBottomToY(roof, roofTargetBottomY);
+    roof.position.set(
+      cx,
+      (max.y - roofSink) + lift + ROOF_GAP, // ✅ collé
+      cz - (overhang / 2)
+    );
 
     roof.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roof);
@@ -962,33 +977,31 @@ function rebuildOverlays(bbox) {
   } else {
     const halfW = widthZ / 2;
     const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
+    const lift = (halfW / 2) * Math.sin(angle);
 
     const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
     roofPlusZ.userData.kind = "roof";
     roofPlusZ.rotation.x = +angle;
-    roofPlusZ.position.set(cx, 0, cz + halfW / 2);
-    alignMeshBottomToY(roofPlusZ, roofTargetBottomY);
+    roofPlusZ.position.set(cx, (max.y - roofSink) + lift + ROOF_GAP, cz + halfW / 2);
     roofPlusZ.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roofPlusZ);
 
     const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
     roofMinusZ.userData.kind = "roof";
     roofMinusZ.rotation.x = -angle;
-    roofMinusZ.position.set(cx, 0, cz - halfW / 2);
-    alignMeshBottomToY(roofMinusZ, roofTargetBottomY);
+    roofMinusZ.position.set(cx, (max.y - roofSink) + lift + ROOF_GAP, cz - halfW / 2);
     roofMinusZ.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roofMinusZ);
 
     overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ };
   }
 
-  // ===== BARDAGE =====
+  // ===== BARDAGE (collé sous toiture) =====
   const panelHeight = Math.max(0.2, heightY - CLAD_TOP_GAP);
   const yCenter = min.y + panelHeight / 2;
 
   const geoLong = new THREE.BoxGeometry(lenX, panelHeight, cladThick);
 
-  // Façade A = max.z (côté haut)
   const cladA_outer = new THREE.Mesh(geoLong, cladMat.clone());
   cladA_outer.position.set(cx, yCenter, max.z + eps);
 
@@ -1000,11 +1013,15 @@ function rebuildOverlays(bbox) {
 
   if (slopeType === "mono") {
     const deltaH = widthZ * PITCH_RATIO;
+
+    // façade A = haut = côté +Z (max.z)
+    // donc sur le pignon, le haut doit être côté +Z
     const yLow  = min.y + panelHeight - deltaH;
     const yHigh = min.y + panelHeight;
 
-    // ✅ B normal, D inversé (miroir) pour corriger la pente
     const shapeB = createMonoGableShape(widthZ, min.y, yLow, yHigh);
+
+    // ✅ CORRECTION PIGNON D : on inverse la pente (miroir)
     const shapeD = createMonoGableShape(widthZ, min.y, yHigh, yLow);
 
     const geoGableB = new THREE.ShapeGeometry(shapeB);
@@ -1078,109 +1095,97 @@ function rebuildOverlays(bbox) {
   }
 
   applyCladdingVisibility();
-  overlayGroup.userData = { applyCladdingVisibility };
+  overlayGroup.userData.applyCladdingVisibility = applyCladdingVisibility;
 
-  // ===== TRIMS (habillages) — bandes 3D simples =====
-  // (Couleur = trimColor / affichage selon options)
-  const trimColor = getTrimColor3D();
-  const trimMatBase = new THREE.MeshStandardMaterial({
-    color: trimColor,
-    roughness: 0.8,
-    metalness: 0.05,
-  });
+  // ===== HABILLAGES DE FINITION (VISIBLES EN 3D)
+  // Objectif : donner un rendu pro et montrer clairement les options.
+  const TRIM_TH = 0.018;  // épaisseur
+  const TRIM_W  = 0.070;  // largeur visuelle
 
-  function addTrimBox(sx, sy, sz, px, py, pz) {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), trimMatBase.clone());
+  function addTrimBox(sizeX, sizeY, sizeZ, px, py, pz, rotX = 0, rotY = 0, rotZ = 0, visible = true) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(sizeX, sizeY, sizeZ), trimMat.clone());
     m.position.set(px, py, pz);
+    m.rotation.set(rotX, rotY, rotZ);
     m.castShadow = SHADOW_ENABLED;
     m.receiveShadow = false;
     m.userData.kind = "trim";
+    m.visible = visible;
     overlayGroup.add(m);
     return m;
   }
 
-  const t = Math.max(0.015, Math.min(lenX, widthZ) * 0.01); // épaisseur bande
-  const t2 = t * 1.2;
-  const yBase = min.y + (t / 2);
-  const yTop  = (max.y - roofSink) - (t / 2);
-
   const optAngles = $("optAngles")?.checked;
   const optRejetEau = $("optRejetEau")?.checked;
-  const optGrandeRive = $("optGrandeRive")?.checked;
-  const optRiveSolin = $("optRiveSolin")?.checked;
+  const optFaitiereDouble = $("optFaitiereDouble")?.checked;
   const optFaitiereSimple = $("optFaitiereSimple")?.checked;
   const optFaitiereSolin = $("optFaitiereSolin")?.checked;
-  const optFaitiereDouble = $("optFaitiereDouble")?.checked;
+
+  const optGrandeRive = $("optGrandeRive")?.checked;
+  const optRiveSolin = $("optRiveSolin")?.checked;
 
   const grB = $("optGrandeRiveB")?.checked;
   const grD = $("optGrandeRiveD")?.checked;
   const rsB = $("optRiveSolinB")?.checked;
   const rsD = $("optRiveSolinD")?.checked;
 
-  // Angles : 4 montants
+  // Angles : 4 coins verticaux
   if (optAngles) {
-    const xL = min.x + t / 2, xR = max.x - t / 2;
-    const zF = max.z - t / 2, zB = min.z + t / 2;
-    const h = heightY;
-
-    addTrimBox(t, h, t, xL, min.y + h / 2, zF);
-    addTrimBox(t, h, t, xL, min.y + h / 2, zB);
-    addTrimBox(t, h, t, xR, min.y + h / 2, zF);
-    addTrimBox(t, h, t, xR, min.y + h / 2, zB);
+    const h = panelHeight;
+    const y = min.y + h / 2;
+    addTrimBox(TRIM_TH, h, TRIM_W, min.x - eps, y, min.z - eps);
+    addTrimBox(TRIM_TH, h, TRIM_W, min.x - eps, y, max.z + eps);
+    addTrimBox(TRIM_TH, h, TRIM_W, max.x + eps, y, min.z - eps);
+    addTrimBox(TRIM_TH, h, TRIM_W, max.x + eps, y, max.z + eps);
   }
 
-  // Rejet d’eau : bande en pied des façades bardées
+  // Rejet d’eau : bande basse sur les façades bardées (simplifié)
   if (optRejetEau) {
+    const y = min.y + 0.05;
+    const zA = max.z + eps;
+    const zC = min.z - eps;
+
     const showA = !!document.querySelector('input[name="claddingSide"][value="A"]:checked');
-    const showB = !!document.querySelector('input[name="claddingSide"][value="B"]:checked');
     const showC = !!document.querySelector('input[name="claddingSide"][value="C"]:checked');
+
+    if (showA) addTrimBox(lenX, TRIM_TH, TRIM_W, cx, y, zA);
+    if (showC) addTrimBox(lenX, TRIM_TH, TRIM_W, cx, y, zC);
+
+    const showB = !!document.querySelector('input[name="claddingSide"][value="B"]:checked');
     const showD = !!document.querySelector('input[name="claddingSide"][value="D"]:checked');
 
-    if (showA) addTrimBox(lenX, t, t2, cx, yBase, max.z + eps);
-    if (showC) addTrimBox(lenX, t, t2, cx, yBase, min.z - eps);
-    if (showB) addTrimBox(t2, t, widthZ, min.x - eps, yBase, cz);
-    if (showD) addTrimBox(t2, t, widthZ, max.x + eps, yBase, cz);
+    if (showB) addTrimBox(TRIM_W, TRIM_TH, widthZ, min.x - eps, y, cz);
+    if (showD) addTrimBox(TRIM_W, TRIM_TH, widthZ, max.x + eps, y, cz);
   }
 
-  // Grande rive / Rive solin : bandes en haut des pignons (B/D)
-  function addGableTopTrim(onB, onD) {
-    if (onB) addTrimBox(t2, t, widthZ, min.x - eps, yTop, cz);
-    if (onD) addTrimBox(t2, t, widthZ, max.x + eps, yTop, cz);
+  // Rives (Grande rive / Rive solin) : bande en haut des pignons B/D (simplifié mais propre)
+  const topY = (max.y - roofSink) + ROOF_GAP + (widthZ * 0.5 * Math.sin(angle) * 0.25);
+
+  function addGableTrim(side /* "B" or "D" */) {
+    const x = (side === "B") ? (min.x - eps) : (max.x + eps);
+    addTrimBox(TRIM_W, TRIM_TH, widthZ + 0.02, x, topY, cz);
   }
 
-  if (optGrandeRive) addGableTopTrim(grB, grD);
-  if (optRiveSolin)  addGableTopTrim(rsB, rsD);
-
-  // Faîtière : mono = côté haut (façade A = max.z) ; bi = au centre
-  if (slopeType === "mono") {
-    if (optFaitiereSimple || optFaitiereSolin) {
-      addTrimBox(lenX, t, t2, cx, yTop, max.z + eps);
-    }
-  } else {
-    if (optFaitiereDouble) {
-      addTrimBox(lenX, t, t2, cx, yTop, cz);
-    }
+  if (optGrandeRive) {
+    if (grB) addGableTrim("B");
+    if (grD) addGableTrim("D");
+  }
+  if (optRiveSolin) {
+    if (rsB) addGableTrim("B");
+    if (rsD) addGableTrim("D");
   }
 
-  // ===== SCALE SOL + FOND =====
-  const radius = Math.max(lenX, widthZ) * 0.9;
-
-  if (groundDisc) {
-    groundDisc.geometry.dispose();
-    groundDisc.geometry = new THREE.CircleGeometry(radius, 80);
-    groundDisc.position.y = min.y - 0.01;
+  // Faîtières : mono = sur arête haute côté façade A, bi = sur faîtage au centre
+  if (slopeType === "mono" && (optFaitiereSimple || optFaitiereSolin)) {
+    const z = max.z + (ROOF_OVERHANG_RATIO * widthZ * 0.25);
+    addTrimBox(lenX + 0.02, TRIM_TH, TRIM_W, cx, (max.y - roofSink) + ROOF_GAP + 0.02, z);
+  }
+  if (slopeType === "bi" && optFaitiereDouble) {
+    addTrimBox(lenX + 0.02, TRIM_TH, TRIM_W, cx, (max.y - roofSink) + ROOF_GAP + 0.02, cz);
   }
 
-  if (padMesh) {
-    padMesh.geometry.dispose();
-    padMesh.geometry = new THREE.PlaneGeometry(lenX * 1.05, widthZ * 1.15);
-    padMesh.position.y = min.y;
-  }
-
-  if (backgroundPlane) {
-    backgroundPlane.position.set(cx, min.y + heightY * 0.6, -radius * 1.2);
-    backgroundPlane.scale.set(1.3, 1.3, 1);
-  }
+  // ===== SCALE / POSITION STUDIO (sol)
+  if (groundPlane) groundPlane.position.y = min.y;
+  if (groundDecal) groundDecal.position.y = min.y - 0.002;
 
   // ===== CAMÉRA =====
   if (controls && camera) {
@@ -1189,9 +1194,9 @@ function rebuildOverlays(bbox) {
 
     const d = Math.max(lenX, widthZ, heightY);
     camera.position.set(
-      center.x + d * 1.2,
-      center.y + d * 0.9,
-      center.z + d * 1.2
+      center.x + d * 1.25,
+      center.y + d * 0.85,
+      center.z + d * 1.25
     );
   }
 }
@@ -1380,11 +1385,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.querySelectorAll('input[name="trimColor"]').forEach((el) =>
     el.addEventListener("change", () => {
       calculatePriceAndRecap();
-      safeUpdate3D();
+      update3DFromConfig();
     })
   );
 
-  // setup options côté
   setupSideOption("optGrandeRive", "optGrandeRiveB", "optGrandeRiveD");
   setupSideOption("optRiveSolin",  "optRiveSolinB",  "optRiveSolinD");
   enforceMutualExclusivePerSide();
@@ -1401,7 +1405,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   ].forEach((id) =>
     $(id)?.addEventListener("change", () => {
       calculatePriceAndRecap();
-      safeUpdate3D();
+      update3DFromConfig();
     })
   );
 
