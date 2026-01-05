@@ -2,11 +2,10 @@
    GAMAX-CM — CONFIGURATEUR + RÉCAP + VUE 3D (THREE r146)
    Fichier : public/app.js
 
-   ✅ FIX BUG + rendu PRO des profilés :
-   - Clipping GLTF corrigé (sens du plan + world-space)
-   - Nettoyage propre au changement de type (évite states bizarres)
-   - Profilé SIGMA 170 (ép. 2 mm galva) en 3D (tôle pliée)
-   - Remplacement frameFX bipente par Sigma 170
+   ✅ Version complète + rendu PRO des profilés :
+   - Profilé SIGMA 170 (ép. 2 mm galvanisé) en 3D (tôle pliée)
+   - Masquage "chirurgical" des pièces GLTF de toiture/pannes (sans cacher les poteaux)
+   - Toiture/bardage calculés en overlay (pente 10% constante)
 ========================================================= */
 
 /* ---------------------------
@@ -575,45 +574,90 @@ let cladTex = null;
 
 let lastInlineCanvasHeight = 0;
 
-// ===============================
-// CLIPPING STRUCTURE (GLTF) — FIX
-// On garde tout ce qui est <= eaveY (bas de pente) et on coupe le reste
-// (sens du plan corrigé pour three r146)
-// ===============================
-let structureClipPlane = null;
+/* =========================================================
+   MASQUAGE "CHIRURGICAL" des pièces GLTF de toiture/pannes
+   Objectif : enlever uniquement la "toiture" du gltf sans toucher aux poteaux/cadres.
+========================================================= */
 
-// ===============================
-// MASQUAGE GLTF AU-DESSUS DE L'ÉGOUT (au lieu du clipping)
-// Objectif : éviter que la "toiture" intégrée au GLTF impose une pente différente
-// tout en gardant les poteaux/structure visibles.
-// ===============================
-function setStructureUpperVisibility(eaveWorldY) {
+// Mots-clés (si tu veux ajouter : ajoute ici)
+const HIDE_NAME_RX = /(roof|toit|toiture|cover|sheet|bac|t[ôo]le|panel|panne|purlin|sabliere|sablière|fa[iî]ti[eè]re|ridge|rafter|chevron)/i;
+
+function setStructureUpperVisibility(eaveWorldY, bbox, type) {
   if (!structureGroup) return;
 
-  const tol = 0.06;        // tolérance (m)
-  const hideFrom = eaveWorldY - tol;
+  const tol = 0.06; // tolérance globale
+  const hideFromY = eaveWorldY - tol;
 
   const tmpBox = new THREE.Box3();
-  const tmpVec = new THREE.Vector3();
+  const tmpSize = new THREE.Vector3();
+  const tmpCenter = new THREE.Vector3();
 
+  // repères dimensions globales (aide heuristique)
+  const lenX = bbox ? (bbox.max.x - bbox.min.x) : 10;
+  const widthZ = bbox ? (bbox.max.z - bbox.min.z) : 6;
+
+  // 1) reset visibilité à chaque rebuild
+  structureGroup.traverse((obj) => {
+    if (obj && obj.isMesh) obj.visible = true;
+  });
+
+  // 2) heuristique "chirurgicale"
   structureGroup.traverse((obj) => {
     if (!obj.isMesh) return;
 
-    // Recalcule bbox en world
+    // bbox locale (en world)
     tmpBox.setFromObject(obj);
-    const minY = tmpBox.min.y;
-    const maxY = tmpBox.max.y;
+    tmpBox.getSize(tmpSize);
+    tmpBox.getCenter(tmpCenter);
 
-    // Heuristique :
-    // - On cache les pièces qui commencent "près" de l'égout et montent au-dessus
-    // - On évite de cacher les poteaux qui partent du sol (minY proche de 0)
-    const isColumnLike = minY < 0.25; // poteau -> on laisse visible
-    const isUpperPiece = (minY >= hideFrom) || (maxY >= eaveWorldY + tol && minY > 0.35);
+    const sizeY = tmpSize.y;
+    const sizeX = tmpSize.x;
+    const sizeZ = tmpSize.z;
+    const centerY = tmpCenter.y;
 
-    obj.visible = !(isUpperPiece && !isColumnLike);
+    const name = String(obj.name || "");
+    const matName = String(obj.material?.name || "");
+
+    // ✅ Toujours garder les gros éléments verticaux (poteaux / cadres)
+    const isStructuralTall = sizeY > 0.85; // poteaux > 0.85m en général
+
+    // ✅ Typique des éléments de toiture (plats / pannes) : faible hauteur Y, grande portée X/Z
+    const looksLikeRoofPiece =
+      (sizeY <= 0.35) &&
+      (
+        sizeX >= Math.min(1.2, lenX * 0.35) ||   // long en X
+        sizeZ >= Math.min(1.2, widthZ * 0.35)    // large en Z
+      );
+
+    // ✅ Test par nom (le plus fiable si tes meshes ont des noms)
+    const nameSuggestsRoof = HIDE_NAME_RX.test(name) || HIDE_NAME_RX.test(matName);
+
+    // ✅ Test par altitude : au-dessus de l'égout
+    const isAboveEave = centerY >= hideFromY;
+
+    // ✅ Cas bipente : parfois la toiture gltf est en deux pans, on coupe aussi les pièces très hautes même si petites
+    const veryHighSmall = (centerY >= (eaveWorldY + 0.25)) && (sizeY <= 0.45);
+
+    // Décision
+    if (!isStructuralTall) {
+      // 1) si le nom indique toiture/pannes -> hide direct (quand c'est au-dessus de l'égout)
+      if (nameSuggestsRoof && isAboveEave) {
+        obj.visible = false;
+        return;
+      }
+      // 2) sinon heuristique géométrique
+      if (isAboveEave && looksLikeRoofPiece) {
+        obj.visible = false;
+        return;
+      }
+      // 3) filet de sécurité (pièce minuscule très haute)
+      if (veryHighSmall) {
+        obj.visible = false;
+        return;
+      }
+    }
   });
 }
-
 
 function createContactShadowTexture(size = 256) {
   const c = document.createElement("canvas");
@@ -666,8 +710,8 @@ function buildStudio() {
   studioGroup.add(groundDecal);
 
   const radius = 38;
-  const wallH = 22;
-  const cyl = new THREE.CylinderGeometry(radius, radius, wallH, 64, 1, true, Math.PI * 0.15, Math.PI * 0.70);
+  const height = 22;
+  const cyl = new THREE.CylinderGeometry(radius, radius, height, 64, 1, true, Math.PI * 0.15, Math.PI * 0.70);
   const wallMat = new THREE.MeshStandardMaterial({
     color: 0xf3eee6,
     roughness: 1,
@@ -675,7 +719,7 @@ function buildStudio() {
     side: THREE.BackSide,
   });
   const wall = new THREE.Mesh(cyl, wallMat);
-  wall.position.set(0, wallH * 0.46, -10);
+  wall.position.set(0, height * 0.46, -10);
   wall.rotation.y = Math.PI;
   studioGroup.add(wall);
 
@@ -695,13 +739,13 @@ function buildStudio() {
 const MM = 0.001;
 
 const SIGMA170 = {
-  W: 170 * MM,   // largeur totale (Z)
-  TOP: 34 * MM,  // plat haut (chaque côté)
-  STEP: 25 * MM, // marche
-  MID: 60 * MM,  // plat central
-  H: 56 * MM,    // hauteur âme
-  LIP: 15 * MM,  // retour bas
-  T: 2 * MM,     // épaisseur tôle
+  W: 170 * MM,
+  TOP: 34 * MM,
+  STEP: 25 * MM,
+  MID: 60 * MM,
+  H: 56 * MM,
+  LIP: 15 * MM,
+  T: 2 * MM,
 };
 
 function makeGalvaMat() {
@@ -720,12 +764,10 @@ function createSigma170Beam(lengthX, mat) {
   const halfW = W / 2;
   const halfMID = MID / 2;
 
-  // Niveaux (Y)
   const yTop = 0;
   const yMid = -STEP;
   const yBot = -H;
 
-  // Positions clés (Z)
   const zOuterL = -halfW;
   const zOuterR = +halfW;
   const zTopL2 = zOuterL + TOP;
@@ -755,7 +797,7 @@ function createSigma170Beam(lengthX, mat) {
   addH((zOuterL + zTopL2) / 2, yTop, (zTopL2 - zOuterL));
   addH((zTopR2 + zOuterR) / 2, yTop, (zOuterR - zTopR2));
 
-  // Marche + plat vers le milieu (approx propre)
+  // Marche + plats vers le milieu
   addV(zTopL2 + T / 2, (yTop + yMid) / 2, (yTop - yMid));
   addH((zTopL2 + zMidL) / 2, yMid, Math.abs(zMidL - zTopL2));
 
@@ -834,7 +876,6 @@ function initThree() {
   camera.position.set(9, 5.5, 10.5);
 
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-  renderer.localClippingEnabled = true; // ✅ IMPORTANT (clipping)
   renderer.setPixelRatio(window.devicePixelRatio || 1);
   renderer.setSize(w, h, false);
 
@@ -933,18 +974,7 @@ function initThree() {
   animateThree();
 }
 
-function safeRemoveGroup(g) {
-  if (!g || !scene) return;
-  scene.remove(g);
-}
-
 function loadModelForType(type) {
-  safeRemoveGroup(structureGroup); structureGroup = null;
-  safeRemoveGroup(overlayGroup); overlayGroup = null;
-
-  baseModule = null;
-  baseBBox = null;
-
   const modelCfg = MODELS[type] || MODELS.mono;
   const loader = new THREE.GLTFLoader();
 
@@ -958,8 +988,6 @@ function loadModelForType(type) {
         if (!obj.isMesh) return;
         obj.castShadow = SHADOW_ENABLED;
         obj.receiveShadow = SHADOW_ENABLED;
-
-        // Important: matériau unique pour ne pas polluer le GLTF original
         obj.material = new THREE.MeshStandardMaterial({
           color: 0xc9c9c9,
           metalness: 0.12,
@@ -1036,7 +1064,7 @@ function buildStructureFromConfig() {
   structureGroup.position.z -= center.z;
 
   bbox = new THREE.Box3().setFromObject(structureGroup);
-  structureGroup.position.y -= bbox.min.y; // min.y => 0
+  structureGroup.position.y -= bbox.min.y;
 
   bbox = new THREE.Box3().setFromObject(structureGroup);
   return bbox;
@@ -1106,12 +1134,11 @@ function rebuildOverlays(bbox) {
   const eps = 0.004 * Math.max(lenX, widthZ);
 
   const { height } = getCurrentDimensions();
-
-  const eaveY = min.y + height; // bas de pente / égout = hauteur sélectionnée
+  const eaveY = min.y + height;
   const angle = Math.atan(PITCH_RATIO);
-   // Masque uniquement le "haut" du GLTF (toiture/pannes) pour éviter conflit de pente
-setStructureUpperVisibility(eaveY);
 
+  // ✅ Masquage chirurgical des pièces GLTF "toiture/pannes"
+  setStructureUpperVisibility(eaveY, bbox, getSelectedType());
 
   const roofMat = materialWithTexture({
     color: getRoofColor3D(),
@@ -1142,6 +1169,7 @@ setStructureUpperVisibility(eaveY);
     const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.userData.kind = "roof";
 
+    // façade A = +Z = côté haut
     roof.rotation.x = -angle;
 
     const lift = (widthZ / 2) * Math.sin(angle);
@@ -1152,10 +1180,6 @@ setStructureUpperVisibility(eaveY);
     overlayGroup.add(roof);
 
     overlayGroup.userData.roof = { type: "mono", roof, centerY, eaveY };
-
-    // ✅ FIX: clipping correct (sinon bug / rien ne se clippe)
-   
-
   } else {
     const halfW = widthZ / 2;
     const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
@@ -1178,9 +1202,6 @@ setStructureUpperVisibility(eaveY);
     overlayGroup.add(roofMinusZ);
 
     overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ, centerY, eaveY };
-
-    // ✅ FIX clipping
-
   }
 
   /* ============================
@@ -1204,27 +1225,50 @@ setStructureUpperVisibility(eaveY);
     const galva = makeGalvaMat();
 
     // Panne faîtière (horizontale)
-    addSigmaBeam(frameFX, { len: lenX, x: cx, y: underRidge, z: cz, rx: 0, ry: 0, rz: 0, mat: galva });
+    addSigmaBeam(frameFX, {
+      len: lenX,
+      x: cx,
+      y: underRidge,
+      z: cz,
+      rx: 0, ry: 0, rz: 0,
+      mat: galva
+    });
 
-    // Deux pannes / arbalétriers inclinés (visuel)
+    // Deux pannes inclinées (visuel)
     const t = 0.55;
     addSigmaBeam(frameFX, {
-      len: lenX, x: cx, y: underRidge - (ridgeH * t), z: cz + (halfW * t),
-      rx: +angle, ry: 0, rz: 0, mat: galva
+      len: lenX,
+      x: cx,
+      y: underRidge - (ridgeH * t),
+      z: cz + (halfW * t),
+      rx: +angle, ry: 0, rz: 0,
+      mat: galva
     });
     addSigmaBeam(frameFX, {
-      len: lenX, x: cx, y: underRidge - (ridgeH * t), z: cz - (halfW * t),
-      rx: -angle, ry: 0, rz: 0, mat: galva
+      len: lenX,
+      x: cx,
+      y: underRidge - (ridgeH * t),
+      z: cz - (halfW * t),
+      rx: -angle, ry: 0, rz: 0,
+      mat: galva
     });
 
     // Pannes d’égout (horizontales)
     addSigmaBeam(frameFX, {
-      len: lenX, x: cx, y: underEave, z: cz + halfW - 0.03,
-      rx: 0, ry: 0, rz: 0, mat: galva
+      len: lenX,
+      x: cx,
+      y: underEave,
+      z: cz + halfW - 0.03,
+      rx: 0, ry: 0, rz: 0,
+      mat: galva
     });
     addSigmaBeam(frameFX, {
-      len: lenX, x: cx, y: underEave, z: cz - halfW + 0.03,
-      rx: 0, ry: 0, rz: 0, mat: galva
+      len: lenX,
+      x: cx,
+      y: underEave,
+      z: cz - halfW + 0.03,
+      rx: 0, ry: 0, rz: 0,
+      mat: galva
     });
   }
 
@@ -1277,7 +1321,6 @@ setStructureUpperVisibility(eaveY);
     const gableOffset = (cladThick / 2) + eps;
     gableShapeB.position.set(min.x - gableOffset, 0, cz);
     gableShapeD.position.set(max.x + gableOffset, 0, cz);
-
   } else {
     const yEave  = (eaveY     - UNDER_ROOF_CLEARANCE) - CLAD_TOP_GAP;
     const yRidge = (ridgeY_bi - UNDER_ROOF_CLEARANCE) - CLAD_TOP_GAP;
@@ -1361,18 +1404,18 @@ setStructureUpperVisibility(eaveY);
   const optGrandeRive = $("optGrandeRive")?.checked;
   const optRiveSolin = $("optRiveSolin")?.checked;
 
-  const grB = $("optGrandeRiveB")?.checked;
-  const grD = $("optGrandeRiveD")?.checked;
-  const rsB = $("optRiveSolinB")?.checked;
-  const rsD = $("optRiveSolinD")?.checked;
+  const grB2 = $("optGrandeRiveB")?.checked;
+  const grD2 = $("optGrandeRiveD")?.checked;
+  const rsB2 = $("optRiveSolinB")?.checked;
+  const rsD2 = $("optRiveSolinD")?.checked;
 
   if (optAngles) {
-    const hMax = Math.max(panelHeightA, panelHeightC);
-    const y = min.y + hMax / 2;
-    addTrimBox(TRIM_TH, hMax, TRIM_W, min.x - eps, y, min.z - eps);
-    addTrimBox(TRIM_TH, hMax, TRIM_W, min.x - eps, y, max.z + eps);
-    addTrimBox(TRIM_TH, hMax, TRIM_W, max.x + eps, y, min.z - eps);
-    addTrimBox(TRIM_TH, hMax, TRIM_W, max.x + eps, y, max.z + eps);
+    const h = Math.max(panelHeightA, panelHeightC);
+    const y = min.y + h / 2;
+    addTrimBox(TRIM_TH, h, TRIM_W, min.x - eps, y, min.z - eps);
+    addTrimBox(TRIM_TH, h, TRIM_W, min.x - eps, y, max.z + eps);
+    addTrimBox(TRIM_TH, h, TRIM_W, max.x + eps, y, min.z - eps);
+    addTrimBox(TRIM_TH, h, TRIM_W, max.x + eps, y, max.z + eps);
   }
 
   if (optRejetEau) {
@@ -1386,11 +1429,11 @@ setStructureUpperVisibility(eaveY);
     if (showA) addTrimBox(lenX, TRIM_TH, TRIM_W, cx, y, zA);
     if (showC) addTrimBox(lenX, TRIM_TH, TRIM_W, cx, y, zC);
 
-    const showB2 = !!document.querySelector('input[name="claddingSide"][value="B"]:checked');
-    const showD2 = !!document.querySelector('input[name="claddingSide"][value="D"]:checked');
+    const showB = !!document.querySelector('input[name="claddingSide"][value="B"]:checked');
+    const showD = !!document.querySelector('input[name="claddingSide"][value="D"]:checked');
 
-    if (showB2) addTrimBox(TRIM_W, TRIM_TH, widthZ, min.x - eps, y, cz);
-    if (showD2) addTrimBox(TRIM_W, TRIM_TH, widthZ, max.x + eps, y, cz);
+    if (showB) addTrimBox(TRIM_W, TRIM_TH, widthZ, min.x - eps, y, cz);
+    if (showD) addTrimBox(TRIM_W, TRIM_TH, widthZ, max.x + eps, y, cz);
   }
 
   const topRefY = (slopeType === "mono") ? (ridgeY_mono + ROOF_GAP) : (ridgeY_bi + ROOF_GAP);
@@ -1401,12 +1444,12 @@ setStructureUpperVisibility(eaveY);
   }
 
   if (optGrandeRive) {
-    if (grB) addGableTrim("B");
-    if (grD) addGableTrim("D");
+    if (grB2) addGableTrim("B");
+    if (grD2) addGableTrim("D");
   }
   if (optRiveSolin) {
-    if (rsB) addGableTrim("B");
-    if (rsD) addGableTrim("D");
+    if (rsB2) addGableTrim("B");
+    if (rsD2) addGableTrim("D");
   }
 
   if (slopeType === "mono" && (optFaitiereSimple || optFaitiereSolin)) {
@@ -1663,4 +1706,3 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   calculatePriceAndRecap();
 });
-
