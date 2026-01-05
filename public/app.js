@@ -557,8 +557,8 @@ const CLAD_THICKNESS = 0.032;
 
 // ✅ Recollage toiture (monopente surtout)
 // -> plus on descend, plus le “jour” disparaît
-const ROOF_GAP = -0.035;        // était -0.010
-const ROOF_SINK_RATIO = 0.018;  // était 0.004
+const ROOF_GAP = -0.06;        // était -0.010
+const ROOF_SINK_RATIO = 0.02;  // était 0.004
 
 
 // ✅ Bardage collé sous couverture
@@ -976,14 +976,18 @@ function rebuildOverlays(bbox) {
     const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.userData.kind = "roof";
 
-    roof.rotation.x = -angle;
-    const lift = (widthZ / 2) * Math.sin(angle);
+ roof.rotation.x = -angle;
 
-    roof.position.set(
-      cx,
-      (max.y - roofSink) + lift + ROOF_GAP, // ✅ collé
-      cz - (overhang / 2)
-    );
+// ✅ IMPORTANT : on supprime le lift (qui remonte la toiture)
+// et on colle la toiture en se basant sur le top de la structure
+const roofY = (max.y - roofSink) + ROOF_GAP;
+
+roof.position.set(
+  cx,
+  roofY,
+  cz - (overhang / 2)
+);
+
 
     roof.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roof);
