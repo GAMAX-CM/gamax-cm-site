@@ -1025,27 +1025,49 @@ function rebuildOverlays(bbox) {
     overlayGroup.add(roof);
 
     overlayGroup.userData.roof = { type: "mono", roof };
-  } else {
-    const halfW = widthZ / 2;
-    const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
-    const lift = (halfW / 2) * Math.sin(angle);
+} else {
+  const halfW = widthZ / 2;
+  const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
 
-    const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
-    roofPlusZ.userData.kind = "roof";
-    roofPlusZ.rotation.x = +angle;
-    roofPlusZ.position.set(cx, (max.y - roofSink) + lift + ROOF_GAP * 0.6, cz + halfW / 2);
-    roofPlusZ.castShadow = SHADOW_ENABLED;
-    overlayGroup.add(roofPlusZ);
+  // ✅ Égout (bas de pente) ANCRÉ : toujours à la même hauteur (haut structure)
+  // -> c'est le faîtage qui monte quand width augmente
+  const roofEaveY = (max.y - roofSink) + ROOF_GAP;
 
-    const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
-    roofMinusZ.userData.kind = "roof";
-    roofMinusZ.rotation.x = -angle;
-    roofMinusZ.position.set(cx, (max.y - roofSink) + lift + ROOF_GAP * 0.6, cz - halfW / 2);
-    roofMinusZ.castShadow = SHADOW_ENABLED;
-    overlayGroup.add(roofMinusZ);
+  // Décalage vertical du centre du pan pour que le bord bas tombe pile sur roofEaveY
+  const lift = (halfW / 2) * Math.sin(angle);
 
-    overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ };
-  }
+  // Pan +Z
+  const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
+  roofPlusZ.userData.kind = "roof";
+  roofPlusZ.rotation.x = +angle;
+
+  roofPlusZ.position.set(
+    cx,
+    roofEaveY + lift,          // ✅ égout constant
+    cz + halfW / 2
+  );
+  roofPlusZ.castShadow = SHADOW_ENABLED;
+  overlayGroup.add(roofPlusZ);
+
+  // Pan -Z
+  const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
+  roofMinusZ.userData.kind = "roof";
+  roofMinusZ.rotation.x = -angle;
+
+  roofMinusZ.position.set(
+    cx,
+    roofEaveY + lift,          // ✅ égout constant
+    cz - halfW / 2
+  );
+  roofMinusZ.castShadow = SHADOW_ENABLED;
+  overlayGroup.add(roofMinusZ);
+
+  overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ };
+
+  // (Optionnel debug mental)
+  // -> Hauteur faîtage = roofEaveY + halfW * sin(angle) (augmente avec la largeur)
+}
+
 
   // ======================================================
   // CHARPENTE "PRO" (EFFET VISUEL) — uniquement BIPENTE
