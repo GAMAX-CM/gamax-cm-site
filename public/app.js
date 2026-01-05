@@ -852,37 +852,51 @@ function animateThree() {
    => On ne peut pas l’obtenir avec un simple scaleY, donc on déforme les vertices en Y selon Z.
 ========================================================= */
 
-function deformCloneForPitch(clone, slopeType, desiredWidth, desiredEaveHeight, baseCfg, scaleYApplied) {
-  // bbox clone APRES scale (X/Y/Z), AVANT déformation
-  const bb = new THREE.Box3().setFromObject(clone);
-  const minZ = bb.min.z;
-  const maxZ = bb.max.z;
-  const widthZ = maxZ - minZ;
-  if (!widthZ || widthZ <= 1e-6) return;
+function deformCloneForPitch(clone, slopeType, desiredWidth, baseCfg, scaleY) {
+  // On utilise la bbox LOCALE du modèle de base (stable)
+  if (!baseBBox) return;
 
-  // pente de référence du modèle (en "mètres réels") : baseCfg.width à 10%
-  const baseSlopeMono = baseCfg.width * PITCH_RATIO;
-  const baseSlopeBi   = (baseCfg.width / 2) * PITCH_RATIO;
+  const baseMinZ = baseBBox.min.z;
+  const baseMaxZ = baseBBox.max.z;
+  const baseWidthLocal = baseMaxZ - baseMinZ;
+  if (!baseWidthLocal || baseWidthLocal <= 1e-6) return;
 
-  const desiredSlopeMono = desiredWidth * PITCH_RATIO;
-  const desiredSlopeBi   = (desiredWidth / 2) * PITCH_RATIO;
+  const baseCenterZ = (baseMinZ + baseMaxZ) / 2;
+  const halfBaseW = baseWidthLocal / 2;
 
-  // Après scaleYApplied (pour coller l’égout), la pente du modèle devient baseSlope * scaleYApplied
-  const extraSlopeMono = desiredSlopeMono - (baseSlopeMono * scaleYApplied);
-  const extraSlopeBi   = desiredSlopeBi   - (baseSlopeBi   * scaleYApplied);
+  // La pente "10%" => rise désiré en mètres (monde) :
+  // - mono : rise total sur toute la largeur = width * 0.10
+  // - bi   : rise du pan (égout -> faîtage)  = (width/2) * 0.10
+  const baseRiseMono = baseCfg.width * PITCH_RATIO;          // modèle de base
+  const baseRiseBi   = (baseCfg.width / 2) * PITCH_RATIO;
 
-  // Si déjà ok, on ne touche pas
-  const EPS = 1e-4;
-  if (slopeType === "mono" && Math.abs(extraSlopeMono) < EPS) return;
-  if (slopeType === "bi"   && Math.abs(extraSlopeBi)   < EPS) return;
+  const desiredRiseMono = desiredWidth * PITCH_RATIO;
+  const desiredRiseBi   = (desiredWidth / 2) * PITCH_RATIO;
 
-  const centerZ = (minZ + maxZ) / 2;
-  const halfW = widthZ / 2;
+  // Après scaleY, le rise du modèle est déjà multiplié par scaleY
+  // Donc rise actuel (monde) :
+  const currentRiseMono = baseRiseMono * scaleY;
+  const currentRiseBi   = baseRiseBi   * scaleY;
+
+  // Rise manquant à ajouter (monde)
+  const addRiseMono = desiredRiseMono - currentRiseMono;
+  const addRiseBi   = desiredRiseBi   - currentRiseBi;
+
+  // Si déjà OK, on ne touche pas
+  const EPS = 1e-5;
+  if (slopeType === "mono" && Math.abs(addRiseMono) < EPS) return;
+  if (slopeType === "bi"   && Math.abs(addRiseBi)   < EPS) return;
+
+  // IMPORTANT :
+  // On modifie des vertices en local, puis ils seront ENCORE multipliés par scaleY.
+  // Donc on doit ajouter en local : addRise / scaleY
+  const addRiseMonoLocal = addRiseMono / (scaleY || 1);
+  const addRiseBiLocal   = addRiseBi   / (scaleY || 1);
 
   clone.traverse((obj) => {
     if (!obj.isMesh || !obj.geometry || !obj.geometry.attributes?.position) return;
 
-    // Important : on clone la géométrie pour ne pas modifier le cache entre clones
+    // Clone la géométrie pour ne pas impacter les autres clones
     obj.geometry = obj.geometry.clone();
 
     const pos = obj.geometry.attributes.position;
@@ -892,14 +906,14 @@ function deformCloneForPitch(clone, slopeType, desiredWidth, desiredEaveHeight, 
       v.fromBufferAttribute(pos, i);
 
       if (slopeType === "mono") {
-        // t = 0 au bas de pente (façade C = minZ), t = 1 au haut (façade A = maxZ)
-        const t = (v.z - minZ) / widthZ;
-        v.y += extraSlopeMono * t;
+        // t=0 au bas de pente (façade C = -Z) ; t=1 au haut (façade A = +Z)
+        const t = (v.z - baseMinZ) / baseWidthLocal; // stable même si on scaleZ
+        v.y += addRiseMonoLocal * Math.max(0, Math.min(1, t));
       } else {
-        // bipente : t = 0 aux égouts (|z| = halfW), t = 1 au faîtage (z = centerZ)
-        const dist = Math.abs(v.z - centerZ);
-        const t = 1 - (dist / halfW); // 0..1
-        v.y += extraSlopeBi * Math.max(0, Math.min(1, t));
+        // bipente : t=0 aux égouts (|z| max) ; t=1 au faîtage (z=center)
+        const dist = Math.abs(v.z - baseCenterZ);
+        const t = 1 - (dist / halfBaseW);
+        v.y += addRiseBiLocal * Math.max(0, Math.min(1, t));
       }
 
       pos.setXYZ(i, v.x, v.y, v.z);
@@ -907,8 +921,10 @@ function deformCloneForPitch(clone, slopeType, desiredWidth, desiredEaveHeight, 
 
     pos.needsUpdate = true;
     obj.geometry.computeVertexNormals();
+    obj.geometry.computeBoundingBox();
   });
 }
+
 
 function buildStructureFromConfig() {
   if (!baseModule || !baseBBox) return null;
@@ -943,7 +959,7 @@ function buildStructureFromConfig() {
     clone.scale.set(scaleX, scaleY, scaleZ);
 
     // ✅ Déformation pitch 10% (structure parallèle à la couverture)
-    deformCloneForPitch(clone, type, width, height, baseCfg, scaleY);
+    deformCloneForPitch(clone, type, width, baseCfg, scaleY);
 
     // placement en X (module en série)
     const minXScaled = baseBBox.min.x * scaleX;
