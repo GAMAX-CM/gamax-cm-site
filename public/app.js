@@ -574,6 +574,31 @@ let cladTex = null;
 
 let lastInlineCanvasHeight = 0;
 
+// ===============================
+// CLIPPING STRUCTURE (GLTF)
+// On garde tout ce qui est <= eaveY (bas de pente) et on coupe le reste
+// ===============================
+let structureClipPlane = null;
+
+function applyStructureClipping(eaveWorldY) {
+  if (!structureGroup) return;
+
+  // Plan horizontal : conserve y <= eaveWorldY + marge
+  const margin = 0.02;
+  structureClipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), eaveWorldY + margin);
+
+  structureGroup.traverse((obj) => {
+    if (!obj.isMesh || !obj.material) return;
+
+    const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+    mats.forEach((m) => {
+      m.clippingPlanes = [structureClipPlane];
+      m.clipShadows = true;
+      m.needsUpdate = true;
+    });
+  });
+}
+
 function createContactShadowTexture(size = 256) {
   const c = document.createElement("canvas");
   c.width = c.height = size;
@@ -803,9 +828,11 @@ function initThree() {
   camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 2500);
   camera.position.set(9, 5.5, 10.5);
 
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-  renderer.setPixelRatio(window.devicePixelRatio || 1);
-  renderer.setSize(w, h, false);
+renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+renderer.localClippingEnabled = true; // ✅ IMPORTANT (clipping)
+renderer.setPixelRatio(window.devicePixelRatio || 1);
+renderer.setSize(w, h, false);
+
 
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -1106,6 +1133,9 @@ function rebuildOverlays(bbox) {
     overlayGroup.add(roof);
 
     overlayGroup.userData.roof = { type: "mono", roof, centerY, eaveY };
+   // --- CLIP GLTF AU NIVEAU ÉGOUT (évite que la pente du GLTF change quand on change la largeur)
+applyStructureClipping(eaveY);
+
   } else {
     const halfW = widthZ / 2;
     const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
@@ -1128,6 +1158,9 @@ function rebuildOverlays(bbox) {
     overlayGroup.add(roofMinusZ);
 
     overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ, centerY, eaveY };
+   // --- CLIP GLTF AU NIVEAU ÉGOUT (évite que la pente du GLTF change quand on change la largeur)
+applyStructureClipping(eaveY);
+  
   }
 
   /* ============================
