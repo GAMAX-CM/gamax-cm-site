@@ -483,11 +483,12 @@
   </footer>
 
   <!-- THREE -->
-  <script src="https://unpkg.com/three@0.146.0/build/three.min.js"></script>
-  <script src="https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://unpkg.com/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://unpkg.com/three@0.146.0/build/three.min.js" defer></script>
+  <script src="https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js" defer></script>
 
-  <script src="app.js"></script>
+  <!-- Si tu n'utilises pas de modèles GLTF, on peut supprimer cette ligne -->
+  <script src="https://unpkg.com/three@0.146.0/examples/js/loaders/GLTFLoader.js" defer></script>
+
+  <script src="app.js" defer></script>
 </body>
 </html>
-
