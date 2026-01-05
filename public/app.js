@@ -984,6 +984,8 @@ function rebuildOverlays(bbox) {
 
   const roofThick = ROOF_THICKNESS * GLOBAL_SCALE;
   const cladThick = CLAD_THICKNESS * GLOBAL_SCALE;
+   // marge sous toiture pour éviter que le bardage "passe dans" la couverture
+const UNDER_ROOF_CLEARANCE = 0.02; // 2 cm visuel
 
   // ✅ on enfonce légèrement la toiture dans la structure
   const roofSink = Math.max(0.001, heightY * ROOF_SINK_RATIO);
@@ -1054,67 +1056,131 @@ function rebuildOverlays(bbox) {
 
     overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ };
   }
+// ===== BARDAGE (calé sous toiture) =====
+let panelHeightA = Math.max(0.2, heightY - CLAD_TOP_GAP);
+let panelHeightC = panelHeightA; // mono => côté bas plus court
+let panelHeightEave = panelHeightA; // bipente => même hauteur sur A/C
 
-  // ===== BARDAGE (collé sous toiture) =====
-  const panelHeight = Math.max(0.2, heightY - CLAD_TOP_GAP);
-  const yCenter = min.y + panelHeight / 2;
+// --- on calcule une hauteur "sous toiture" cohérente ---
+if (slopeType === "mono") {
+  // roof center Y (mono)
+  const roof = overlayGroup.userData?.roof?.roof;
+  const roofCenterY = roof ? roof.position.y : (max.y - roofSink) + ROOF_GAP;
 
-  const geoLong = new THREE.BoxGeometry(lenX, panelHeight, cladThick);
+  // dessous toiture côté haut (façade A = côté +Z)
+  const underHigh = roofCenterY - (roofThick / 2) - UNDER_ROOF_CLEARANCE;
 
-  const cladA_outer = new THREE.Mesh(geoLong, cladMat.clone());
+  // dessous toiture côté bas (façade C = côté -Z) = -deltaH
+  const deltaH = widthZ * PITCH_RATIO;
+  const underLow = underHigh - deltaH;
+
+  // hauteur bardage A et C
+  panelHeightA = Math.max(0.2, underHigh - min.y - CLAD_TOP_GAP);
+  panelHeightC = Math.max(0.2, underLow  - min.y - CLAD_TOP_GAP);
+
+} else {
+  // bipente : sous toiture à l'égout (même hauteur sur A/C)
+  const halfW = widthZ / 2;
+  const ridgeH = halfW * PITCH_RATIO;
+
+  // on reprend les roof meshes si dispo
+  const r = overlayGroup.userData?.roof;
+  // roof position.y = centerY; on veut sous-toiture à l'égout
+  // ridge sous-toiture approx :
+  const anyRoof = r?.roofPlusZ || r?.roofMinusZ;
+  const roofCenterY = anyRoof ? anyRoof.position.y : max.y;
+
+  // comme les pans sont inclinés, l'égout est ridge - ridgeH
+  const underRidge = roofCenterY - (roofThick / 2) - UNDER_ROOF_CLEARANCE;
+  const underEave = underRidge - ridgeH;
+
+  panelHeightEave = Math.max(0.2, underEave - min.y - CLAD_TOP_GAP);
+}
+
+// --- A/C (long pans) ---
+if (slopeType === "mono") {
+  const geoA = new THREE.BoxGeometry(lenX, panelHeightA, cladThick);
+  const geoC = new THREE.BoxGeometry(lenX, panelHeightC, cladThick);
+
+  const yA = min.y + panelHeightA / 2;
+  const yC = min.y + panelHeightC / 2;
+
+  var cladA_outer = new THREE.Mesh(geoA, cladMat.clone());
+  cladA_outer.position.set(cx, yA, max.z + eps);
+
+  var cladC_outer = new THREE.Mesh(geoC, cladMat.clone());
+  cladC_outer.position.set(cx, yC, min.z - eps);
+
+} else {
+  const geoLong = new THREE.BoxGeometry(lenX, panelHeightEave, cladThick);
+  const yCenter = min.y + panelHeightEave / 2;
+
+  var cladA_outer = new THREE.Mesh(geoLong, cladMat.clone());
   cladA_outer.position.set(cx, yCenter, max.z + eps);
 
-  const cladC_outer = new THREE.Mesh(geoLong, cladMat.clone());
+  var cladC_outer = new THREE.Mesh(geoLong, cladMat.clone());
   cladC_outer.position.set(cx, yCenter, min.z - eps);
+}
 
-  let gableShapeB = null;
-  let gableShapeD = null;
+// --- B/D (pignons) ---
+let gableShapeB = null;
+let gableShapeD = null;
 
-  if (slopeType === "mono") {
-    const deltaH = widthZ * PITCH_RATIO;
+if (slopeType === "mono") {
+  const roof = overlayGroup.userData?.roof?.roof;
+  const roofCenterY = roof ? roof.position.y : (max.y - roofSink) + ROOF_GAP;
+  const underHigh = roofCenterY - (roofThick / 2) - UNDER_ROOF_CLEARANCE;
+  const deltaH = widthZ * PITCH_RATIO;
+  const underLow = underHigh - deltaH;
 
-    // façade A = haut = côté +Z (max.z)
-    const yLow  = min.y + panelHeight - deltaH;
-    const yHigh = min.y + panelHeight;
+  // ✅ gable calé sous toiture
+  const yLow  = underLow  - CLAD_TOP_GAP;
+  const yHigh = underHigh - CLAD_TOP_GAP;
 
-    const shapeB = createMonoGableShape(widthZ, min.y, yLow, yHigh);
-    // ✅ CORRECTION PIGNON D : pente inversée (miroir)
-    const shapeD = createMonoGableShape(widthZ, min.y, yHigh, yLow);
+  const shapeB = createMonoGableShape(widthZ, min.y, yLow, yHigh);
+  // ✅ miroir côté D (pente inversée)
+  const shapeD = createMonoGableShape(widthZ, min.y, yHigh, yLow);
 
-    const geoGableB = new THREE.ShapeGeometry(shapeB);
-    const geoGableD = new THREE.ShapeGeometry(shapeD);
+  const geoGableB = new THREE.ShapeGeometry(shapeB);
+  const geoGableD = new THREE.ShapeGeometry(shapeD);
 
-    gableShapeB = new THREE.Mesh(geoGableB, cladMat.clone());
-    gableShapeD = new THREE.Mesh(geoGableD, cladMat.clone());
+  gableShapeB = new THREE.Mesh(geoGableB, cladMat.clone());
+  gableShapeD = new THREE.Mesh(geoGableD, cladMat.clone());
 
-    gableShapeB.rotation.y = -Math.PI / 2;
-    gableShapeD.rotation.y = +Math.PI / 2;
+  gableShapeB.rotation.y = -Math.PI / 2;
+  gableShapeD.rotation.y = +Math.PI / 2;
 
-    const gableOffset = (cladThick / 2) + eps;
-    gableShapeB.position.set(min.x - gableOffset, 0, cz);
-    gableShapeD.position.set(max.x + gableOffset, 0, cz);
+  const gableOffset = (cladThick / 2) + eps;
+  gableShapeB.position.set(min.x - gableOffset, 0, cz);
+  gableShapeD.position.set(max.x + gableOffset, 0, cz);
 
-  } else {
-    const halfW = widthZ / 2;
-    const ridgeH = halfW * PITCH_RATIO;
+} else {
+  const halfW = widthZ / 2;
+  const ridgeH = halfW * PITCH_RATIO;
 
-    const yEave  = min.y + panelHeight - ridgeH;
-    const yRidge = min.y + panelHeight;
+  const r = overlayGroup.userData?.roof;
+  const anyRoof = r?.roofPlusZ || r?.roofMinusZ;
+  const roofCenterY = anyRoof ? anyRoof.position.y : max.y;
 
-    const shape = createBiGableShape(widthZ, min.y, yEave, yRidge);
-    const geoGable = new THREE.ShapeGeometry(shape);
+  const underRidge = roofCenterY - (roofThick / 2) - UNDER_ROOF_CLEARANCE;
+  const underEave  = underRidge - ridgeH;
 
-    gableShapeB = new THREE.Mesh(geoGable, cladMat.clone());
-    gableShapeD = new THREE.Mesh(geoGable, cladMat.clone());
+  const yEave  = underEave  - CLAD_TOP_GAP;
+  const yRidge = underRidge - CLAD_TOP_GAP;
 
-    gableShapeB.rotation.y = Math.PI / 2;
-    gableShapeD.rotation.y = -Math.PI / 2;
+  const shape = createBiGableShape(widthZ, min.y, yEave, yRidge);
+  const geoGable = new THREE.ShapeGeometry(shape);
 
-    const gableOffset = (cladThick / 2) + eps;
-    gableShapeB.position.set(min.x - gableOffset, 0, cz);
-    gableShapeD.position.set(max.x + gableOffset, 0, cz);
-  }
+  gableShapeB = new THREE.Mesh(geoGable, cladMat.clone());
+  gableShapeD = new THREE.Mesh(geoGable, cladMat.clone());
 
+  gableShapeB.rotation.y = Math.PI / 2;
+  gableShapeD.rotation.y = -Math.PI / 2;
+
+  const gableOffset = (cladThick / 2) + eps;
+  gableShapeB.position.set(min.x - gableOffset, 0, cz);
+  gableShapeD.position.set(max.x + gableOffset, 0, cz);
+}
   function addDoubleSkin(mesh, outwardDir) {
     mesh.castShadow = SHADOW_ENABLED;
     mesh.receiveShadow = SHADOW_ENABLED;
