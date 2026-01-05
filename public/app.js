@@ -153,9 +153,7 @@ function getDeliveryPrice(postalCode) {
 async function fetchCitiesFromAPI(postalCode) {
   if (!postalCode || postalCode.length !== 5) return [];
   try {
-    const response = await fetch(
-      "https://apicarto.ign.fr/api/codes-postaux/communes/" + postalCode
-    );
+    const response = await fetch("https://apicarto.ign.fr/api/codes-postaux/communes/" + postalCode);
     if (!response.ok) return [];
     const data = await response.json();
     return data.map((item) => item.nomCommune);
@@ -180,8 +178,7 @@ async function updateCityOptions() {
   select.innerHTML = "";
 
   if (cp.length !== 5) {
-    select.innerHTML =
-      "<option value=''>Sélectionnez votre ville après saisie du code postal</option>";
+    select.innerHTML = "<option value=''>Sélectionnez votre ville après saisie du code postal</option>";
     return;
   }
 
@@ -221,6 +218,119 @@ function updateDeliveryUI() {
 }
 
 /* ---------------------------
+   3.5) OPTIONS — CÔTÉS (Rive / Grande rive)
+---------------------------- */
+
+function isChecked(id) { return !!$(id)?.checked; }
+function setChecked(id, v) { const el = $(id); if (el) el.checked = !!v; }
+function setDisabled(id, v) { const el = $(id); if (el) el.disabled = !!v; }
+
+function anySideChecked(sideIds) {
+  return sideIds.some((sid) => isChecked(sid));
+}
+
+function syncMainWithSides(mainId, sideIds) {
+  const main = $(mainId);
+  if (!main) return;
+  main.checked = anySideChecked(sideIds);
+}
+
+function ensureSidesIfMainChecked(mainId, sideIds) {
+  const main = $(mainId);
+  if (!main) return;
+
+  if (main.checked && !anySideChecked(sideIds)) {
+    // Par défaut : B + D si aucun côté
+    sideIds.forEach((sid) => setChecked(sid, true));
+  }
+  if (!main.checked) {
+    sideIds.forEach((sid) => setChecked(sid, false));
+  }
+}
+
+function setupSideOption(mainId, sideBId, sideDId) {
+  const main = $(mainId);
+  const sideB = $(sideBId);
+  const sideD = $(sideDId);
+  if (!main || !sideB || !sideD) return;
+
+  // 1) main -> sides
+  main.addEventListener("change", () => {
+    ensureSidesIfMainChecked(mainId, [sideBId, sideDId]);
+    calculatePriceAndRecap();
+    update3DFromConfig();
+  });
+
+  // 2) sides -> main
+  [sideB, sideD].forEach((sideEl) => {
+    sideEl.addEventListener("change", () => {
+      syncMainWithSides(mainId, [sideBId, sideDId]);
+      // si main ON et aucun côté, remettre défaut
+      ensureSidesIfMainChecked(mainId, [sideBId, sideDId]);
+      calculatePriceAndRecap();
+      update3DFromConfig();
+    });
+  });
+
+  // init
+  syncMainWithSides(mainId, [sideBId, sideDId]);
+}
+
+function enforceMutualExclusivePerSide() {
+  // Sur un même côté : Grande rive OU Rive avec solin
+  const grB = $("optGrandeRiveB");
+  const grD = $("optGrandeRiveD");
+  const rsB = $("optRiveSolinB");
+  const rsD = $("optRiveSolinD");
+
+  if (!grB || !grD || !rsB || !rsD) return;
+
+  function apply() {
+    // Si GR côté B, alors RS côté B impossible
+    if (grB.checked) { rsB.checked = false; rsB.disabled = true; }
+    else { rsB.disabled = false; }
+
+    if (grD.checked) { rsD.checked = false; rsD.disabled = true; }
+    else { rsD.disabled = false; }
+
+    // Si RS côté B, alors GR côté B impossible
+    if (rsB.checked) { grB.checked = false; grB.disabled = true; }
+    else { grB.disabled = false; }
+
+    if (rsD.checked) { grD.checked = false; grD.disabled = true; }
+    else { grD.disabled = false; }
+
+    // resync main checkboxes
+    syncMainWithSides("optGrandeRive", ["optGrandeRiveB", "optGrandeRiveD"]);
+    syncMainWithSides("optRiveSolin",  ["optRiveSolinB", "optRiveSolinD"]);
+  }
+
+  [grB, grD, rsB, rsD].forEach((el) => el.addEventListener("change", apply));
+  apply();
+}
+
+function applyOptionAvailabilityByType() {
+  const type = getSelectedType();
+
+  // IDs
+  const optFaitiereDouble = $("optFaitiereDouble");
+  const optFaitiereSimple = $("optFaitiereSimple");
+  const optFaitiereSolin  = $("optFaitiereSolin");
+
+  if (type === "mono") {
+    if (optFaitiereDouble) { optFaitiereDouble.checked = false; optFaitiereDouble.disabled = true; }
+    if (optFaitiereSimple) optFaitiereSimple.disabled = false;
+    if (optFaitiereSolin)  optFaitiereSolin.disabled = false;
+  } else {
+    // bipente : faîtière double uniquement
+    if (optFaitiereDouble) optFaitiereDouble.disabled = false;
+
+    if (optFaitiereSimple) { optFaitiereSimple.checked = false; optFaitiereSimple.disabled = true; }
+    if (optFaitiereSolin)  { optFaitiereSolin.checked  = false; optFaitiereSolin.disabled  = true; }
+  }
+}
+
+/* ---------------------------
    4) CALCUL PRIX + RÉCAP
 ---------------------------- */
 
@@ -253,29 +363,32 @@ function calculatePriceAndRecap() {
     else claddingArea += width * height;
   });
 
-  const claddingType =
-    document.querySelector('input[name="claddingType"]:checked')?.value;
+  const claddingType = document.querySelector('input[name="claddingType"]:checked')?.value;
   const cladUnit = CLADDING_PRICE_PER_M2[claddingType] ?? 0;
   const claddingCost = claddingArea * cladUnit;
 
   // options
-  const optInstall = $("optInstall");
-  const optFaitiereSolin = $("optFaitiereSolin");
-  const optRiveSolin = $("optRiveSolin");
-  const optGrandeRive = $("optGrandeRive");
-  const optAngles = $("optAngles");
-  const optRejetEau = $("optRejetEau");
+  const optInstall        = $("optInstall");
+  const optRiveSolin      = $("optRiveSolin");
+  const optGrandeRive     = $("optGrandeRive");
+  const optAngles         = $("optAngles");
+  const optRejetEau       = $("optRejetEau");
   const optFaitiereDouble = $("optFaitiereDouble");
   const optFaitiereSimple = $("optFaitiereSimple");
+  const optFaitiereSolin  = $("optFaitiereSolin");
+
+  // côtés
+  const grB = $("optGrandeRiveB"), grD = $("optGrandeRiveD");
+  const rsB = $("optRiveSolinB"),  rsD = $("optRiveSolinD");
 
   const finishingSelected =
-    (optFaitiereSolin?.checked) ||
     (optRiveSolin?.checked) ||
     (optGrandeRive?.checked) ||
     (optAngles?.checked) ||
     (optRejetEau?.checked) ||
     (optFaitiereDouble?.checked) ||
-    (optFaitiereSimple?.checked);
+    (optFaitiereSimple?.checked) ||
+    (optFaitiereSolin?.checked);
 
   let optionsPrice = 0;
   if (finishingSelected) optionsPrice += area * OPTIONS_PRICES.finishingPerM2;
@@ -307,13 +420,26 @@ function calculatePriceAndRecap() {
 
   const roofColor = document.querySelector('input[name="roofColor"]:checked')?.value || "Non précisée";
   const claddingColor = document.querySelector('input[name="claddingColor"]:checked')?.value || "Non précisée";
-  const trimColor = document.querySelector('input[name="trimColor"]:checked')?.value || roofColor;
+  const trimColor = document.querySelector('input[name="trimColor"]:checked')?.value || "Non précisée";
 
   const selectedOptions = [];
   if (optRejetEau?.checked) selectedOptions.push("Rejet d’eau");
-  if (optAngles?.checked) selectedOptions.push("Angles");
-  if (optGrandeRive?.checked) selectedOptions.push("Grande rive");
-  if (optRiveSolin?.checked) selectedOptions.push("Rive avec solin");
+  if (optAngles?.checked) selectedOptions.push("Angles de bardage");
+
+  if (optGrandeRive?.checked) {
+    const sides = [];
+    if (grB?.checked) sides.push("B");
+    if (grD?.checked) sides.push("D");
+    selectedOptions.push("Grande rive" + (sides.length ? ` (côté ${sides.join("+")})` : ""));
+  }
+
+  if (optRiveSolin?.checked) {
+    const sides = [];
+    if (rsB?.checked) sides.push("B");
+    if (rsD?.checked) sides.push("D");
+    selectedOptions.push("Rive avec solin" + (sides.length ? ` (côté ${sides.join("+")})` : ""));
+  }
+
   if (optFaitiereSolin?.checked) selectedOptions.push("Faîtière avec solin");
   if (optFaitiereSimple?.checked) selectedOptions.push("Faîtière simple");
   if (optFaitiereDouble?.checked) selectedOptions.push("Faîtière double");
@@ -355,13 +481,13 @@ function calculatePriceAndRecap() {
   recapHTML += LINE("Façades bardées :", claddingAreaText);
   recapHTML += BLANK();
   recapHTML += LINE("Habillages (RAL) :", trimColor);
-  recapHTML += LINE("Options :", (selectedOptions.length ? selectedOptions.join(", ") : "Aucune"));
-  recapHTML += BLANK();
   recapHTML += LINE("Mode :", (deliveryMode === "retrait" ? "Retrait à Tonneins" : "Livraison sur chantier"));
   recapHTML += LINE("Adresse :", addressText);
   recapHTML += LINE("Livraison estimative :", livTxt);
   recapHTML += BLANK();
   recapHTML += LINE("Prix estimatif :", `${formatCurrency(totalHT)} HT soit env. ${formatCurrency(totalTTC)} TTC`);
+  recapHTML += BLANK();
+  recapHTML += LINE("Options :", (selectedOptions.length ? selectedOptions.join(", ") : "Aucune"));
   recapHTML += BLANK();
   recapHTML += `<div style="opacity:.9">${L("Note :")} Ce devis est une estimation indicative. Un devis définitif vous sera transmis par GAMAX-CM.</div>`;
 
@@ -379,13 +505,14 @@ function calculatePriceAndRecap() {
   recapText += LINE_TXT("Façades bardées :", claddingAreaText);
   recapText += "\n";
   recapText += LINE_TXT("Habillages (RAL) :", trimColor);
-  recapText += LINE_TXT("Options :", (selectedOptions.length ? selectedOptions.join(", ") : "Aucune"));
   recapText += "\n";
   recapText += LINE_TXT("Mode :", (deliveryMode === "retrait" ? "Retrait à Tonneins" : "Livraison sur chantier"));
   recapText += LINE_TXT("Adresse :", addressText);
   recapText += LINE_TXT("Livraison estimative :", livTxt);
   recapText += "\n";
   recapText += LINE_TXT("Prix estimatif :", `${formatCurrency(totalHT)} HT soit env. ${formatCurrency(totalTTC)} TTC`);
+  recapText += "\n";
+  recapText += LINE_TXT("Options :", (selectedOptions.length ? selectedOptions.join(", ") : "Aucune"));
   recapText += "\n";
   recapText += "Ce devis est une estimation indicative. Un devis définitif vous sera transmis par GAMAX-CM.\n";
 
@@ -432,14 +559,14 @@ const MODELS = {
   },
 };
 
-// Échelle globale (laisser à 1)
+// Échelle globale
 const GLOBAL_SCALE = 1;
 
 // Pente
 const PITCH_RATIO = 0.10;          // 10%
 const ROOF_OVERHANG_RATIO = 0.14;  // débord
 
-// Visuel texture (répétition)
+// Visuel texture
 const ROOF_TEX_REPEAT_X = 8;
 const ROOF_TEX_REPEAT_Z = 2;
 const CLAD_TEX_REPEAT_X = 8;
@@ -453,9 +580,9 @@ const CLAD_OPACITY = 0.98;
 const ROOF_THICKNESS = 0.06;
 const CLAD_THICKNESS = 0.035;
 
-// ✅ paramètres legacy (on garde, mais le snap panne haute gère le “collage”)
-const ROOF_SINK_RATIO = 0.015;
-const ROOF_DROP = 0.08;
+// ✅ Couverture collée : mini gap
+const ROOF_GAP = 0.006;   // <- très faible (avant : trop grand)
+const ROOF_SINK_RATIO = 0.012;
 
 // ✅ Bardage juste sous couverture
 const CLAD_TOP_GAP = 0.03;
@@ -536,7 +663,6 @@ function initThree() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   }
 
-  // lumières
   scene.add(new THREE.AmbientLight(0xffffff, 0.70));
 
   const dir = new THREE.DirectionalLight(0xffffff, 0.95);
@@ -612,7 +738,6 @@ function initThree() {
     scene.add(backgroundPlane);
   });
 
-  // Charger modèle initial
   loadModelForType(getSelectedType());
 
   window.addEventListener("resize", () => setTimeout(onThreeResize, 40));
@@ -696,7 +821,6 @@ function buildStructureFromConfig() {
     currentX += segLength;
   }
 
-  // Center X/Z + poser au sol (min.y => 0)
   let bbox = new THREE.Box3().setFromObject(structureGroup);
   const center = bbox.getCenter(new THREE.Vector3());
 
@@ -727,7 +851,7 @@ function materialWithTexture({ color, tex, opacity }) {
   return mat;
 }
 
-// ----- Géométrie pignon mono (trapèze)
+// pignon mono (trapèze)
 function createMonoGableShape(widthZ, y0, yLow, yHigh) {
   const halfW = widthZ / 2;
   const s = new THREE.Shape();
@@ -739,7 +863,7 @@ function createMonoGableShape(widthZ, y0, yLow, yHigh) {
   return s;
 }
 
-// ----- Géométrie pignon bi (forme maison)
+// pignon bi (maison)
 function createBiGableShape(widthZ, y0, yEave, yRidge) {
   const halfW = widthZ / 2;
   const s = new THREE.Shape();
@@ -750,111 +874,6 @@ function createBiGableShape(widthZ, y0, yEave, yRidge) {
   s.lineTo(-halfW, yEave);
   s.lineTo(-halfW, y0);
   return s;
-}
-
-/* ===== Helpers “panne haute” + snap couverture ===== */
-function snapMeshMinYTo(mesh, targetMinY) {
-  const bb = new THREE.Box3().setFromObject(mesh);
-  const dy = targetMinY - bb.min.y;
-  mesh.position.y += dy;
-}
-
-function getRoofSeatYFromStructure(structureGroup, bbox) {
-  if (!structureGroup || !bbox) return null;
-
-  const min = bbox.min, max = bbox.max;
-  const lenX = max.x - min.x;
-  const widthZ = max.z - min.z;
-  const heightY = max.y - min.y;
-
-  const topZoneMinY = max.y - heightY * 0.35;
-  const thinYMax = Math.max(0.06, heightY * 0.08);
-
-  let best = null;
-
-  structureGroup.traverse((obj) => {
-    if (!obj.isMesh) return;
-
-    const bb = new THREE.Box3().setFromObject(obj);
-    const size = bb.getSize(new THREE.Vector3());
-
-    if (bb.max.y < topZoneMinY) return;
-    if (size.y > thinYMax) return;
-
-    const longEnoughX = size.x > lenX * 0.35;
-    const longEnoughZ = size.z > widthZ * 0.35;
-    if (!longEnoughX && !longEnoughZ) return;
-
-    const score = (bb.max.y * 10) + Math.max(size.x, size.z);
-    if (!best || score > best.score) best = { score, yTop: bb.max.y };
-  });
-
-  return best ? best.yTop : null;
-}
-function getAllMeshes(root) {
-  const meshes = [];
-  if (!root) return meshes;
-  root.traverse((o) => { if (o.isMesh) meshes.push(o); });
-  return meshes;
-}
-
-/**
- * Colle la couverture sur la structure en raycastant vers le bas.
- * - sampleCount : plus il est élevé, plus c’est précis
- * - gap : mini jour anti z-fighting (en m)
- */
-function snapRoofByRaycast(roofMesh, structureRoot, sampleCount = 7, gap = 0.002) {
-  if (!roofMesh || !structureRoot) return;
-
-  const meshes = getAllMeshes(structureRoot);
-  if (!meshes.length) return;
-
-  const raycaster = new THREE.Raycaster();
-  raycaster.firstHitOnly = false;
-
-  // BBox monde de la couverture (après rotation/position)
-  const bbRoof = new THREE.Box3().setFromObject(roofMesh);
-  const min = bbRoof.min, max = bbRoof.max;
-
-  // points d’échantillonnage dans la surface XY (X/Z)
-  const xs = [];
-  const zs = [];
-
-  for (let i = 0; i < sampleCount; i++) {
-    const t = i / (sampleCount - 1);
-    xs.push(THREE.MathUtils.lerp(min.x + 0.05*(max.x-min.x), max.x - 0.05*(max.x-min.x), t));
-    zs.push(THREE.MathUtils.lerp(min.z + 0.08*(max.z-min.z), max.z - 0.08*(max.z-min.z), t));
-  }
-
-  let bestHitY = null;
-
-  // On part d’un peu au-dessus de la couverture, et on tire vers le bas
-  const origin = new THREE.Vector3();
-  const dir = new THREE.Vector3(0, -1, 0);
-
-  for (const x of xs) {
-    for (const z of zs) {
-      origin.set(x, max.y + 2.0, z);
-      raycaster.set(origin, dir);
-
-      const hits = raycaster.intersectObjects(meshes, true);
-      if (!hits || !hits.length) continue;
-
-      // on garde le hit le plus haut
-      for (const h of hits) {
-        if (bestHitY === null || h.point.y > bestHitY) bestHitY = h.point.y;
-      }
-    }
-  }
-
-  if (bestHitY === null) return;
-
-  // On veut que le bas de la couverture (bbox minY) touche bestHitY - gap
-  const bbAfter = new THREE.Box3().setFromObject(roofMesh);
-  const currentMinY = bbAfter.min.y;
-  const targetMinY = bestHitY - gap;
-
-  roofMesh.position.y += (targetMinY - currentMinY);
 }
 
 function rebuildOverlays(bbox) {
@@ -878,7 +897,7 @@ function rebuildOverlays(bbox) {
   const roofThick = ROOF_THICKNESS * GLOBAL_SCALE;
   const cladThick = CLAD_THICKNESS * GLOBAL_SCALE;
 
-  const roofSink = Math.max(0.01, heightY * ROOF_SINK_RATIO);
+  const roofSink = Math.max(0.004, heightY * ROOF_SINK_RATIO);
 
   const roofMat = materialWithTexture({
     color: getRoofColor3D(),
@@ -892,14 +911,9 @@ function rebuildOverlays(bbox) {
     opacity: CLAD_OPACITY,
   });
 
-  // ===== TOITURE (couverture) — collée sur panne haute =====
+  // ===== TOITURE (recollée) =====
   const slopeType = getSelectedType();
   const angle = Math.atan(PITCH_RATIO);
-
-  const ROOF_CONTACT_GAP = 0.004; // minuscule anti-zfighting
-  const seatY = getRoofSeatYFromStructure(structureGroup, bbox);
-  const seatFallbackY = (max.y - roofSink) - 0.18;
-  const targetMinY = (seatY ?? seatFallbackY) - ROOF_CONTACT_GAP;
 
   if (slopeType === "mono") {
     const overhang = widthZ * ROOF_OVERHANG_RATIO;
@@ -908,22 +922,17 @@ function rebuildOverlays(bbox) {
     roof.userData.kind = "roof";
 
     roof.rotation.x = -angle;
-
     const lift = (widthZ / 2) * Math.sin(angle);
 
     roof.position.set(
       cx,
-      (max.y - roofSink) + lift - ROOF_DROP,
+      (max.y - roofSink) + lift - ROOF_GAP,   // ✅ collé (plus de “drop”)
       cz - (overhang / 2)
     );
 
     roof.castShadow = SHADOW_ENABLED;
     roof.receiveShadow = false;
     overlayGroup.add(roof);
-
-    // ✅ snap réel
-snapRoofByRaycast(roof, structureGroup, 7, 0.002);
-;
 
     overlayGroup.userData.roof = { type: "mono", roof };
 
@@ -937,28 +946,22 @@ snapRoofByRaycast(roof, structureGroup, 7, 0.002);
     roofPlusZ.rotation.x = +angle;
     roofPlusZ.position.set(
       cx,
-      (max.y - roofSink) + lift - ROOF_DROP,
+      (max.y - roofSink) + lift - ROOF_GAP,   // ✅ collé
       cz + halfW / 2
     );
     roofPlusZ.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roofPlusZ);
-   snapRoofByRaycast(roofPlusZ, structureGroup, 7, 0.002);
 
     const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
     roofMinusZ.userData.kind = "roof";
     roofMinusZ.rotation.x = -angle;
     roofMinusZ.position.set(
       cx,
-      (max.y - roofSink) + lift - ROOF_DROP,
+      (max.y - roofSink) + lift - ROOF_GAP,   // ✅ collé
       cz - halfW / 2
     );
     roofMinusZ.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roofMinusZ);
-   snapRoofByRaycast(roofMinusZ, structureGroup, 7, 0.002);
-
-    // ✅ snap réel
-    snapMeshMinYTo(roofPlusZ, targetMinY);
-    snapMeshMinYTo(roofMinusZ, targetMinY);
 
     overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ };
   }
@@ -967,23 +970,20 @@ snapRoofByRaycast(roof, structureGroup, 7, 0.002);
   const panelHeight = Math.max(0.2, heightY - CLAD_TOP_GAP);
   const yCenter = min.y + panelHeight / 2;
 
-  // Long pans A/C
   const geoLong = new THREE.BoxGeometry(lenX, panelHeight, cladThick);
 
-  // A = +Z
   const cladA_outer = new THREE.Mesh(geoLong, cladMat.clone());
   cladA_outer.position.set(cx, yCenter, max.z + eps);
 
-  // C = -Z
   const cladC_outer = new THREE.Mesh(geoLong, cladMat.clone());
   cladC_outer.position.set(cx, yCenter, min.z - eps);
 
-  // Pignons B/D
   let gableShapeB = null;
   let gableShapeD = null;
 
   if (slopeType === "mono") {
     const deltaH = widthZ * PITCH_RATIO;
+
     const yLow  = min.y + panelHeight - deltaH;
     const yHigh = min.y + panelHeight;
 
@@ -1059,6 +1059,10 @@ snapRoofByRaycast(roof, structureGroup, 7, 0.002);
 
   applyCladdingVisibility();
   overlayGroup.userData = { applyCladdingVisibility };
+
+  // ===== TRIMS (habillages) — juste pour recollage/visu (bandes)
+  // (Tu m’as demandé surtout recoller la couverture + refaire les côtés.
+  //  Les bandes 3D d’habillages, on les remettra si tu veux, mais là je sécurise surtout le bug “disparition”.)
 
   // ===== SCALE SOL + FOND =====
   const radius = Math.max(lenX, widthZ) * 0.9;
@@ -1204,7 +1208,6 @@ function setup3DFullscreenUI() {
 ---------------------------- */
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // ✅ si un élément n’existe pas, on évite de casser
   populateDimensions();
 
   initThree();
@@ -1213,9 +1216,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   updateDeliveryUI();
   await updateCityOptions();
 
+  // options type dispo
+  applyOptionAvailabilityByType();
+
   document.querySelectorAll('input[name="slopeType"]').forEach((el) => {
     el.addEventListener("change", () => {
       populateDimensions();
+      applyOptionAvailabilityByType();
       loadModelForType(getSelectedType());
       calculatePriceAndRecap();
     });
@@ -1261,13 +1268,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     })
   );
 
-  document.querySelectorAll('input[name="trimColor"]').forEach((el) =>
-    el.addEventListener("change", () => {
-      calculatePriceAndRecap();
-      // (si plus tard on ajoute les habillages 3D avec couleur)
-    })
-  );
-
   document.querySelectorAll('input[name="claddingSide"]').forEach((el) =>
     el.addEventListener("change", () => {
       calculatePriceAndRecap();
@@ -1275,23 +1275,36 @@ document.addEventListener("DOMContentLoaded", async () => {
     })
   );
 
+  // Trim color
+  document.querySelectorAll('input[name="trimColor"]').forEach((el) =>
+    el.addEventListener("change", () => {
+      calculatePriceAndRecap();
+      update3DFromConfig();
+    })
+  );
+
+  // setup options côté
+  setupSideOption("optGrandeRive", "optGrandeRiveB", "optGrandeRiveD");
+  setupSideOption("optRiveSolin",  "optRiveSolinB",  "optRiveSolinD");
+  enforceMutualExclusivePerSide();
+
   [
     "optInstall",
-    "optFaitiereSolin",
-    "optRiveSolin",
-    "optGrandeRive",
     "optAngles",
     "optRejetEau",
     "optFaitiereDouble",
     "optFaitiereSimple",
+    "optFaitiereSolin",
+    "optGrandeRive",
+    "optRiveSolin",
   ].forEach((id) =>
     $(id)?.addEventListener("change", () => {
       calculatePriceAndRecap();
+      update3DFromConfig();
     })
   );
 
   $("btnCalculate")?.addEventListener("click", calculatePriceAndRecap);
 
-  // ✅ premier calcul
   calculatePriceAndRecap();
 });
