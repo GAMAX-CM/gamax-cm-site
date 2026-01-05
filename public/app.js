@@ -1,5 +1,5 @@
 /* =========================================================
-   GAMAX-CM — CONFIGURATEUR + RÉCAP + VUE 3D (THREE)
+   GAMAX-CM — CONFIGURATEUR + RÉCAP + VUE 3D (THREE r146)
    Fichier : public/app.js
    ========================================================= */
 
@@ -496,6 +496,7 @@ function calculatePriceAndRecap() {
 
   afficherRecapitulatif(recapHTML, recapText);
 
+  // MAJ 3D
   update3DFromConfig();
 }
 
@@ -555,11 +556,9 @@ const CLAD_OPACITY = 0.985;
 const ROOF_THICKNESS = 0.06;
 const CLAD_THICKNESS = 0.032;
 
-// ✅ Recollage toiture (monopente surtout)
-// -> plus on descend, plus le “jour” disparaît
-const ROOF_GAP = -0.06;        // était -0.010
-const ROOF_SINK_RATIO = 0.02;  // était 0.004
-
+// ✅ Toiture monopente : COLLAGE RÉEL (baisse visible)
+const ROOF_GAP = -0.06;        // ajuste entre -0.04 et -0.09 si besoin
+const ROOF_SINK_RATIO = 0.02;  // enfonce légèrement dans la structure
 
 // ✅ Bardage collé sous couverture
 const CLAD_TOP_GAP = 0.006;
@@ -581,6 +580,10 @@ let overlayGroup = null;
 let studioGroup = null;
 let groundPlane = null;
 let groundDecal = null;
+
+// contact shadow (fake AO)
+let contactShadow = null;
+let contactTex = null;
 
 let roofTex = null;
 let cladTex = null;
@@ -613,6 +616,27 @@ function getBayCount(length) {
   return 6;
 }
 
+/* ===== Fake AO / Contact shadow texture ===== */
+function createContactShadowTexture(size = 256) {
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const ctx = c.getContext("2d");
+
+  const g = ctx.createRadialGradient(
+    size / 2, size / 2, size * 0.10,
+    size / 2, size / 2, size * 0.50
+  );
+  g.addColorStop(0, "rgba(0,0,0,0.35)");
+  g.addColorStop(1, "rgba(0,0,0,0)");
+
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.needsUpdate = true;
+  return tex;
+}
+
 /* ===== Studio helpers ===== */
 
 function buildStudio() {
@@ -626,7 +650,7 @@ function buildStudio() {
   // Sol : shadow catcher + léger sol texturé en dessous (plus pro)
   if (SHADOW_ENABLED) {
     const shadowMat = new THREE.ShadowMaterial({ opacity: 0.22 });
-    groundPlane = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), shadowMat);
+    groundPlane = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), shadowMat); // ✅ plus petit -> focus produit
     groundPlane.rotation.x = -Math.PI / 2;
     groundPlane.position.y = 0;
     groundPlane.receiveShadow = true;
@@ -634,7 +658,7 @@ function buildStudio() {
   }
 
   groundDecal = new THREE.Mesh(
-    new THREE.PlaneGeometry(60, 60),
+    new THREE.PlaneGeometry(60, 60), // ✅ plus petit -> abri paraît plus grand
     new THREE.MeshStandardMaterial({
       color: 0xffffff,
       roughness: 1,
@@ -648,9 +672,9 @@ function buildStudio() {
   groundDecal.receiveShadow = false;
   studioGroup.add(groundDecal);
 
-  // Mur “cyclo” (fond studio courbe) : beaucoup plus propre que la photo
-  const radius = 70;
-  const height = 35;
+  // Mur “cyclo” (fond studio courbe)
+  const radius = 38;
+  const height = 22;
   const cyl = new THREE.CylinderGeometry(radius, radius, height, 64, 1, true, Math.PI * 0.15, Math.PI * 0.70);
   const wallMat = new THREE.MeshStandardMaterial({
     color: 0xf3eee6,
@@ -659,16 +683,16 @@ function buildStudio() {
     side: THREE.BackSide,
   });
   const wall = new THREE.Mesh(cyl, wallMat);
-  wall.position.set(0, height * 0.42, -20);
+  wall.position.set(0, height * 0.46, -10);
   wall.rotation.y = Math.PI;
   studioGroup.add(wall);
 
   // Légère “base” claire derrière
   const back = new THREE.Mesh(
-    new THREE.PlaneGeometry(140, 60),
+    new THREE.PlaneGeometry(70, 30),
     new THREE.MeshStandardMaterial({ color: 0xf8f4ee, roughness: 1, metalness: 0 })
   );
-  back.position.set(0, 18, -55);
+  back.position.set(0, 9, -28);
   studioGroup.add(back);
 }
 
@@ -686,7 +710,7 @@ function initThree() {
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xf6f2ea);
-  scene.fog = new THREE.Fog(0xf6f2ea, 35, 120);
+  scene.fog = new THREE.Fog(0xf6f2ea, 25, 85);
 
   camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 2500);
   camera.position.set(9, 5.5, 10.5);
@@ -695,10 +719,10 @@ function initThree() {
   renderer.setPixelRatio(window.devicePixelRatio || 1);
   renderer.setSize(w, h, false);
 
-  // ✅ rendu plus “pro”
+  // ✅ rendu plus “pro” (r146)
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.18; // + lumineux
+  renderer.toneMappingExposure = 1.18;
   renderer.physicallyCorrectLights = true;
 
   if (SHADOW_ENABLED) {
@@ -706,38 +730,54 @@ function initThree() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   }
 
-  // Lights “studio”
-  scene.add(new THREE.AmbientLight(0xffffff, 0.52)); // + lumineux
+  // Lights “studio” (un peu + lumineux)
+  scene.add(new THREE.AmbientLight(0xffffff, 0.52));
 
-  const key = new THREE.DirectionalLight(0xffffff, 1.05);
+  const key = new THREE.DirectionalLight(0xffffff, 1.10);
   key.position.set(12, 22, 10);
   key.castShadow = SHADOW_ENABLED;
+
+  // ✅ ombre plus propre + douce
   key.shadow.mapSize.set(4096, 4096);
   key.shadow.radius = 6;
-  key.shadow.normalBias = 0.02 
-  key.shadow.camera.near = 1;
-  key.shadow.camera.far = 140;
   key.shadow.bias = -0.00015;
+  key.shadow.normalBias = 0.02;
+  key.shadow.camera.near = 1;
+  key.shadow.camera.far = 120;
+
   scene.add(key);
 
-  const fill = new THREE.DirectionalLight(0xffffff, 0.35);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.42);
   fill.position.set(-18, 14, 6);
   scene.add(fill);
 
-const topSoft = new THREE.DirectionalLight(0xffffff, 0.35);
-topSoft.position.set(0, 30, 0);
-scene.add(topSoft);
-
+  const topSoft = new THREE.DirectionalLight(0xffffff, 0.35);
+  topSoft.position.set(0, 30, 0);
+  scene.add(topSoft);
 
   const rim = new THREE.DirectionalLight(0xfff3dd, 0.25);
   rim.position.set(0, 12, -18);
   scene.add(rim);
 
-  const hemi = new THREE.HemisphereLight(0xffffff, 0xe9dcc2, 0.45);
+  const hemi = new THREE.HemisphereLight(0xffffff, 0xe9dcc2, 0.50);
   scene.add(hemi);
 
-  // Studio backdrop + sol
+  // Studio
   buildStudio();
+
+  // Fake AO / contact shadow (ancrage au sol)
+  contactTex = createContactShadowTexture(512);
+  contactShadow = new THREE.Mesh(
+    new THREE.PlaneGeometry(5, 5),
+    new THREE.MeshBasicMaterial({
+      map: contactTex,
+      transparent: true,
+      opacity: 0.55,
+      depthWrite: false,
+    })
+  );
+  contactShadow.rotation.x = -Math.PI / 2;
+  scene.add(contactShadow);
 
   // controls
   controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -747,8 +787,8 @@ scene.add(topSoft);
   controls.target.set(0, 1.5, 0);
   controls.minPolarAngle = ORBIT_MIN_POLAR;
   controls.maxPolarAngle = ORBIT_MAX_POLAR;
-  controls.minDistance = 6;
-  controls.maxDistance = 45;
+  controls.minDistance = 5;
+  controls.maxDistance = 35;
 
   // textures
   const tl = new THREE.TextureLoader();
@@ -756,7 +796,7 @@ scene.add(topSoft);
   tl.load(PAVE_TEX_PATH, (tex) => {
     tex.encoding = THREE.sRGBEncoding;
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(14, 14);
+    tex.repeat.set(10, 10); // sera recalé dans rebuildOverlays
     if (groundDecal?.material) {
       groundDecal.material.map = tex;
       groundDecal.material.needsUpdate = true;
@@ -790,22 +830,20 @@ function loadModelForType(type) {
   loader.load(
     modelCfg.path,
     (gltf) => {
-baseModule = gltf.scene;
-baseModule.traverse((obj) => {
-  if (!obj.isMesh) return;
+      baseModule = gltf.scene;
 
-  obj.castShadow = SHADOW_ENABLED;
-  obj.receiveShadow = SHADOW_ENABLED;
+      // ✅ Structure gris clair (couleur réelle) + matériaux homogènes
+      baseModule.traverse((obj) => {
+        if (!obj.isMesh) return;
+        obj.castShadow = SHADOW_ENABLED;
+        obj.receiveShadow = SHADOW_ENABLED;
 
-  // ✅ structure gris clair (couleur réelle)
-  const m = new THREE.MeshStandardMaterial({
-    color: 0xc9c9c9,     // gris clair
-    metalness: 0.12,
-    roughness: 0.55,
-  });
-
-  obj.material = m;
-});
+        obj.material = new THREE.MeshStandardMaterial({
+          color: 0xc9c9c9,
+          metalness: 0.12,
+          roughness: 0.55,
+        });
+      });
 
       baseBBox = new THREE.Box3().setFromObject(baseModule);
       update3DFromConfig();
@@ -947,21 +985,6 @@ function rebuildOverlays(bbox) {
   const roofThick = ROOF_THICKNESS * GLOBAL_SCALE;
   const cladThick = CLAD_THICKNESS * GLOBAL_SCALE;
 
-   // ✅ Pavés : échelle réaliste (ex: pavé ~ 40 cm)
-// Plus repeat est faible, plus les pavés paraissent grands.
-if (groundDecal?.material?.map) {
-  const tex = groundDecal.material.map;
-
-  // On veut ~0.4m par pavé → repeat = dimension / 0.4
-  const repX = Math.max(6, Math.round(lenX / 0.4));
-  const repZ = Math.max(6, Math.round(widthZ / 0.4));
-
-  tex.repeat.set(repX, repZ);
-  tex.needsUpdate = true;
-
-  groundDecal.material.needsUpdate = true;
-}
-
   // ✅ on enfonce légèrement la toiture dans la structure
   const roofSink = Math.max(0.001, heightY * ROOF_SINK_RATIO);
 
@@ -983,8 +1006,6 @@ if (groundDecal?.material?.map) {
     roughness: 0.55,
   });
 
-   
-
   // ===== TOITURE (recollée) =====
   const slopeType = getSelectedType();
   const angle = Math.atan(PITCH_RATIO);
@@ -995,24 +1016,24 @@ if (groundDecal?.material?.map) {
     const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.userData.kind = "roof";
 
- roof.rotation.x = -angle;
+    roof.rotation.x = -angle;
 
-// ✅ IMPORTANT : on supprime le lift (qui remonte la toiture)
-// et on colle la toiture en se basant sur le top de la structure
-const roofY = (max.y - roofSink) + ROOF_GAP;
+    // ✅ IMPORTANT : suppression du "lift" qui remontait la toiture
+    const roofY = (max.y - roofSink) + ROOF_GAP;
 
-roof.position.set(
-  cx,
-  roofY,
-  cz - (overhang / 2)
-);
-
+    roof.position.set(
+      cx,
+      roofY,
+      cz - (overhang / 2)
+    );
 
     roof.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roof);
 
     overlayGroup.userData.roof = { type: "mono", roof };
+
   } else {
+    // bipente : on garde un petit lift visuel (plus naturel)
     const halfW = widthZ / 2;
     const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
     const lift = (halfW / 2) * Math.sin(angle);
@@ -1020,14 +1041,14 @@ roof.position.set(
     const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
     roofPlusZ.userData.kind = "roof";
     roofPlusZ.rotation.x = +angle;
-    roofPlusZ.position.set(cx, (max.y - roofSink) + lift + ROOF_GAP, cz + halfW / 2);
+    roofPlusZ.position.set(cx, (max.y - roofSink) + lift + ROOF_GAP * 0.6, cz + halfW / 2);
     roofPlusZ.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roofPlusZ);
 
     const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
     roofMinusZ.userData.kind = "roof";
     roofMinusZ.rotation.x = -angle;
-    roofMinusZ.position.set(cx, (max.y - roofSink) + lift + ROOF_GAP, cz - halfW / 2);
+    roofMinusZ.position.set(cx, (max.y - roofSink) + lift + ROOF_GAP * 0.6, cz - halfW / 2);
     roofMinusZ.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roofMinusZ);
 
@@ -1053,13 +1074,11 @@ roof.position.set(
     const deltaH = widthZ * PITCH_RATIO;
 
     // façade A = haut = côté +Z (max.z)
-    // donc sur le pignon, le haut doit être côté +Z
     const yLow  = min.y + panelHeight - deltaH;
     const yHigh = min.y + panelHeight;
 
     const shapeB = createMonoGableShape(widthZ, min.y, yLow, yHigh);
-
-    // ✅ CORRECTION PIGNON D : on inverse la pente (miroir)
+    // ✅ CORRECTION PIGNON D : pente inversée (miroir)
     const shapeD = createMonoGableShape(widthZ, min.y, yHigh, yLow);
 
     const geoGableB = new THREE.ShapeGeometry(shapeB);
@@ -1136,9 +1155,8 @@ roof.position.set(
   overlayGroup.userData.applyCladdingVisibility = applyCladdingVisibility;
 
   // ===== HABILLAGES DE FINITION (VISIBLES EN 3D)
-  // Objectif : donner un rendu pro et montrer clairement les options.
-  const TRIM_TH = 0.018;  // épaisseur
-  const TRIM_W  = 0.070;  // largeur visuelle
+  const TRIM_TH = 0.018;
+  const TRIM_W  = 0.070;
 
   function addTrimBox(sizeX, sizeY, sizeZ, px, py, pz, rotX = 0, rotY = 0, rotZ = 0, visible = true) {
     const m = new THREE.Mesh(new THREE.BoxGeometry(sizeX, sizeY, sizeZ), trimMat.clone());
@@ -1166,7 +1184,6 @@ roof.position.set(
   const rsB = $("optRiveSolinB")?.checked;
   const rsD = $("optRiveSolinD")?.checked;
 
-  // Angles : 4 coins verticaux
   if (optAngles) {
     const h = panelHeight;
     const y = min.y + h / 2;
@@ -1176,7 +1193,6 @@ roof.position.set(
     addTrimBox(TRIM_TH, h, TRIM_W, max.x + eps, y, max.z + eps);
   }
 
-  // Rejet d’eau : bande basse sur les façades bardées (simplifié)
   if (optRejetEau) {
     const y = min.y + 0.05;
     const zA = max.z + eps;
@@ -1195,10 +1211,9 @@ roof.position.set(
     if (showD) addTrimBox(TRIM_W, TRIM_TH, widthZ, max.x + eps, y, cz);
   }
 
-  // Rives (Grande rive / Rive solin) : bande en haut des pignons B/D (simplifié mais propre)
-  const topY = (max.y - roofSink) + ROOF_GAP + (widthZ * 0.5 * Math.sin(angle) * 0.25);
+  const topY = (max.y - roofSink) + ROOF_GAP + 0.02;
 
-  function addGableTrim(side /* "B" or "D" */) {
+  function addGableTrim(side) {
     const x = (side === "B") ? (min.x - eps) : (max.x + eps);
     addTrimBox(TRIM_W, TRIM_TH, widthZ + 0.02, x, topY, cz);
   }
@@ -1212,7 +1227,6 @@ roof.position.set(
     if (rsD) addGableTrim("D");
   }
 
-  // Faîtières : mono = sur arête haute côté façade A, bi = sur faîtage au centre
   if (slopeType === "mono" && (optFaitiereSimple || optFaitiereSolin)) {
     const z = max.z + (ROOF_OVERHANG_RATIO * widthZ * 0.25);
     addTrimBox(lenX + 0.02, TRIM_TH, TRIM_W, cx, (max.y - roofSink) + ROOF_GAP + 0.02, z);
@@ -1221,20 +1235,39 @@ roof.position.set(
     addTrimBox(lenX + 0.02, TRIM_TH, TRIM_W, cx, (max.y - roofSink) + ROOF_GAP + 0.02, cz);
   }
 
-  // ===== SCALE / POSITION STUDIO (sol)
+  // ===== Sol studio positionné au niveau de la structure
   if (groundPlane) groundPlane.position.y = min.y;
   if (groundDecal) groundDecal.position.y = min.y - 0.002;
 
-  // ===== CAMÉRA =====
+  // ✅ Pavés : échelle réaliste (pavé ~ 40 cm)
+  if (groundDecal?.material?.map) {
+    const tex = groundDecal.material.map;
+    const repX = Math.max(6, Math.round(lenX / 0.4));
+    const repZ = Math.max(6, Math.round(widthZ / 0.4));
+    tex.repeat.set(repX, repZ);
+    tex.needsUpdate = true;
+    groundDecal.material.needsUpdate = true;
+  }
+
+  // ✅ Fake AO / contact shadow : ancre l’abri
+  if (contactShadow) {
+    const pad = 0.20;
+    contactShadow.geometry.dispose();
+    contactShadow.geometry = new THREE.PlaneGeometry(lenX + pad, widthZ + pad);
+    contactShadow.position.set(cx, min.y + 0.01, cz);
+    contactShadow.material.opacity = 0.55;
+  }
+
+  // ===== Caméra : cadrage propre
   if (controls && camera) {
     const center = new THREE.Vector3(cx, min.y + heightY * 0.55, cz);
     controls.target.set(center.x, center.y, center.z);
 
     const d = Math.max(lenX, widthZ, heightY);
     camera.position.set(
-      center.x + d * 1.25,
+      center.x + d * 1.22,
       center.y + d * 0.85,
-      center.z + d * 1.25
+      center.z + d * 1.22
     );
   }
 }
