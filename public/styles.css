@@ -723,4 +723,53 @@ input[type="text"]:focus, select:focus{
   .bardage-label-sub {
     font-size: 0.8rem;
   }
+ /* =========================================================
+   ✅ GLOW "ACCENT" SUR CARTES AVEC CHOIX DE CÔTÉS
+   - Glow léger quand l’option est cochée
+   - Glow plus visible si cochée mais aucun côté B/D coché
+========================================================= */
+
+/* Glow léger si la checkbox principale est cochée */
+.bardage-choice input[type="checkbox"]:checked + .bardage-card{
+  border-color: rgba(200,169,106,.95);
+  box-shadow:
+    0 12px 26px rgba(0,0,0,.10),
+    0 0 0 1px rgba(200,169,106,.55);
+}
+
+/* Glow plus marqué si option cochée MAIS aucun côté sélectionné
+   -> on ne peut pas cibler "aucun des 2 cochés" en pur CSS sur des checkboxes séparées
+   -> donc on renforce automatiquement quand l'utilisateur n'a pas encore cliqué une pastille
+   -> et on réduit dès qu'il en coche une (ci-dessous) */
+.bardage-choice input[type="checkbox"]:checked ~ .option-sides{
+  /* rien ici, l’animation est déjà gérée */
+}
+
+/* Dès qu’une pastille B/D est cochée, on adoucit le glow (aspect "validé") */
+.option-side input:checked{
+  /* hack : on s’appuie sur :has si dispo, sinon le glow léger restera (OK) */
+}
+
+/* ✅ Version moderne (Chrome/Edge/Safari récents) : état "incomplet" détecté */
+@supports selector(.bardage-choice:has(.option-side input:checked)) {
+  /* si main cochée ET aucune pastille cochée => glow plus marqué */
+  .bardage-choice:has(> input[type="checkbox"]:checked):not(:has(.option-side input:checked)) .bardage-card{
+    border-color: rgba(200,169,106,1);
+    box-shadow:
+      0 16px 34px rgba(0,0,0,.14),
+      0 0 0 2px rgba(200,169,106,.75),
+      0 0 22px rgba(200,169,106,.25);
+    transform: translateY(-1px);
+  }
+
+  /* si main cochée ET au moins une pastille cochée => glow léger (validé) */
+  .bardage-choice:has(> input[type="checkbox"]:checked):has(.option-side input:checked) .bardage-card{
+    border-color: rgba(200,169,106,.95);
+    box-shadow:
+      0 12px 26px rgba(0,0,0,.10),
+      0 0 0 1px rgba(200,169,106,.55);
+    transform: none;
+  }
+}
+  
 }
