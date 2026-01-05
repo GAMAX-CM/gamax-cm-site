@@ -626,7 +626,7 @@ function buildStudio() {
   // Sol : shadow catcher + léger sol texturé en dessous (plus pro)
   if (SHADOW_ENABLED) {
     const shadowMat = new THREE.ShadowMaterial({ opacity: 0.22 });
-    groundPlane = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), shadowMat);
+    groundPlane = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), shadowMat);
     groundPlane.rotation.x = -Math.PI / 2;
     groundPlane.position.y = 0;
     groundPlane.receiveShadow = true;
@@ -634,7 +634,7 @@ function buildStudio() {
   }
 
   groundDecal = new THREE.Mesh(
-    new THREE.PlaneGeometry(200, 200),
+    new THREE.PlaneGeometry(60, 60),
     new THREE.MeshStandardMaterial({
       color: 0xffffff,
       roughness: 1,
@@ -712,10 +712,12 @@ function initThree() {
   const key = new THREE.DirectionalLight(0xffffff, 1.05);
   key.position.set(12, 22, 10);
   key.castShadow = SHADOW_ENABLED;
-  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.mapSize.set(4096, 4096);
+  key.shadow.radius = 6;
+  key.shadow.normalBias = 0.02 
   key.shadow.camera.near = 1;
   key.shadow.camera.far = 140;
-  key.shadow.bias = -0.0002;
+  key.shadow.bias = -0.00015;
   scene.add(key);
 
   const fill = new THREE.DirectionalLight(0xffffff, 0.35);
@@ -945,6 +947,21 @@ function rebuildOverlays(bbox) {
   const roofThick = ROOF_THICKNESS * GLOBAL_SCALE;
   const cladThick = CLAD_THICKNESS * GLOBAL_SCALE;
 
+   // ✅ Pavés : échelle réaliste (ex: pavé ~ 40 cm)
+// Plus repeat est faible, plus les pavés paraissent grands.
+if (groundDecal?.material?.map) {
+  const tex = groundDecal.material.map;
+
+  // On veut ~0.4m par pavé → repeat = dimension / 0.4
+  const repX = Math.max(6, Math.round(lenX / 0.4));
+  const repZ = Math.max(6, Math.round(widthZ / 0.4));
+
+  tex.repeat.set(repX, repZ);
+  tex.needsUpdate = true;
+
+  groundDecal.material.needsUpdate = true;
+}
+
   // ✅ on enfonce légèrement la toiture dans la structure
   const roofSink = Math.max(0.001, heightY * ROOF_SINK_RATIO);
 
@@ -965,6 +982,8 @@ function rebuildOverlays(bbox) {
     metalness: 0.10,
     roughness: 0.55,
   });
+
+   
 
   // ===== TOITURE (recollée) =====
   const slopeType = getSelectedType();
