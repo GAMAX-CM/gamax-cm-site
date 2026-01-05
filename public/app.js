@@ -2,10 +2,11 @@
    GAMAX-CM — CONFIGURATEUR + RÉCAP + VUE 3D (THREE r146)
    Fichier : public/app.js
 
-   ✅ Version complète + ajout rendu PRO des profilés :
-   - Profilé SIGMA 170 (ép. 2 mm galvanisé) en 3D (tôle pliée)
-   - Remplacement de la charpente “frameFX” (bipente) par des Sigma 170
-   - Le reste de ton configurateur / récap / 3D reste identique
+   ✅ FIX BUG + rendu PRO des profilés :
+   - Clipping GLTF corrigé (sens du plan + world-space)
+   - Nettoyage propre au changement de type (évite states bizarres)
+   - Profilé SIGMA 170 (ép. 2 mm galva) en 3D (tôle pliée)
+   - Remplacement frameFX bipente par Sigma 170
 ========================================================= */
 
 /* ---------------------------
@@ -575,25 +576,42 @@ let cladTex = null;
 let lastInlineCanvasHeight = 0;
 
 // ===============================
-// CLIPPING STRUCTURE (GLTF)
+// CLIPPING STRUCTURE (GLTF) — FIX
 // On garde tout ce qui est <= eaveY (bas de pente) et on coupe le reste
+// (sens du plan corrigé pour three r146)
 // ===============================
 let structureClipPlane = null;
 
 function applyStructureClipping(eaveWorldY) {
-  if (!structureGroup) return;
+  if (!structureGroup || !renderer) return;
 
-  // Plan horizontal : conserve y <= eaveWorldY + marge
+  // IMPORTANT: en Three, la distance signée est normal·p + constant.
+  // Pour avoir un plan y = eaveWorldY + margin : normal=(0,1,0), constant=-(eaveWorldY+margin)
   const margin = 0.02;
-  structureClipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), eaveWorldY + margin);
+  structureClipPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(eaveWorldY + margin));
 
   structureGroup.traverse((obj) => {
     if (!obj.isMesh || !obj.material) return;
 
     const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
     mats.forEach((m) => {
+      // garde uniquement sous le plan
       m.clippingPlanes = [structureClipPlane];
       m.clipShadows = true;
+      m.needsUpdate = true;
+    });
+  });
+}
+
+function clearStructureClipping() {
+  structureClipPlane = null;
+  if (!structureGroup) return;
+  structureGroup.traverse((obj) => {
+    if (!obj.isMesh || !obj.material) return;
+    const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+    mats.forEach((m) => {
+      m.clippingPlanes = null;
+      m.clipShadows = false;
       m.needsUpdate = true;
     });
   });
@@ -650,8 +668,8 @@ function buildStudio() {
   studioGroup.add(groundDecal);
 
   const radius = 38;
-  const height = 22;
-  const cyl = new THREE.CylinderGeometry(radius, radius, height, 64, 1, true, Math.PI * 0.15, Math.PI * 0.70);
+  const wallH = 22;
+  const cyl = new THREE.CylinderGeometry(radius, radius, wallH, 64, 1, true, Math.PI * 0.15, Math.PI * 0.70);
   const wallMat = new THREE.MeshStandardMaterial({
     color: 0xf3eee6,
     roughness: 1,
@@ -659,7 +677,7 @@ function buildStudio() {
     side: THREE.BackSide,
   });
   const wall = new THREE.Mesh(cyl, wallMat);
-  wall.position.set(0, height * 0.46, -10);
+  wall.position.set(0, wallH * 0.46, -10);
   wall.rotation.y = Math.PI;
   studioGroup.add(wall);
 
@@ -739,7 +757,7 @@ function createSigma170Beam(lengthX, mat) {
   addH((zOuterL + zTopL2) / 2, yTop, (zTopL2 - zOuterL));
   addH((zTopR2 + zOuterR) / 2, yTop, (zOuterR - zTopR2));
 
-  // Marche + plat vers le milieu (approx très propre)
+  // Marche + plat vers le milieu (approx propre)
   addV(zTopL2 + T / 2, (yTop + yMid) / 2, (yTop - yMid));
   addH((zTopL2 + zMidL) / 2, yMid, Math.abs(zMidL - zTopL2));
 
@@ -766,17 +784,6 @@ function addSigmaBeam(group, { len, x, y, z, rx = 0, ry = 0, rz = 0, mat = null 
   beam.rotation.set(rx, ry, rz);
   group.add(beam);
   return beam;
-}
-
-/* (On garde addBeam si tu l’utilises ailleurs / tests) */
-function addBeam(group, { lenX, h, w, x, y, z, rotX = 0, rotY = 0, rotZ = 0, mat }) {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(lenX, h, w), mat);
-  m.position.set(x, y, z);
-  m.rotation.set(rotX, rotY, rotZ);
-  m.castShadow = SHADOW_ENABLED;
-  m.receiveShadow = SHADOW_ENABLED;
-  group.add(m);
-  return m;
 }
 
 /* ---------------------------
@@ -828,11 +835,10 @@ function initThree() {
   camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 2500);
   camera.position.set(9, 5.5, 10.5);
 
-renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-renderer.localClippingEnabled = true; // ✅ IMPORTANT (clipping)
-renderer.setPixelRatio(window.devicePixelRatio || 1);
-renderer.setSize(w, h, false);
-
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  renderer.localClippingEnabled = true; // ✅ IMPORTANT (clipping)
+  renderer.setPixelRatio(window.devicePixelRatio || 1);
+  renderer.setSize(w, h, false);
 
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -929,7 +935,20 @@ renderer.setSize(w, h, false);
   animateThree();
 }
 
+function safeRemoveGroup(g) {
+  if (!g || !scene) return;
+  scene.remove(g);
+}
+
 function loadModelForType(type) {
+  // Nettoyage (évite bugs de states / clipping persistant)
+  clearStructureClipping();
+  safeRemoveGroup(structureGroup); structureGroup = null;
+  safeRemoveGroup(overlayGroup); overlayGroup = null;
+
+  baseModule = null;
+  baseBBox = null;
+
   const modelCfg = MODELS[type] || MODELS.mono;
   const loader = new THREE.GLTFLoader();
 
@@ -943,6 +962,8 @@ function loadModelForType(type) {
         if (!obj.isMesh) return;
         obj.castShadow = SHADOW_ENABLED;
         obj.receiveShadow = SHADOW_ENABLED;
+
+        // Important: matériau unique pour ne pas polluer le GLTF original
         obj.material = new THREE.MeshStandardMaterial({
           color: 0xc9c9c9,
           metalness: 0.12,
@@ -1019,7 +1040,7 @@ function buildStructureFromConfig() {
   structureGroup.position.z -= center.z;
 
   bbox = new THREE.Box3().setFromObject(structureGroup);
-  structureGroup.position.y -= bbox.min.y;
+  structureGroup.position.y -= bbox.min.y; // min.y => 0
 
   bbox = new THREE.Box3().setFromObject(structureGroup);
   return bbox;
@@ -1090,7 +1111,7 @@ function rebuildOverlays(bbox) {
 
   const { height } = getCurrentDimensions();
 
-  const eaveY = min.y + height;
+  const eaveY = min.y + height; // bas de pente / égout = hauteur sélectionnée
   const angle = Math.atan(PITCH_RATIO);
 
   const roofMat = materialWithTexture({
@@ -1122,7 +1143,6 @@ function rebuildOverlays(bbox) {
     const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.userData.kind = "roof";
 
-    // façade A = +Z = côté haut
     roof.rotation.x = -angle;
 
     const lift = (widthZ / 2) * Math.sin(angle);
@@ -1133,8 +1153,9 @@ function rebuildOverlays(bbox) {
     overlayGroup.add(roof);
 
     overlayGroup.userData.roof = { type: "mono", roof, centerY, eaveY };
-   // --- CLIP GLTF AU NIVEAU ÉGOUT (évite que la pente du GLTF change quand on change la largeur)
-applyStructureClipping(eaveY);
+
+    // ✅ FIX: clipping correct (sinon bug / rien ne se clippe)
+    applyStructureClipping(eaveY);
 
   } else {
     const halfW = widthZ / 2;
@@ -1158,14 +1179,14 @@ applyStructureClipping(eaveY);
     overlayGroup.add(roofMinusZ);
 
     overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ, centerY, eaveY };
-   // --- CLIP GLTF AU NIVEAU ÉGOUT (évite que la pente du GLTF change quand on change la largeur)
-applyStructureClipping(eaveY);
-  
+
+    // ✅ FIX clipping
+    applyStructureClipping(eaveY);
   }
 
   /* ============================
      CHARPENTE PRO (visible) — BIPENTE
-     ✅ Ici : Sigma 170 (ép. 2mm) galvanisé
+     ✅ Sigma 170 (ép. 2mm) galvanisé
   ============================ */
   if (slopeType === "bi") {
     const halfW = widthZ / 2;
@@ -1184,50 +1205,27 @@ applyStructureClipping(eaveY);
     const galva = makeGalvaMat();
 
     // Panne faîtière (horizontale)
-    addSigmaBeam(frameFX, {
-      len: lenX,
-      x: cx,
-      y: underRidge,
-      z: cz,
-      rx: 0, ry: 0, rz: 0,
-      mat: galva
-    });
+    addSigmaBeam(frameFX, { len: lenX, x: cx, y: underRidge, z: cz, rx: 0, ry: 0, rz: 0, mat: galva });
 
     // Deux pannes / arbalétriers inclinés (visuel)
     const t = 0.55;
     addSigmaBeam(frameFX, {
-      len: lenX,
-      x: cx,
-      y: underRidge - (ridgeH * t),
-      z: cz + (halfW * t),
-      rx: +angle, ry: 0, rz: 0,
-      mat: galva
+      len: lenX, x: cx, y: underRidge - (ridgeH * t), z: cz + (halfW * t),
+      rx: +angle, ry: 0, rz: 0, mat: galva
     });
     addSigmaBeam(frameFX, {
-      len: lenX,
-      x: cx,
-      y: underRidge - (ridgeH * t),
-      z: cz - (halfW * t),
-      rx: -angle, ry: 0, rz: 0,
-      mat: galva
+      len: lenX, x: cx, y: underRidge - (ridgeH * t), z: cz - (halfW * t),
+      rx: -angle, ry: 0, rz: 0, mat: galva
     });
 
     // Pannes d’égout (horizontales)
     addSigmaBeam(frameFX, {
-      len: lenX,
-      x: cx,
-      y: underEave,
-      z: cz + halfW - 0.03,
-      rx: 0, ry: 0, rz: 0,
-      mat: galva
+      len: lenX, x: cx, y: underEave, z: cz + halfW - 0.03,
+      rx: 0, ry: 0, rz: 0, mat: galva
     });
     addSigmaBeam(frameFX, {
-      len: lenX,
-      x: cx,
-      y: underEave,
-      z: cz - halfW + 0.03,
-      rx: 0, ry: 0, rz: 0,
-      mat: galva
+      len: lenX, x: cx, y: underEave, z: cz - halfW + 0.03,
+      rx: 0, ry: 0, rz: 0, mat: galva
     });
   }
 
@@ -1243,7 +1241,7 @@ applyStructureClipping(eaveY);
 
   if (slopeType === "mono") {
     topA = ridgeY_mono - UNDER_ROOF_CLEARANCE;
-    topC = eaveY      - UNDER_ROOF_CLEARANCE;
+    topC = eaveY       - UNDER_ROOF_CLEARANCE;
   } else {
     topA = eaveY - UNDER_ROOF_CLEARANCE;
     topC = eaveY - UNDER_ROOF_CLEARANCE;
@@ -1370,12 +1368,12 @@ applyStructureClipping(eaveY);
   const rsD = $("optRiveSolinD")?.checked;
 
   if (optAngles) {
-    const h = Math.max(panelHeightA, panelHeightC);
-    const y = min.y + h / 2;
-    addTrimBox(TRIM_TH, h, TRIM_W, min.x - eps, y, min.z - eps);
-    addTrimBox(TRIM_TH, h, TRIM_W, min.x - eps, y, max.z + eps);
-    addTrimBox(TRIM_TH, h, TRIM_W, max.x + eps, y, min.z - eps);
-    addTrimBox(TRIM_TH, h, TRIM_W, max.x + eps, y, max.z + eps);
+    const hMax = Math.max(panelHeightA, panelHeightC);
+    const y = min.y + hMax / 2;
+    addTrimBox(TRIM_TH, hMax, TRIM_W, min.x - eps, y, min.z - eps);
+    addTrimBox(TRIM_TH, hMax, TRIM_W, min.x - eps, y, max.z + eps);
+    addTrimBox(TRIM_TH, hMax, TRIM_W, max.x + eps, y, min.z - eps);
+    addTrimBox(TRIM_TH, hMax, TRIM_W, max.x + eps, y, max.z + eps);
   }
 
   if (optRejetEau) {
@@ -1389,11 +1387,11 @@ applyStructureClipping(eaveY);
     if (showA) addTrimBox(lenX, TRIM_TH, TRIM_W, cx, y, zA);
     if (showC) addTrimBox(lenX, TRIM_TH, TRIM_W, cx, y, zC);
 
-    const showB = !!document.querySelector('input[name="claddingSide"][value="B"]:checked');
-    const showD = !!document.querySelector('input[name="claddingSide"][value="D"]:checked');
+    const showB2 = !!document.querySelector('input[name="claddingSide"][value="B"]:checked');
+    const showD2 = !!document.querySelector('input[name="claddingSide"][value="D"]:checked');
 
-    if (showB) addTrimBox(TRIM_W, TRIM_TH, widthZ, min.x - eps, y, cz);
-    if (showD) addTrimBox(TRIM_W, TRIM_TH, widthZ, max.x + eps, y, cz);
+    if (showB2) addTrimBox(TRIM_W, TRIM_TH, widthZ, min.x - eps, y, cz);
+    if (showD2) addTrimBox(TRIM_W, TRIM_TH, widthZ, max.x + eps, y, cz);
   }
 
   const topRefY = (slopeType === "mono") ? (ridgeY_mono + ROOF_GAP) : (ridgeY_bi + ROOF_GAP);
@@ -1666,3 +1664,4 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   calculatePriceAndRecap();
 });
+
