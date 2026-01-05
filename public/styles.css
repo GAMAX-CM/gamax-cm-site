@@ -513,7 +513,7 @@ input[type="text"]:focus, select:focus{
 .delivery-choice input{accent-color:var(--accent);margin:0}
 
 /* =========================
-   SIDEBAR DROITE (RÉCAP + VUE 3D)
+   SIDEBAR DROITE (VUE 3D + RÉCAP)
 ========================= */
 .sidepanels{
   display:grid;
@@ -521,6 +521,16 @@ input[type="text"]:focus, select:focus{
   gap:18px;
   align-items:start;
   align-content:start;
+
+  /* ✅ sticky sur l’ensemble (les 2 cartes suivent le scroll) */
+  position: sticky;
+  top: 86px; /* aligné avec ton header + petit espace */
+  align-self: start;
+
+  /* ✅ si trop haut, on scrolle dans la colonne */
+  max-height: calc(100vh - 106px);
+  overflow: auto;
+  padding-right: 6px;
 }
 
 .sidepanel{
@@ -568,8 +578,8 @@ input[type="text"]:focus, select:focus{
 .viewer-panel{
   background:#fff;
   border:1px solid var(--beige-dark);
-  position:sticky;
-  top:86px;
+  /* ✅ on retire le sticky ici : c’est sidepanels qui gère */
+  position: static;
 }
 .viewer-panel h2{
   margin:0 0 4px;
@@ -645,8 +655,15 @@ input[type="text"]:focus, select:focus{
     grid-template-columns:minmax(0, 1fr); /* 1 colonne */
   }
   .config-form{grid-column:1}
-  .sidepanels{grid-column:1}
-  .viewer-panel{position:static}
+  .sidepanels{
+    grid-column:1;
+
+    /* ✅ on désactive sticky en mobile/tablette */
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
   .hero-text h1{font-size:2rem}
 }
 
@@ -718,7 +735,6 @@ input[type="text"]:focus, select:focus{
 }
 
 /* ---------- CARTES SÉLECTIONNÉES ---------- */
-/* On évite le gras agressif en sélection */
 .bardage-choice input:checked + .bardage-card .bardage-label-main,
 .option-choice input:checked + .option-card--catalogue .bardage-label-main,
 .roof-card input:checked + .roof-card-inner .roof-title {
@@ -764,4 +780,3 @@ input[type="text"]:focus, select:focus{
     font-size: 0.8rem;
   }
 }
-
