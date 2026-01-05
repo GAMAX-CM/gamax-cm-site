@@ -1245,12 +1245,13 @@ function rebuildOverlays(bbox) {
     const halfW = widthZ / 2;
     const ridgeH = halfW * PITCH_RATIO;
 
-    const r = overlayGroup.userData?.roof;
-    const anyRoof = r?.roofPlusZ || r?.roofMinusZ;
-    const roofCenterY = anyRoof ? anyRoof.position.y : max.y;
+const r = overlayGroup.userData?.roof;
+const anyRoof = r?.roofPlusZ || r?.roofMinusZ;
+const roofCenterY = anyRoof ? anyRoof.position.y : max.y;
 
-    const underRidge = roofCenterY - (roofThick / 2) - UNDER_ROOF_CLEARANCE;
-    const underEave  = underRidge - ridgeH;
+const underRidge = roofCenterY - (roofThick / 2) - UNDER_ROOF_CLEARANCE;
+const underEave  = underRidge - (halfW * PITCH_RATIO);
+
 
     const yEave  = underEave  - CLAD_TOP_GAP;
     const yRidge = underRidge - CLAD_TOP_GAP;
