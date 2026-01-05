@@ -496,7 +496,6 @@ function calculatePriceAndRecap() {
 
   afficherRecapitulatif(recapHTML, recapText);
 
-  // MAJ 3D
   update3DFromConfig();
 }
 
@@ -557,8 +556,8 @@ const ROOF_THICKNESS = 0.06;
 const CLAD_THICKNESS = 0.032;
 
 // ✅ Toiture monopente : COLLAGE RÉEL (baisse visible)
-const ROOF_GAP = -0.06;        // ajuste entre -0.04 et -0.09 si besoin
-const ROOF_SINK_RATIO = 0.02;  // enfonce légèrement dans la structure
+const ROOF_GAP = -0.06;
+const ROOF_SINK_RATIO = 0.02;
 
 // ✅ Bardage collé sous couverture
 const CLAD_TOP_GAP = 0.006;
@@ -638,7 +637,6 @@ function createContactShadowTexture(size = 256) {
 }
 
 /* ===== Studio helpers ===== */
-
 function buildStudio() {
   if (!scene) return;
 
@@ -647,10 +645,9 @@ function buildStudio() {
   studioGroup.name = "studio";
   scene.add(studioGroup);
 
-  // Sol : shadow catcher + léger sol texturé en dessous (plus pro)
   if (SHADOW_ENABLED) {
     const shadowMat = new THREE.ShadowMaterial({ opacity: 0.22 });
-    groundPlane = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), shadowMat); // ✅ plus petit -> focus produit
+    groundPlane = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), shadowMat);
     groundPlane.rotation.x = -Math.PI / 2;
     groundPlane.position.y = 0;
     groundPlane.receiveShadow = true;
@@ -658,7 +655,7 @@ function buildStudio() {
   }
 
   groundDecal = new THREE.Mesh(
-    new THREE.PlaneGeometry(60, 60), // ✅ plus petit -> abri paraît plus grand
+    new THREE.PlaneGeometry(60, 60),
     new THREE.MeshStandardMaterial({
       color: 0xffffff,
       roughness: 1,
@@ -669,10 +666,8 @@ function buildStudio() {
   );
   groundDecal.rotation.x = -Math.PI / 2;
   groundDecal.position.y = -0.002;
-  groundDecal.receiveShadow = false;
   studioGroup.add(groundDecal);
 
-  // Mur “cyclo” (fond studio courbe)
   const radius = 38;
   const height = 22;
   const cyl = new THREE.CylinderGeometry(radius, radius, height, 64, 1, true, Math.PI * 0.15, Math.PI * 0.70);
@@ -687,13 +682,23 @@ function buildStudio() {
   wall.rotation.y = Math.PI;
   studioGroup.add(wall);
 
-  // Légère “base” claire derrière
   const back = new THREE.Mesh(
     new THREE.PlaneGeometry(70, 30),
     new THREE.MeshStandardMaterial({ color: 0xf8f4ee, roughness: 1, metalness: 0 })
   );
   back.position.set(0, 9, -28);
   studioGroup.add(back);
+}
+
+/* ===== Beam helper (charpente FX) ===== */
+function addBeam(group, { lenX, h, w, x, y, z, rotX = 0, rotY = 0, rotZ = 0, mat }) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(lenX, h, w), mat);
+  m.position.set(x, y, z);
+  m.rotation.set(rotX, rotY, rotZ);
+  m.castShadow = SHADOW_ENABLED;
+  m.receiveShadow = SHADOW_ENABLED;
+  group.add(m);
+  return m;
 }
 
 function initThree() {
@@ -719,7 +724,6 @@ function initThree() {
   renderer.setPixelRatio(window.devicePixelRatio || 1);
   renderer.setSize(w, h, false);
 
-  // ✅ rendu plus “pro” (r146)
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.18;
@@ -730,21 +734,18 @@ function initThree() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   }
 
-  // Lights “studio” (un peu + lumineux)
   scene.add(new THREE.AmbientLight(0xffffff, 0.52));
 
   const key = new THREE.DirectionalLight(0xffffff, 1.10);
   key.position.set(12, 22, 10);
   key.castShadow = SHADOW_ENABLED;
 
-  // ✅ ombre plus propre + douce
   key.shadow.mapSize.set(4096, 4096);
   key.shadow.radius = 6;
   key.shadow.bias = -0.00015;
   key.shadow.normalBias = 0.02;
   key.shadow.camera.near = 1;
   key.shadow.camera.far = 120;
-
   scene.add(key);
 
   const fill = new THREE.DirectionalLight(0xffffff, 0.42);
@@ -762,10 +763,8 @@ function initThree() {
   const hemi = new THREE.HemisphereLight(0xffffff, 0xe9dcc2, 0.50);
   scene.add(hemi);
 
-  // Studio
   buildStudio();
 
-  // Fake AO / contact shadow (ancrage au sol)
   contactTex = createContactShadowTexture(512);
   contactShadow = new THREE.Mesh(
     new THREE.PlaneGeometry(5, 5),
@@ -779,7 +778,6 @@ function initThree() {
   contactShadow.rotation.x = -Math.PI / 2;
   scene.add(contactShadow);
 
-  // controls
   controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
@@ -790,13 +788,12 @@ function initThree() {
   controls.minDistance = 5;
   controls.maxDistance = 35;
 
-  // textures
   const tl = new THREE.TextureLoader();
 
   tl.load(PAVE_TEX_PATH, (tex) => {
     tex.encoding = THREE.sRGBEncoding;
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(10, 10); // sera recalé dans rebuildOverlays
+    tex.repeat.set(10, 10);
     if (groundDecal?.material) {
       groundDecal.material.map = tex;
       groundDecal.material.needsUpdate = true;
@@ -832,7 +829,7 @@ function loadModelForType(type) {
     (gltf) => {
       baseModule = gltf.scene;
 
-      // ✅ Structure gris clair (couleur réelle) + matériaux homogènes
+      // ✅ Structure gris clair (réel) : uniformisation
       baseModule.traverse((obj) => {
         if (!obj.isMesh) return;
         obj.castShadow = SHADOW_ENABLED;
@@ -976,7 +973,7 @@ function rebuildOverlays(bbox) {
   const widthZ = max.z - min.z;
   const heightY = max.y - min.y;
 
-  // ✅ epsilon réduit : évite l’effet “décollé”
+  // epsilon réduit : évite l’effet “décollé”
   const eps = 0.004 * Math.max(lenX, widthZ, heightY);
 
   const cx = (min.x + max.x) / 2;
@@ -984,10 +981,10 @@ function rebuildOverlays(bbox) {
 
   const roofThick = ROOF_THICKNESS * GLOBAL_SCALE;
   const cladThick = CLAD_THICKNESS * GLOBAL_SCALE;
-   // marge sous toiture pour éviter que le bardage "passe dans" la couverture
-const UNDER_ROOF_CLEARANCE = 0.02; // 2 cm visuel
 
-  // ✅ on enfonce légèrement la toiture dans la structure
+  // marge sous toiture pour éviter que le bardage "passe dans" la couverture
+  const UNDER_ROOF_CLEARANCE = 0.02;
+
   const roofSink = Math.max(0.001, heightY * ROOF_SINK_RATIO);
 
   const roofMat = materialWithTexture({
@@ -1008,7 +1005,7 @@ const UNDER_ROOF_CLEARANCE = 0.02; // 2 cm visuel
     roughness: 0.55,
   });
 
-  // ===== TOITURE (recollée) =====
+  // ===== TOITURE =====
   const slopeType = getSelectedType();
   const angle = Math.atan(PITCH_RATIO);
 
@@ -1020,22 +1017,15 @@ const UNDER_ROOF_CLEARANCE = 0.02; // 2 cm visuel
 
     roof.rotation.x = -angle;
 
-    // ✅ IMPORTANT : suppression du "lift" qui remontait la toiture
+    // IMPORTANT : suppression du "lift" (toiture collée)
     const roofY = (max.y - roofSink) + ROOF_GAP;
 
-    roof.position.set(
-      cx,
-      roofY,
-      cz - (overhang / 2)
-    );
-
+    roof.position.set(cx, roofY, cz - (overhang / 2));
     roof.castShadow = SHADOW_ENABLED;
     overlayGroup.add(roof);
 
     overlayGroup.userData.roof = { type: "mono", roof };
-
   } else {
-    // bipente : on garde un petit lift visuel (plus naturel)
     const halfW = widthZ / 2;
     const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
     const lift = (halfW / 2) * Math.sin(angle);
@@ -1056,131 +1046,201 @@ const UNDER_ROOF_CLEARANCE = 0.02; // 2 cm visuel
 
     overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ };
   }
-// ===== BARDAGE (calé sous toiture) =====
-let panelHeightA = Math.max(0.2, heightY - CLAD_TOP_GAP);
-let panelHeightC = panelHeightA; // mono => côté bas plus court
-let panelHeightEave = panelHeightA; // bipente => même hauteur sur A/C
 
-// --- on calcule une hauteur "sous toiture" cohérente ---
-if (slopeType === "mono") {
-  // roof center Y (mono)
-  const roof = overlayGroup.userData?.roof?.roof;
-  const roofCenterY = roof ? roof.position.y : (max.y - roofSink) + ROOF_GAP;
+  // ======================================================
+  // CHARPENTE "PRO" (EFFET VISUEL) — uniquement BIPENTE
+  // Pannes / chevrons qui suivent la pente (indépendant GLTF)
+  // ======================================================
+  if (slopeType === "bi") {
+    const halfW = widthZ / 2;
+    const ridgeH = halfW * PITCH_RATIO;
 
-  // dessous toiture côté haut (façade A = côté +Z)
-  const underHigh = roofCenterY - (roofThick / 2) - UNDER_ROOF_CLEARANCE;
+    const r = overlayGroup.userData?.roof;
+    const anyRoof = r?.roofPlusZ || r?.roofMinusZ;
+    const roofCenterY = anyRoof ? anyRoof.position.y : max.y;
 
-  // dessous toiture côté bas (façade C = côté -Z) = -deltaH
-  const deltaH = widthZ * PITCH_RATIO;
-  const underLow = underHigh - deltaH;
+    const underRidge = roofCenterY - (roofThick / 2) - UNDER_ROOF_CLEARANCE;
+    const underEave  = underRidge - ridgeH;
 
-  // hauteur bardage A et C
-  panelHeightA = Math.max(0.2, underHigh - min.y - CLAD_TOP_GAP);
-  panelHeightC = Math.max(0.2, underLow  - min.y - CLAD_TOP_GAP);
+    const frameFX = new THREE.Group();
+    frameFX.name = "frameFX";
+    overlayGroup.add(frameFX);
 
-} else {
-  // bipente : sous toiture à l'égout (même hauteur sur A/C)
-  const halfW = widthZ / 2;
-  const ridgeH = halfW * PITCH_RATIO;
+    const frameMat = new THREE.MeshStandardMaterial({
+      color: 0xc9c9c9,
+      metalness: 0.14,
+      roughness: 0.48,
+    });
 
-  // on reprend les roof meshes si dispo
-  const r = overlayGroup.userData?.roof;
-  // roof position.y = centerY; on veut sous-toiture à l'égout
-  // ridge sous-toiture approx :
-  const anyRoof = r?.roofPlusZ || r?.roofMinusZ;
-  const roofCenterY = anyRoof ? anyRoof.position.y : max.y;
+    const BEAM_H = 0.07;
+    const BEAM_W = 0.07;
 
-  // comme les pans sont inclinés, l'égout est ridge - ridgeH
-  const underRidge = roofCenterY - (roofThick / 2) - UNDER_ROOF_CLEARANCE;
-  const underEave = underRidge - ridgeH;
+    // Panne faîtière
+    addBeam(frameFX, {
+      lenX, h: BEAM_H, w: BEAM_W,
+      x: cx, y: underRidge - BEAM_H / 2, z: cz,
+      mat: frameMat
+    });
 
-  panelHeightEave = Math.max(0.2, underEave - min.y - CLAD_TOP_GAP);
-}
+    // Pannes de versant (suivent les pans)
+    const t = 0.55;
 
-// --- A/C (long pans) ---
-if (slopeType === "mono") {
-  const geoA = new THREE.BoxGeometry(lenX, panelHeightA, cladThick);
-  const geoC = new THREE.BoxGeometry(lenX, panelHeightC, cladThick);
+    const zPlus = cz + (halfW * t);
+    const yPlus = underRidge - (ridgeH * t) - BEAM_H / 2;
+    addBeam(frameFX, {
+      lenX, h: BEAM_H * 0.9, w: BEAM_W * 0.9,
+      x: cx, y: yPlus, z: zPlus,
+      rotX: +angle,
+      mat: frameMat
+    });
 
-  const yA = min.y + panelHeightA / 2;
-  const yC = min.y + panelHeightC / 2;
+    const zMinus = cz - (halfW * t);
+    const yMinus = underRidge - (ridgeH * t) - BEAM_H / 2;
+    addBeam(frameFX, {
+      lenX, h: BEAM_H * 0.9, w: BEAM_W * 0.9,
+      x: cx, y: yMinus, z: zMinus,
+      rotX: -angle,
+      mat: frameMat
+    });
 
-  var cladA_outer = new THREE.Mesh(geoA, cladMat.clone());
-  cladA_outer.position.set(cx, yA, max.z + eps);
+    // Pannes d’égout (aident énormément à "coller" bardage/toiture)
+    addBeam(frameFX, {
+      lenX, h: BEAM_H * 0.85, w: BEAM_W * 0.85,
+      x: cx, y: underEave - BEAM_H / 2,
+      z: cz + halfW - 0.03,
+      mat: frameMat
+    });
 
-  var cladC_outer = new THREE.Mesh(geoC, cladMat.clone());
-  cladC_outer.position.set(cx, yC, min.z - eps);
+    addBeam(frameFX, {
+      lenX, h: BEAM_H * 0.85, w: BEAM_W * 0.85,
+      x: cx, y: underEave - BEAM_H / 2,
+      z: cz - halfW + 0.03,
+      mat: frameMat
+    });
 
-} else {
-  const geoLong = new THREE.BoxGeometry(lenX, panelHeightEave, cladThick);
-  const yCenter = min.y + panelHeightEave / 2;
+    // petit renfort transversal (look)
+    const tie = new THREE.Mesh(
+      new THREE.BoxGeometry(BEAM_W * 0.9, BEAM_H * 0.7, widthZ * 0.20),
+      frameMat
+    );
+    tie.position.set(cx - lenX * 0.15, underRidge - BEAM_H * 0.8, cz);
+    tie.castShadow = SHADOW_ENABLED;
+    tie.receiveShadow = SHADOW_ENABLED;
+    frameFX.add(tie);
+  }
 
-  var cladA_outer = new THREE.Mesh(geoLong, cladMat.clone());
-  cladA_outer.position.set(cx, yCenter, max.z + eps);
+  // ===== BARDAGE (calé sous toiture) =====
+  let panelHeightA = Math.max(0.2, heightY - CLAD_TOP_GAP);
+  let panelHeightC = panelHeightA;
+  let panelHeightEave = panelHeightA;
 
-  var cladC_outer = new THREE.Mesh(geoLong, cladMat.clone());
-  cladC_outer.position.set(cx, yCenter, min.z - eps);
-}
+  if (slopeType === "mono") {
+    const roof = overlayGroup.userData?.roof?.roof;
+    const roofCenterY = roof ? roof.position.y : (max.y - roofSink) + ROOF_GAP;
 
-// --- B/D (pignons) ---
-let gableShapeB = null;
-let gableShapeD = null;
+    const underHigh = roofCenterY - (roofThick / 2) - UNDER_ROOF_CLEARANCE;
+    const deltaH = widthZ * PITCH_RATIO;
+    const underLow = underHigh - deltaH;
 
-if (slopeType === "mono") {
-  const roof = overlayGroup.userData?.roof?.roof;
-  const roofCenterY = roof ? roof.position.y : (max.y - roofSink) + ROOF_GAP;
-  const underHigh = roofCenterY - (roofThick / 2) - UNDER_ROOF_CLEARANCE;
-  const deltaH = widthZ * PITCH_RATIO;
-  const underLow = underHigh - deltaH;
+    panelHeightA = Math.max(0.2, underHigh - min.y - CLAD_TOP_GAP);
+    panelHeightC = Math.max(0.2, underLow  - min.y - CLAD_TOP_GAP);
+  } else {
+    const halfW = widthZ / 2;
+    const ridgeH = halfW * PITCH_RATIO;
 
-  // ✅ gable calé sous toiture
-  const yLow  = underLow  - CLAD_TOP_GAP;
-  const yHigh = underHigh - CLAD_TOP_GAP;
+    const r = overlayGroup.userData?.roof;
+    const anyRoof = r?.roofPlusZ || r?.roofMinusZ;
+    const roofCenterY = anyRoof ? anyRoof.position.y : max.y;
 
-  const shapeB = createMonoGableShape(widthZ, min.y, yLow, yHigh);
-  // ✅ miroir côté D (pente inversée)
-  const shapeD = createMonoGableShape(widthZ, min.y, yHigh, yLow);
+    const underRidge = roofCenterY - (roofThick / 2) - UNDER_ROOF_CLEARANCE;
+    const underEave  = underRidge - ridgeH;
 
-  const geoGableB = new THREE.ShapeGeometry(shapeB);
-  const geoGableD = new THREE.ShapeGeometry(shapeD);
+    panelHeightEave = Math.max(0.2, underEave - min.y - CLAD_TOP_GAP);
+  }
 
-  gableShapeB = new THREE.Mesh(geoGableB, cladMat.clone());
-  gableShapeD = new THREE.Mesh(geoGableD, cladMat.clone());
+  // A/C
+  let cladA_outer, cladC_outer;
 
-  gableShapeB.rotation.y = -Math.PI / 2;
-  gableShapeD.rotation.y = +Math.PI / 2;
+  if (slopeType === "mono") {
+    const geoA = new THREE.BoxGeometry(lenX, panelHeightA, cladThick);
+    const geoC = new THREE.BoxGeometry(lenX, panelHeightC, cladThick);
 
-  const gableOffset = (cladThick / 2) + eps;
-  gableShapeB.position.set(min.x - gableOffset, 0, cz);
-  gableShapeD.position.set(max.x + gableOffset, 0, cz);
+    const yA = min.y + panelHeightA / 2;
+    const yC = min.y + panelHeightC / 2;
 
-} else {
-  const halfW = widthZ / 2;
-  const ridgeH = halfW * PITCH_RATIO;
+    cladA_outer = new THREE.Mesh(geoA, cladMat.clone());
+    cladA_outer.position.set(cx, yA, max.z + eps);
 
-  const r = overlayGroup.userData?.roof;
-  const anyRoof = r?.roofPlusZ || r?.roofMinusZ;
-  const roofCenterY = anyRoof ? anyRoof.position.y : max.y;
+    cladC_outer = new THREE.Mesh(geoC, cladMat.clone());
+    cladC_outer.position.set(cx, yC, min.z - eps);
+  } else {
+    const geoLong = new THREE.BoxGeometry(lenX, panelHeightEave, cladThick);
+    const yCenter = min.y + panelHeightEave / 2;
 
-  const underRidge = roofCenterY - (roofThick / 2) - UNDER_ROOF_CLEARANCE;
-  const underEave  = underRidge - ridgeH;
+    cladA_outer = new THREE.Mesh(geoLong, cladMat.clone());
+    cladA_outer.position.set(cx, yCenter, max.z + eps);
 
-  const yEave  = underEave  - CLAD_TOP_GAP;
-  const yRidge = underRidge - CLAD_TOP_GAP;
+    cladC_outer = new THREE.Mesh(geoLong, cladMat.clone());
+    cladC_outer.position.set(cx, yCenter, min.z - eps);
+  }
 
-  const shape = createBiGableShape(widthZ, min.y, yEave, yRidge);
-  const geoGable = new THREE.ShapeGeometry(shape);
+  // B/D (pignons) recalés sous toiture
+  let gableShapeB = null;
+  let gableShapeD = null;
 
-  gableShapeB = new THREE.Mesh(geoGable, cladMat.clone());
-  gableShapeD = new THREE.Mesh(geoGable, cladMat.clone());
+  if (slopeType === "mono") {
+    const roof = overlayGroup.userData?.roof?.roof;
+    const roofCenterY = roof ? roof.position.y : (max.y - roofSink) + ROOF_GAP;
+    const underHigh = roofCenterY - (roofThick / 2) - UNDER_ROOF_CLEARANCE;
+    const deltaH = widthZ * PITCH_RATIO;
+    const underLow = underHigh - deltaH;
 
-  gableShapeB.rotation.y = Math.PI / 2;
-  gableShapeD.rotation.y = -Math.PI / 2;
+    const yLow  = underLow  - CLAD_TOP_GAP;
+    const yHigh = underHigh - CLAD_TOP_GAP;
 
-  const gableOffset = (cladThick / 2) + eps;
-  gableShapeB.position.set(min.x - gableOffset, 0, cz);
-  gableShapeD.position.set(max.x + gableOffset, 0, cz);
-}
+    const shapeB = createMonoGableShape(widthZ, min.y, yLow, yHigh);
+    const shapeD = createMonoGableShape(widthZ, min.y, yHigh, yLow); // miroir
+
+    const geoGableB = new THREE.ShapeGeometry(shapeB);
+    const geoGableD = new THREE.ShapeGeometry(shapeD);
+
+    gableShapeB = new THREE.Mesh(geoGableB, cladMat.clone());
+    gableShapeD = new THREE.Mesh(geoGableD, cladMat.clone());
+
+    gableShapeB.rotation.y = -Math.PI / 2;
+    gableShapeD.rotation.y = +Math.PI / 2;
+
+    const gableOffset = (cladThick / 2) + eps;
+    gableShapeB.position.set(min.x - gableOffset, 0, cz);
+    gableShapeD.position.set(max.x + gableOffset, 0, cz);
+  } else {
+    const halfW = widthZ / 2;
+    const ridgeH = halfW * PITCH_RATIO;
+
+    const r = overlayGroup.userData?.roof;
+    const anyRoof = r?.roofPlusZ || r?.roofMinusZ;
+    const roofCenterY = anyRoof ? anyRoof.position.y : max.y;
+
+    const underRidge = roofCenterY - (roofThick / 2) - UNDER_ROOF_CLEARANCE;
+    const underEave  = underRidge - ridgeH;
+
+    const yEave  = underEave  - CLAD_TOP_GAP;
+    const yRidge = underRidge - CLAD_TOP_GAP;
+
+    const shape = createBiGableShape(widthZ, min.y, yEave, yRidge);
+    const geoGable = new THREE.ShapeGeometry(shape);
+
+    gableShapeB = new THREE.Mesh(geoGable, cladMat.clone());
+    gableShapeD = new THREE.Mesh(geoGable, cladMat.clone());
+
+    gableShapeB.rotation.y = Math.PI / 2;
+    gableShapeD.rotation.y = -Math.PI / 2;
+
+    const gableOffset = (cladThick / 2) + eps;
+    gableShapeB.position.set(min.x - gableOffset, 0, cz);
+    gableShapeD.position.set(max.x + gableOffset, 0, cz);
+  }
+
   function addDoubleSkin(mesh, outwardDir) {
     mesh.castShadow = SHADOW_ENABLED;
     mesh.receiveShadow = SHADOW_ENABLED;
@@ -1251,7 +1311,7 @@ if (slopeType === "mono") {
   const rsD = $("optRiveSolinD")?.checked;
 
   if (optAngles) {
-    const h = panelHeight;
+    const h = Math.max(panelHeightA, panelHeightC, panelHeightEave);
     const y = min.y + h / 2;
     addTrimBox(TRIM_TH, h, TRIM_W, min.x - eps, y, min.z - eps);
     addTrimBox(TRIM_TH, h, TRIM_W, min.x - eps, y, max.z + eps);
@@ -1305,7 +1365,7 @@ if (slopeType === "mono") {
   if (groundPlane) groundPlane.position.y = min.y;
   if (groundDecal) groundDecal.position.y = min.y - 0.002;
 
-  // ✅ Pavés : échelle réaliste (pavé ~ 40 cm)
+  // Pavés : échelle réaliste (pavé ~ 40 cm)
   if (groundDecal?.material?.map) {
     const tex = groundDecal.material.map;
     const repX = Math.max(6, Math.round(lenX / 0.4));
@@ -1315,7 +1375,7 @@ if (slopeType === "mono") {
     groundDecal.material.needsUpdate = true;
   }
 
-  // ✅ Fake AO / contact shadow : ancre l’abri
+  // Fake AO / contact shadow
   if (contactShadow) {
     const pad = 0.20;
     contactShadow.geometry.dispose();
@@ -1365,7 +1425,6 @@ function updateOverlayStylesOnly() {
       mat.opacity = 1;
       mat.map = null;
     }
-
     mat.needsUpdate = true;
   });
 
