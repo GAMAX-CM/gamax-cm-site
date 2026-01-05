@@ -280,10 +280,9 @@
                 </div>
               </div>
 
-              <!-- ✅ Habillages : ordre demandé -->
+              <!-- Habillages -->
               <div class="bardage-grid option-grid">
 
-                <!-- Ligne 1 -->
                 <label class="bardage-choice">
                   <input type="checkbox" id="optRejetEau">
                   <div class="bardage-card option-card">
@@ -300,7 +299,6 @@
                   </div>
                 </label>
 
-                <!-- Ligne 2 -->
                 <div>
                   <label class="bardage-choice">
                     <input type="checkbox" id="optGrandeRive">
@@ -345,7 +343,6 @@
                   </div>
                 </div>
 
-                <!-- Ligne 3 -->
                 <label class="bardage-choice">
                   <input type="checkbox" id="optFaitiereSolin">
                   <div class="bardage-card option-card">
@@ -362,7 +359,6 @@
                   </div>
                 </label>
 
-                <!-- Ligne 4 -->
                 <label class="bardage-choice" style="grid-column: 1 / -1;">
                   <input type="checkbox" id="optFaitiereDouble">
                   <div class="bardage-card option-card">
@@ -428,15 +424,7 @@
 
           <!-- COLONNE DROITE -->
           <aside class="sidepanels">
-            <div class="sidepanel recap-panel">
-              <h2>Récapitulatif de votre abri</h2>
-              <p class="recap-sub">Vérifiez les éléments avant de passer à la commande.</p>
-              <pre id="recapDevis" class="recap-text">Votre devis apparaîtra ici après configuration...</pre>
-              <button class="btn-primary recap-btn" type="button" onclick="goToOrderPage()">
-                Commander cet abri
-              </button>
-            </div>
-
+            <!-- ✅ On met la VUE 3D en premier (plus de “couleur” en arrivant) -->
             <div class="sidepanel viewer-panel">
               <h2>Vue 3D</h2>
               <p class="recap-sub">Visualisation simplifiée de votre abri.</p>
@@ -458,6 +446,15 @@
 
                 <p class="viewer-caption">Image non contractuelle.</p>
               </div>
+            </div>
+
+            <div class="sidepanel recap-panel">
+              <h2>Récapitulatif de votre abri</h2>
+              <p class="recap-sub">Vérifiez les éléments avant de passer à la commande.</p>
+              <pre id="recapDevis" class="recap-text">Votre devis apparaîtra ici après configuration...</pre>
+              <button class="btn-primary recap-btn" type="button" onclick="goToOrderPage()">
+                Commander cet abri
+              </button>
             </div>
           </aside>
 
@@ -483,12 +480,11 @@
   </footer>
 
   <!-- THREE -->
-  <script src="https://unpkg.com/three@0.146.0/build/three.min.js" defer></script>
-  <script src="https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js" defer></script>
+  <script src="https://unpkg.com/three@0.146.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://unpkg.com/three@0.146.0/examples/js/loaders/GLTFLoader.js"></script>
 
-  <!-- Si tu n'utilises pas de modèles GLTF, on peut supprimer cette ligne -->
-  <script src="https://unpkg.com/three@0.146.0/examples/js/loaders/GLTFLoader.js" defer></script>
-
-  <script src="app.js" defer></script>
+  <script src="app.js"></script>
 </body>
 </html>
+
