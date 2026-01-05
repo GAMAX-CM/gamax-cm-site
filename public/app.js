@@ -582,40 +582,38 @@ let lastInlineCanvasHeight = 0;
 // ===============================
 let structureClipPlane = null;
 
-function applyStructureClipping(eaveWorldY) {
-  if (!structureGroup || !renderer) return;
-
-  // IMPORTANT: en Three, la distance signée est normal·p + constant.
-  // Pour avoir un plan y = eaveWorldY + margin : normal=(0,1,0), constant=-(eaveWorldY+margin)
-  const margin = 0.02;
-  structureClipPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(eaveWorldY + margin));
-
-  structureGroup.traverse((obj) => {
-    if (!obj.isMesh || !obj.material) return;
-
-    const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-    mats.forEach((m) => {
-      // garde uniquement sous le plan
-      m.clippingPlanes = [structureClipPlane];
-      m.clipShadows = true;
-      m.needsUpdate = true;
-    });
-  });
-}
-
-function clearStructureClipping() {
-  structureClipPlane = null;
+// ===============================
+// MASQUAGE GLTF AU-DESSUS DE L'ÉGOUT (au lieu du clipping)
+// Objectif : éviter que la "toiture" intégrée au GLTF impose une pente différente
+// tout en gardant les poteaux/structure visibles.
+// ===============================
+function setStructureUpperVisibility(eaveWorldY) {
   if (!structureGroup) return;
+
+  const tol = 0.06;        // tolérance (m)
+  const hideFrom = eaveWorldY - tol;
+
+  const tmpBox = new THREE.Box3();
+  const tmpVec = new THREE.Vector3();
+
   structureGroup.traverse((obj) => {
-    if (!obj.isMesh || !obj.material) return;
-    const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-    mats.forEach((m) => {
-      m.clippingPlanes = null;
-      m.clipShadows = false;
-      m.needsUpdate = true;
-    });
+    if (!obj.isMesh) return;
+
+    // Recalcule bbox en world
+    tmpBox.setFromObject(obj);
+    const minY = tmpBox.min.y;
+    const maxY = tmpBox.max.y;
+
+    // Heuristique :
+    // - On cache les pièces qui commencent "près" de l'égout et montent au-dessus
+    // - On évite de cacher les poteaux qui partent du sol (minY proche de 0)
+    const isColumnLike = minY < 0.25; // poteau -> on laisse visible
+    const isUpperPiece = (minY >= hideFrom) || (maxY >= eaveWorldY + tol && minY > 0.35);
+
+    obj.visible = !(isUpperPiece && !isColumnLike);
   });
 }
+
 
 function createContactShadowTexture(size = 256) {
   const c = document.createElement("canvas");
