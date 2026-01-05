@@ -939,8 +939,6 @@ function safeRemoveGroup(g) {
 }
 
 function loadModelForType(type) {
-  // Nettoyage (évite bugs de states / clipping persistant)
-  clearStructureClipping();
   safeRemoveGroup(structureGroup); structureGroup = null;
   safeRemoveGroup(overlayGroup); overlayGroup = null;
 
@@ -1111,6 +1109,9 @@ function rebuildOverlays(bbox) {
 
   const eaveY = min.y + height; // bas de pente / égout = hauteur sélectionnée
   const angle = Math.atan(PITCH_RATIO);
+   // Masque uniquement le "haut" du GLTF (toiture/pannes) pour éviter conflit de pente
+setStructureUpperVisibility(eaveY);
+
 
   const roofMat = materialWithTexture({
     color: getRoofColor3D(),
