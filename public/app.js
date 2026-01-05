@@ -1029,25 +1029,31 @@ function rebuildOverlays(bbox) {
   const halfW = widthZ / 2;
   const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
 
-  // ✅ Égout (bas de pente) ANCRÉ : toujours à la même hauteur (haut structure)
-  // -> c'est le faîtage qui monte quand width augmente
+  // ✅ Égout ancré : toujours la même cote (haut structure)
   const roofEaveY = (max.y - roofSink) + ROOF_GAP;
 
-  // Décalage vertical du centre du pan pour que le bord bas tombe pile sur roofEaveY
+  // Décalage du centre du pan (géométrie) pour que le bord bas tombe sur roofEaveY
   const lift = (halfW / 2) * Math.sin(angle);
 
-  // Pan +Z
   const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
   roofPlusZ.userData.kind = "roof";
   roofPlusZ.rotation.x = +angle;
-
-  roofPlusZ.position.set(
-    cx,
-    roofEaveY + lift,          // ✅ égout constant
-    cz + halfW / 2
-  );
+  roofPlusZ.position.set(cx, roofEaveY + lift, cz + halfW / 2);
   roofPlusZ.castShadow = SHADOW_ENABLED;
   overlayGroup.add(roofPlusZ);
+
+  const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
+  roofMinusZ.userData.kind = "roof";
+  roofMinusZ.rotation.x = -angle;
+  roofMinusZ.position.set(cx, roofEaveY + lift, cz - halfW / 2);
+  roofMinusZ.castShadow = SHADOW_ENABLED;
+  overlayGroup.add(roofMinusZ);
+
+  overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ };
+
+  // 👉 Résultat : pente constante (10%), égout fixe, faîtage qui monte avec la largeur.
+}
+
 
   // Pan -Z
   const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
