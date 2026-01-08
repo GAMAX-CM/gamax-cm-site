@@ -115,42 +115,45 @@
             <h3>3. Toiture</h3>
             <div class="field">
               <label>Type de couverture</label>
-              <div class="bardage-grid">
-                <label class="bardage-choice">
-                  <input type="radio" name="roofType" value="bac_simple" checked>
-                  <div class="bardage-card type-card">
-                    <span class="bardage-label-main">Bac acier simple</span>
-                    <span class="bardage-label-sub">
-                      Tôle nervurée standard, économique.
-                    </span>
-                  </div>
-                </label>
+            <!-- Bac acier simple -->
+<label class="bardage-choice">
+  <input type="radio" name="roofType" value="bac_simple" checked>
+  <div class="bardage-card type-card">
+    <div class="cover-visual cover-visual--bac"></div>
+    <span class="bardage-label-main">Bac acier simple</span>
+    <span class="bardage-label-sub">
+      Tôle nervurée standard, économique.
+    </span>
+  </div>
+</label>>
 
-                <label class="bardage-choice">
-                  <input type="radio" name="roofType" value="bac_regul">
-                  <div class="bardage-card type-card">
-                    <span class="bardage-label-main">
-                      Bac acier avec régulateur de condensation
-                    </span>
-                    <span class="bardage-label-sub">
-                      Recommandé si l’abri est bardé (limite la condensation).
-                    </span>
-                  </div>
-                </label>
+          <!-- Bac acier avec régulateur -->
+<label class="bardage-choice">
+  <input type="radio" name="roofType" value="bac_regul">
+  <div class="bardage-card type-card">
+    <div class="cover-visual cover-visual--bac"></div>
+    <span class="bardage-label-main">
+      Bac acier avec régulateur de condensation
+    </span>
+    <span class="bardage-label-sub">
+      Recommandé si l’abri est bardé (limite la condensation).
+    </span>
+  </div>
+</label>
 
-                <label class="bardage-choice">
-                  <input type="radio" name="roofType" value="sandwich40">
-                  <div class="bardage-card type-card">
-                    <span class="bardage-label-main">
-                      Panneau sandwich ép. 40&nbsp;mm
-                    </span>
-                    <span class="bardage-label-sub">
-                      Meilleure isolation thermique, intérieur plus confortable.
-                    </span>
-                  </div>
-                </label>
-              </div>
-            </div>
+        <!-- Panneau sandwich 40 -->
+<label class="bardage-choice">
+  <input type="radio" name="roofType" value="sandwich40">
+  <div class="bardage-card type-card">
+    <div class="cover-visual cover-visual--sandwich"></div>
+    <span class="bardage-label-main">
+      Panneau sandwich ép. 40&nbsp;mm
+    </span>
+    <span class="bardage-label-sub">
+      Meilleure isolation thermique, intérieur plus confortable.
+    </span>
+  </div>
+</label>
 
             <!-- 3.2 COULEUR TOITURE -->
             <div class="field">
@@ -181,23 +184,25 @@
             <div class="field">
               <label>Type de bardage</label>
               <div class="bardage-grid">
-                <label class="bardage-choice">
-                  <input type="radio" name="claddingType" value="bac_simple" checked>
-                  <div class="bardage-card type-card">
-                    <span class="bardage-label-main">Bac acier simple</span>
-                    <span class="bardage-label-sub">Bardage simple peau, économique.</span>
-                  </div>
-                </label>
+        <!-- Bardage bac acier simple -->
+<label class="bardage-choice">
+  <input type="radio" name="claddingType" value="bac_simple" checked>
+  <div class="bardage-card type-card">
+    <div class="cover-visual cover-visual--bac"></div>
+    <span class="bardage-label-main">Bac acier simple</span>
+    <span class="bardage-label-sub">Bardage simple peau, économique.</span>
+  </div>
+</label>
 
-                <label class="bardage-choice">
-                  <input type="radio" name="claddingType" value="sandwich40">
-                  <div class="bardage-card type-card">
-                    <span class="bardage-label-main">Panneau sandwich ép. 40&nbsp;mm</span>
-                    <span class="bardage-label-sub">Bardage isolé pour un confort intérieur amélioré.</span>
-                  </div>
-                </label>
-              </div>
-            </div>
+<!-- Bardage sandwich 40 -->
+<label class="bardage-choice">
+  <input type="radio" name="claddingType" value="sandwich40">
+  <div class="bardage-card type-card">
+    <div class="cover-visual cover-visual--sandwich"></div>
+    <span class="bardage-label-main">Panneau sandwich ép. 40&nbsp;mm</span>
+    <span class="bardage-label-sub">Bardage isolé pour un confort intérieur amélioré.</span>
+  </div>
+</label>
 
             <!-- 4.2 COULEUR BARDAGE -->
             <div class="field">
