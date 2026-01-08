@@ -779,5 +779,80 @@ input[type="text"]:focus, select:focus{
     z-index: 5;
   }
 }
+/* === LAYOUT CONFIGURATEUR 3 COLONNES === */
+.configurator-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 2.4rem;
+}
+
+/* Colonne gauche : récapitulatif */
+.recap-column {
+  flex: 1.1;
+  min-width: 0;
+}
+
+/* Colonne centrale : formulaire */
+.config-form {
+  flex: 2;
+  min-width: 0;
+}
+
+/* Colonne droite : vue 3D */
+.viewer-column {
+  flex: 1.5;
+  min-width: 0;
+}
+
+/* Panels (au cas où) */
+.sidepanel {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.4rem 1.6rem;
+  box-shadow: 0 8px 24px rgba(15, 16, 20, 0.06);
+}
+
+/* texte récap dans le bloc */
+.recap-text {
+  max-height: 420px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-family: "Menlo", "Consolas", "Roboto Mono", monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* === STICKY SUR DESKTOP : récap & 3D visibles pendant le scroll === */
+@media (min-width: 992px) {
+  .recap-panel {
+    position: sticky;
+    top: 90px;      /* adapte si ton header est plus/moins haut */
+    z-index: 4;
+  }
+
+  #viewer3d-wrapper.viewer-wrapper {
+    position: sticky;
+    top: 90px;
+    z-index: 5;
+  }
+}
+
+/* === MOBILE / TABLETTE : on repasse en colonne simple === */
+@media (max-width: 991px) {
+  .configurator-layout {
+    flex-direction: column;
+  }
+
+  .recap-column,
+  .config-form,
+  .viewer-column {
+    width: 100%;
+  }
+
+  /* Ordre d’apparition sur mobile : config d'abord, puis 3D, puis récap */
+  .config-form { order: 1; }
+  .viewer-column { order: 2; }
+  .recap-column { order: 3; }
+}
 
 }
