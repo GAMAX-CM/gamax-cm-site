@@ -294,6 +294,21 @@ input[type="text"]:focus,select:focus{
     border-color .12s ease,box-shadow .12s ease,
     transform .12s ease;
 }
+/* Visuels réalistes toiture / bardage dans les cartes */
+.cover-img {
+  width: 100%;
+  max-height: 130px;
+  object-fit: contain;
+  border-radius: 10px;
+  display: block;
+  margin-bottom: 10px;
+  background: #f5f5f5;
+}
+
+/* Quand la carte est sélectionnée (fond noir), on garde une bonne lisibilité du visuel */
+.bardage-choice input:checked + .bardage-card .cover-img {
+  filter: brightness(1.05) contrast(1.1);
+}
 .type-card{min-height:92px;}
 
 .bardage-label-main{
