@@ -1,9 +1,5 @@
 /* =========================================================
    GAMAX-CM — styles.css (COMPLET)
-   Objectif :
-   - Remettre le récap + vue 3D sur la droite (2 colonnes)
-   - Alignements verticaux propres
-   - Largeur/rythme cohérents avec le design GAMAX-CM
 ========================================================= */
 
 /* =========================
@@ -23,7 +19,7 @@
   --shadow-soft:0 18px 45px rgba(0,0,0,.08);
   --shadow-light:0 10px 22px rgba(0,0,0,.06);
 
-  --option-thumb-bg:#efe2c8; /* ton sur ton des cartes options */
+  --option-thumb-bg:#efe2c8;
 }
 
 /* =========================
@@ -170,25 +166,27 @@ main{padding-top:18px}
 }
 
 /* =========================
-   CONFIGURATEUR : LAYOUT (IMPORTANT)
+   CONFIGURATEUR : LAYOUT 3 COLONNES
+   recap | configurateur | vue 3D
 ========================= */
 .configurator-layout{
   margin-top:18px;
-
-  display:grid;
-  grid-template-columns: minmax(0, 1fr) 420px; /* FORM | SIDEBAR */
+  display:flex;
+  align-items:flex-start;
   gap:28px;
-  align-items:start;
 }
 
-/* force colonne (évite qu’un style parasite les mette en bas) */
-.config-form{grid-column:1}
-.sidepanels{grid-column:2}
+/* Colonne gauche : récapitulatif */
+.recap-column{
+  flex:1 1 26%;
+  min-width:260px;
+}
 
-/* =========================
-   FORMULAIRE (GAUCHE)
-========================= */
+/* Colonne centrale : formulaire */
 .config-form{
+  flex:1.8 1 44%;
+  min-width:360px;
+
   background:#fff;
   border-radius:var(--radius-lg);
   padding:22px 22px 26px;
@@ -196,14 +194,20 @@ main{padding-top:18px}
   border:1px solid var(--beige-dark);
 }
 
+/* Colonne droite : vue 3D */
+.viewer-column{
+  flex:1.2 1 30%;
+  min-width:260px;
+}
+
+/* =========================
+   FORMULAIRE
+========================= */
 .config-form h3{
   margin:18px 0 10px;
   font-size:1.1rem;
 }
 
-/* =========================
-   FORMULAIRES / CHAMPS
-========================= */
 .form-grid{
   display:grid;
   grid-template-columns:repeat(3, minmax(0, 1fr));
@@ -277,10 +281,11 @@ input[type="text"]:focus, select:focus{
 }
 
 .roof-title{
-  font-weight:700;
+  font-weight:600;
   font-size:.95rem;
 }
 
+/* état sélectionné type d’abri */
 .roof-card input:checked + .roof-card-inner{
   background:#111;
   color:#fff;
@@ -310,7 +315,12 @@ input[type="text"]:focus, select:focus{
   display:flex;
   flex-direction:column;
   gap:4px;
-  transition:border-color .12s ease, box-shadow .12s ease, transform .12s ease, background .12s ease;
+  transition:
+    border-color .12s ease,
+    box-shadow .12s ease,
+    transform .12s ease,
+    background .12s ease,
+    color .12s ease;
 }
 
 .type-card{min-height:92px}
@@ -329,10 +339,6 @@ input[type="text"]:focus, select:focus{
   border-color:var(--accent);
   box-shadow:0 10px 24px rgba(0,0,0,.08);
   transform:translateY(-1px);
-}
-
-.bardage-choice input:checked + .bardage-card{
-  border-color:#111;
 }
 
 /* état désactivé (utilisé en JS) */
@@ -383,8 +389,7 @@ input[type="text"]:focus, select:focus{
 }
 
 /* =========================
-   ✅ CHOIX DES CÔTÉS (B / D) — STYLE "COMME LES RAL"
-   (utilisé sous Grande rive / Rive avec solin)
+   CHOIX DES CÔTÉS (B / D)
 ========================= */
 .option-sides{
   margin-top:8px;
@@ -408,7 +413,7 @@ input[type="text"]:focus, select:focus{
 }
 
 .option-side input{
-  display:none; /* on stylise via le span */
+  display:none;
 }
 
 .option-side span{
@@ -419,29 +424,23 @@ input[type="text"]:focus, select:focus{
   display:flex;
   align-items:center;
   justify-content:center;
-
   font-size:.78rem;
   font-weight:600;
   letter-spacing:.03em;
-
   background:#fbf7f1;
   color:#111;
-
   border:2px solid transparent;
   box-shadow:var(--shadow-light);
   user-select:none;
-
   transition:transform .1s ease, box-shadow .1s ease, border-color .1s ease, background .1s ease;
 }
 
-/* Hover (comme RAL) */
 .option-side:hover span{
   transform:translateY(-1px);
   box-shadow:0 10px 22px rgba(0,0,0,.12);
   border-color:rgba(200,169,106,.75);
 }
 
-/* Sélectionné (comme RAL) */
 .option-side input:checked + span{
   border-color:#000;
   background:#fff;
@@ -449,7 +448,6 @@ input[type="text"]:focus, select:focus{
   box-shadow:0 10px 22px rgba(0,0,0,.16);
 }
 
-/* Désactivé */
 .option-side input:disabled + span{
   opacity:.45;
   cursor:not-allowed;
@@ -480,33 +478,15 @@ input[type="text"]:focus, select:focus{
 .delivery-choice input{accent-color:var(--accent);margin:0}
 
 /* =========================
-   SIDEBAR DROITE (VUE 3D + RÉCAP)
+   RÉCAP + VUE 3D (PANELS)
 ========================= */
-.sidepanels{
-  display:grid;
-  grid-template-rows:auto auto;
-  gap:18px;
-  align-items:start;
-  align-content:start;
-
-  /* sticky sur l’ensemble (les 2 cartes suivent le scroll) */
-  position: sticky;
-  top: 86px;
-  align-self: start;
-
-  /* si trop haut, on scrolle dans la colonne */
-  max-height: calc(100vh - 106px);
-  overflow: auto;
-  padding-right: 6px;
-}
-
 .sidepanel{
   border-radius:var(--radius-lg);
   padding:16px 18px 18px;
   box-shadow:var(--shadow-soft);
 }
 
-/* RÉCAP */
+/* Récapitulatif à gauche */
 .recap-panel{
   background:#000;
   color:#fff;
@@ -527,12 +507,10 @@ input[type="text"]:focus, select:focus{
   border-radius:12px;
   border:1px solid #2a2a2a;
   padding:16px 18px;
-
   font-family:"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size:.9rem;
   line-height:1.6;
   letter-spacing:.01em;
-
   color:#f2f2f2;
   white-space:pre-line;
 }
@@ -541,11 +519,10 @@ input[type="text"]:focus, select:focus{
   color:#fff;
 }
 
-/* VUE 3D */
+/* Vue 3D à droite */
 .viewer-panel{
   background:#fff;
   border:1px solid var(--beige-dark);
-  position: static; /* sticky géré par sidepanels */
 }
 .viewer-panel h2{
   margin:0 0 4px;
@@ -613,40 +590,6 @@ input[type="text"]:focus, select:focus{
 }
 
 /* =========================
-   RESPONSIVE
-========================= */
-@media (max-width: 1024px){
-  main{padding-top:10px}
-  .configurator-layout{
-    grid-template-columns:minmax(0, 1fr); /* 1 colonne */
-  }
-  .config-form{grid-column:1}
-  .sidepanels{
-    grid-column:1;
-    position: static;
-    max-height: none;
-    overflow: visible;
-    padding-right: 0;
-  }
-  .hero-text h1{font-size:2rem}
-}
-
-@media (max-width: 768px){
-  .header-inner{height:60px}
-  .main-nav a{margin-left:16px;font-size:.9rem}
-  .form-grid{grid-template-columns:1fr}
-  .address-grid{grid-template-columns:1fr}
-  .config-form{padding:18px 16px 22px}
-  .contact-block{padding:18px 16px 22px}
-}
-
-@media (max-width: 480px){
-  .hero-text h1{font-size:1.7rem}
-  .hero-actions{flex-direction:column;align-items:flex-start}
-  .viewer-3d{min-height:210px}
-}
-
-/* =========================
    MODE PLEIN ÉCRAN – VUE 3D
 ========================= */
 .viewer-wrapper.is-fullscreen{
@@ -673,222 +616,108 @@ input[type="text"]:focus, select:focus{
 .viewer-wrapper.is-fullscreen .viewer-caption{color:rgba(255,255,255,.75)}
 
 /* =========================================================
-   TYPOGRAPHIE DES CARTES – LISIBILITÉ OPTIMISÉE
+   TYPO CARTES – LISIBILITÉ
 ========================================================= */
 .bardage-label-main,
 .roof-title{
-  font-weight: 600;
-  font-size: 0.95rem;
-  letter-spacing: 0.01em;
-  line-height: 1.2;
-  color: #111;
+  font-weight:600;
+  font-size:0.95rem;
+  letter-spacing:0.01em;
+  line-height:1.2;
+  color:#111;
 }
 
 .bardage-label-sub{
-  font-weight: 400;
-  font-size: 0.82rem;
-  line-height: 1.4;
-  color: rgba(0, 0, 0, 0.6);
-}
-
-.bardage-choice input:checked + .bardage-card .bardage-label-main,
-.roof-card input:checked + .roof-card-inner .roof-title{
-  font-weight: 600;
-}
-
-.roof-card input:checked + .roof-card-inner{
-  color: #fff;
-}
-
-.roof-card input:checked + .roof-card-inner .roof-title{
-  font-weight: 600;
-  color: #fff;
+  font-weight:400;
+  font-size:0.82rem;
+  line-height:1.4;
+  color:rgba(0,0,0,0.6);
 }
 
 .ral-box{
-  font-weight: 500;
-  font-size: 0.75rem;
-  letter-spacing: 0.03em;
+  font-weight:500;
+  font-size:0.75rem;
+  letter-spacing:0.03em;
 }
 
-.bardage-choice:hover .bardage-card{
-  border-color: var(--accent);
-}
-
-@media (max-width: 768px) {
-  .bardage-label-main,
-  .roof-title {
-    font-size: 0.92rem;
-  }
-  .bardage-label-sub {
-    font-size: 0.8rem;
-  }
- /* =========================================================
-   ✅ GLOW "ACCENT" SUR CARTES AVEC CHOIX DE CÔTÉS
-   - Glow léger quand l’option est cochée
-   - Glow plus visible si cochée mais aucun côté B/D coché
-========================================================= */
-
-/* Glow léger si la checkbox principale est cochée */
+/* =========================
+   CARTES SÉLECTIONNÉES
+   (toiture, bardage, options)
+========================= */
+.bardage-choice input[type="radio"]:checked + .bardage-card,
 .bardage-choice input[type="checkbox"]:checked + .bardage-card{
-  border-color: rgba(200,169,106,.95);
+  background:#000;
+  color:#fff;
+  border-color:var(--accent);
   box-shadow:
-    0 12px 26px rgba(0,0,0,.10),
-    0 0 0 1px rgba(200,169,106,.55);
+    0 0 0 1px var(--accent),
+    0 12px 30px rgba(0,0,0,0.35);
+  transform:translateY(-2px);
 }
 
-/* Glow plus marqué si option cochée MAIS aucun côté sélectionné
-   -> on ne peut pas cibler "aucun des 2 cochés" en pur CSS sur des checkboxes séparées
-   -> donc on renforce automatiquement quand l'utilisateur n'a pas encore cliqué une pastille
-   -> et on réduit dès qu'il en coche une (ci-dessous) */
-.bardage-choice input[type="checkbox"]:checked ~ .option-sides{
-  /* rien ici, l’animation est déjà gérée */
+.bardage-choice input:checked + .bardage-card .bardage-label-main{
+  color:#fff;
+}
+.bardage-choice input:checked + .bardage-card .bardage-label-sub{
+  color:rgba(255,255,255,0.8);
 }
 
-/* Dès qu’une pastille B/D est cochée, on adoucit le glow (aspect "validé") */
-.option-side input:checked{
-  /* hack : on s’appuie sur :has si dispo, sinon le glow léger restera (OK) */
-}
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 1024px){
+  main{padding-top:10px}
 
-/* ✅ Version moderne (Chrome/Edge/Safari récents) : état "incomplet" détecté */
-@supports selector(.bardage-choice:has(.option-side input:checked)) {
-  /* si main cochée ET aucune pastille cochée => glow plus marqué */
-  .bardage-choice:has(> input[type="checkbox"]:checked):not(:has(.option-side input:checked)) .bardage-card{
-    border-color: rgba(200,169,106,1);
-    box-shadow:
-      0 16px 34px rgba(0,0,0,.14),
-      0 0 0 2px rgba(200,169,106,.75),
-      0 0 22px rgba(200,169,106,.25);
-    transform: translateY(-1px);
-  }
-
-  /* si main cochée ET au moins une pastille cochée => glow léger (validé) */
-  .bardage-choice:has(> input[type="checkbox"]:checked):has(.option-side input:checked) .bardage-card{
-    border-color: rgba(200,169,106,.95);
-    box-shadow:
-      0 12px 26px rgba(0,0,0,.10),
-      0 0 0 1px rgba(200,169,106,.55);
-    transform: none;
-  }
-}
-  /* Vue 3D toujours visible pendant le scroll (desktop) */
-@media (min-width: 992px) {
-  #viewer3d-wrapper {
-    position: sticky;
-    top: 90px;          /* ajuste en fonction de la hauteur de ton header */
-    z-index: 5;
-  }
-}
-/* === LAYOUT CONFIGURATEUR 3 COLONNES === */
-.configurator-layout {
-  display: flex;
-  align-items: flex-start;
-  gap: 2.4rem;
-}
-
-/* Colonne gauche : récapitulatif */
-.recap-column {
-  flex: 1.1;
-  min-width: 0;
-}
-
-/* Colonne centrale : formulaire */
-.config-form {
-  flex: 2;
-  min-width: 0;
-}
-
-/* Colonne droite : vue 3D */
-.viewer-column {
-  flex: 1.5;
-  min-width: 0;
-}
-
-/* Panels (au cas où) */
-.sidepanel {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 1.4rem 1.6rem;
-  box-shadow: 0 8px 24px rgba(15, 16, 20, 0.06);
-}
-
-/* texte récap dans le bloc */
-.recap-text {
-  max-height: 420px;
-  overflow: auto;
-  white-space: pre-wrap;
-  font-family: "Menlo", "Consolas", "Roboto Mono", monospace;
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
-/* === STICKY SUR DESKTOP : récap & 3D visibles pendant le scroll === */
-@media (min-width: 992px) {
-  .recap-panel {
-    position: sticky;
-    top: 90px;      /* adapte si ton header est plus/moins haut */
-    z-index: 4;
-  }
-
-  #viewer3d-wrapper.viewer-wrapper {
-    position: sticky;
-    top: 90px;
-    z-index: 5;
-  }
-}
-
-/* === MOBILE / TABLETTE : on repasse en colonne simple === */
-@media (max-width: 991px) {
-  .configurator-layout {
-    flex-direction: column;
+  .configurator-layout{
+    flex-direction:column;
   }
 
   .recap-column,
   .config-form,
-  .viewer-column {
-    width: 100%;
+  .viewer-column{
+    min-width:0;
+    width:100%;
   }
 
-  /* Ordre d’apparition sur mobile : config d'abord, puis 3D, puis récap */
-  .config-form { order: 1; }
-  .viewer-column { order: 2; }
-  .recap-column { order: 3; }
+  /* ordre sur tablette / petit écran : config, 3D, récap */
+  .config-form{order:1}
+  .viewer-column{order:2}
+  .recap-column{order:3}
+
+  .hero-text h1{font-size:2rem}
 }
-/* Désactiver le sticky sur le récap, garder seulement la 3D collée */
-@media (min-width: 992px) {
-  .recap-panel {
-    position: static;
-    top: auto;
+
+@media (max-width: 768px){
+  .header-inner{height:60px}
+  .main-nav a{margin-left:16px;font-size:.9rem}
+  .form-grid{grid-template-columns:1fr}
+  .address-grid{grid-template-columns:1fr}
+  .config-form{padding:18px 16px 22px}
+  .contact-block{padding:18px 16px 22px}
+  .bardage-label-main,
+  .roof-title{font-size:0.92rem}
+  .bardage-label-sub{font-size:0.8rem}
+}
+
+@media (max-width: 480px){
+  .hero-text h1{font-size:1.7rem}
+  .hero-actions{flex-direction:column;align-items:flex-start}
+  .viewer-3d{min-height:210px}
+}
+
+/* =========================
+   STICKY — uniquement la vue 3D
+========================= */
+@media (min-width: 992px){
+  #viewer3d-wrapper{
+    position:sticky;
+    top:90px;   /* ajuste si le header change */
+    z-index:5;
   }
-}
-/* ============================
-   Cartes sélectionnées (toiture, bardage, options)
-   ============================ */
 
-.bardage-choice input[type="radio"]:checked + .bardage-card,
-.bardage-choice input[type="checkbox"]:checked + .bardage-card {
-  background: #000000;                /* fond noir comme type d'abri */
-  color: #ffffff;
-  border-color: #c8a96a;              /* ton doré GAMAX */
-  box-shadow: 0 0 0 1px #c8a96a,
-              0 12px 30px rgba(0, 0, 0, 0.35);
-  transform: translateY(-2px);
-}
-
-/* Texte à l'intérieur des cartes sélectionnées */
-.bardage-choice input:checked + .bardage-card .bardage-label-main {
-  color: #ffffff;
-}
-
-.bardage-choice input:checked + .bardage-card .bardage-label-sub {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-/* Petite transition pour que ça soit plus doux */
-.bardage-card {
-  transition: background 0.2s ease, color 0.2s ease,
-              box-shadow 0.2s ease, transform 0.2s ease,
-              border-color 0.2s ease;
-}
-
+  /* récap non-sticky pour le laisser défiler */
+  .recap-panel{
+    position:static;
+    top:auto;
+  }
 }
