@@ -771,5 +771,13 @@ input[type="text"]:focus, select:focus{
     transform: none;
   }
 }
-  
+  /* Vue 3D toujours visible pendant le scroll (desktop) */
+@media (min-width: 992px) {
+  #viewer3d-wrapper {
+    position: sticky;
+    top: 90px;          /* ajuste en fonction de la hauteur de ton header */
+    z-index: 5;
+  }
+}
+
 }
