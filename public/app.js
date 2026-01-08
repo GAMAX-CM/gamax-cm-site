@@ -1217,6 +1217,14 @@ function rebuildOverlays(bbox) {
   // Toiture sandwich visuellement plus épaisse
   if (roofType === "sandwich40") {
     roofThick *= 1.8;
+      
+     if (slopeType === "mono" && (optFaitiereSimple || optFaitiereSolin)) {
+    addTrimBox(lenX + 0.02, TRIM_TH, TRIM_W, cx, (ridgeY_mono + ROOF_GAP) - 0.015, max.z - 0.02);
+  }
+  if (slopeType === "bi" && optFaitiereDouble) {
+    addTrimBox(lenX + 0.02, TRIM_TH, TRIM_W, cx, (ridgeY_bi + ROOF_GAP) - 0.015, cz);
+  }
+
   }
 
   // Bardage sandwich légèrement plus épais
