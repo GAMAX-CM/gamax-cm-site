@@ -331,6 +331,64 @@ input[type="text"]:focus,select:focus{
 .bardage-choice input:checked + .bardage-card .bardage-label-sub{
   color:rgba(255,255,255,0.8);
 }
+/* =========================
+   VISUELS PROFIL COUVERTURE
+   - cover-visual--bac : nervures bac acier
+   - cover-visual--sandwich : couches panneau sandwich
+========================= */
+
+.cover-visual{
+  width:100%;
+  height:46px;
+  border-radius:10px;
+  background:#e6e1d7;
+  position:relative;
+  overflow:hidden;
+  margin-bottom:8px;
+}
+
+/* Bac acier : nervures en relief */
+.cover-visual--bac::before{
+  content:"";
+  position:absolute;
+  inset:6px 8px;
+  border-radius:8px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      #c7c0b4 0px,
+      #c7c0b4 5px,
+      #f4efe6 5px,
+      #f4efe6 12px
+    );
+  box-shadow:inset 0 2px 3px rgba(0,0,0,.18);
+  transform:skewX(-10deg);
+}
+
+/* Panneau sandwich : couches superposées */
+.cover-visual--sandwich::before{
+  content:"";
+  position:absolute;
+  inset:8px 10px;
+  border-radius:6px;
+  background:
+    linear-gradient(
+      to bottom,
+      #d2d7e0 0%,
+      #d2d7e0 22%,
+      #fdfdfc 22%,
+      #fdfdfc 40%,
+      #b7c0cd 40%,
+      #b7c0cd 60%,
+      #fdfdfc 60%,
+      #fdfdfc 80%,
+      #c4ccd7 80%,
+      #c4ccd7 100%
+    );
+  box-shadow:
+    inset 0 1px 2px rgba(255,255,255,.7),
+    0 2px 4px rgba(0,0,0,.25);
+}
 
 /* =========================
    PALETTE RAL
