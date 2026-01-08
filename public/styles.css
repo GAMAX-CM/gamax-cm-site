@@ -34,8 +34,9 @@ body{
 img{max-width:100%;display:block}
 a{color:inherit}
 
+/* 🔧 Container plus large pour réduire les marges beige */
 .container{
-  width:min(1180px, calc(100% - 40px));
+  width:min(1400px, calc(100% - 60px)); /* avant : 1180px et 40px */
   margin:0 auto;
 }
 
@@ -166,13 +167,11 @@ main{padding-top:18px}
   gap:2.4rem;
 }
 
-/* On réordonne les colonnes avec flex-order :
-   HTML = recap-column, config-form, viewer-column
-   Affichage = viewer-column (gauche) | config-form (centre) | recap-column (droite)
-*/
-.recap-column{order:3;flex:1.1;min-width:0;}
-.config-form{order:2;flex:2.2;min-width:0;}
-.viewer-column{order:1;flex:1.1;min-width:0;}
+/* Ordre visuel : 3D (gauche) | Config (centre) | Récap (droite) */
+/* 🔧 Colonnes un peu plus larges : centre très large, côtés élargis */
+.recap-column{order:3;flex:1.35;min-width:0;}
+.config-form{order:2;flex:2.7;min-width:0;}
+.viewer-column{order:1;flex:1.35;min-width:0;}
 
 /* =========================
    FORMULAIRE (colonne centrale)
@@ -472,7 +471,7 @@ input[type="text"]:focus,select:focus{
 }
 .viewer-3d{
   width:100%;
-  min-height:240px;
+  min-height:260px; /* un peu plus haut visuellement */
   border-radius:12px;
   background:radial-gradient(circle at top,#d3d7df 0,#bec2cb 40%,#a9aeb7 100%);
   display:block;
@@ -518,7 +517,7 @@ input[type="text"]:focus,select:focus{
   letter-spacing:.01em;
   color:#f2f2f2;
   white-space:pre-line;
-  max-height:420px;
+  max-height:460px;
   overflow:auto;
 }
 .recap-text strong{font-weight:700;color:#fff;}
