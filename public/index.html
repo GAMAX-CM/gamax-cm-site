@@ -119,13 +119,33 @@
 <label class="bardage-choice">
   <input type="radio" name="roofType" value="bac_simple" checked>
   <div class="bardage-card type-card">
-    <div class="cover-visual cover-visual--bac"></div>
+    <div class="profil-illustration profil-illustration--bac">
+      <svg viewBox="0 0 120 40" class="bac-icon" aria-hidden="true">
+        <!-- tôle nervurée vue en biais -->
+        <path
+          d="M2 26 L10 14 L22 14 L30 26 L42 26 L50 14 L62 14 L70 26 L82 26 L90 14 L102 14 L110 26 L118 26"
+          fill="#f4f4f4"
+          stroke="#d0d0d0"
+          stroke-width="1.5"
+          stroke-linejoin="round"
+        />
+        <!-- profil bas en rouge (onde) -->
+        <path
+          d="M2 26 L10 32 L22 32 L30 26 L42 26 L50 32 L62 32 L70 26 L82 26 L90 32 L102 32 L110 26 L118 26"
+          fill="none"
+          stroke="#e53935"
+          stroke-width="2.2"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </div>
+
     <span class="bardage-label-main">Bac acier simple</span>
     <span class="bardage-label-sub">
       Tôle nervurée standard, économique.
     </span>
   </div>
-</label>>
+</label>
 
           <!-- Bac acier avec régulateur -->
 <label class="bardage-choice">
