@@ -36,7 +36,7 @@ a{color:inherit}
 
 /* 🔧 Container plus large pour réduire les marges beige */
 .container{
-  width:min(1400px, calc(100% - 60px)); /* avant : 1180px et 40px */
+  width:min(1400px, calc(100% - 60px));
   margin:0 auto;
 }
 
@@ -281,7 +281,7 @@ input[type="text"]:focus,select:focus{
 
 .bardage-card{
   border-radius:14px;
-  padding:12px 12px 13px;
+  padding:10px 12px 11px;
   background:#fff;
   border:1px solid #e0d5c1;
   box-shadow:var(--shadow-light);
@@ -294,33 +294,21 @@ input[type="text"]:focus,select:focus{
     transform .12s ease;
 }
 
-/* 🔧 Hauteur uniforme des cartes (toiture / bardage / habillages) */
-.bardage-card.type-card,
-.bardage-card.option-card{
-  min-height:180px;              /* ajuste à ton goût (170–190) */
-  justify-content:flex-start;
-}
-.bardage-card .cover-img,
-.bardage-card .cover-visual{
-  margin-bottom:10px;
-}
-
 /* Visuels réalistes toiture / bardage dans les cartes */
-.cover-img{
-  width:100%;
-  max-height:130px;
-  object-fit:contain;
-  border-radius:10px;
-  display:block;
-  background:#f5f5f5;
+.cover-img {
+  width: 100%;
+  max-height: 110px;            /* 🔧 un peu plus compact */
+  object-fit: contain;
+  border-radius: 10px;
+  display: block;
+  margin-bottom: 8px;
+  background: #f5f5f5;
 }
 
 /* Quand la carte est sélectionnée (fond noir), on garde une bonne lisibilité du visuel */
-.bardage-choice input:checked + .bardage-card .cover-img{
-  filter:brightness(1.05) contrast(1.1);
+.bardage-choice input:checked + .bardage-card .cover-img {
+  filter: brightness(1.05) contrast(1.1);
 }
-
-.type-card{min-height:92px;}
 
 .bardage-label-main{
   font-size:.95rem;
@@ -360,8 +348,7 @@ input[type="text"]:focus,select:focus{
 
 /* =========================
    VISUELS PROFIL COUVERTURE
-   - cover-visual--bac : nervures bac acier
-   - cover-visual--sandwich : couches panneau sandwich
+   (optionnels si tu gardes aussi les images)
 ========================= */
 
 .cover-visual{
@@ -371,6 +358,7 @@ input[type="text"]:focus,select:focus{
   background:#e6e1d7;
   position:relative;
   overflow:hidden;
+  margin-bottom:8px;
 }
 
 /* Bac acier : nervures en relief */
@@ -606,16 +594,7 @@ input[type="text"]:focus,select:focus{
 }
 .recap-text strong{font-weight:700;color:#fff;}
 
-/* =========================
-   STICKY : 3D & RÉCAP TOUJOURS VISIBLES SUR DESKTOP
-========================= */
-@media (min-width: 992px){
-  .viewer-panel,
-  .recap-panel{
-    position:sticky;
-    top:90px;   /* ajuste si ton header change de hauteur */
-  }
-}
+/* 🔁 Plus de sticky : les colonnes 3D & récap défilent normalement */
 
 /* =========================
    CONTACT + FOOTER
@@ -681,12 +660,6 @@ input[type="text"]:focus,select:focus{
   .config-form{order:1;}
   .viewer-column{order:2;}
   .recap-column{order:3;}
-
-  .viewer-panel,
-  .recap-panel{
-    position:static;
-    top:auto;
-  }
 
   .hero-text h1{font-size:2rem;}
 }
