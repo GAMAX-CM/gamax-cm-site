@@ -6,6 +6,12 @@
    - Profilé SIGMA 170 (ép. 2 mm galvanisé) en 3D (tôle pliée)
    - Masquage "chirurgical" des pièces GLTF de toiture/pannes (sans cacher les poteaux)
    - Toiture/bardage calculés en overlay (pente 10% constante)
+
+   ✅ PATCH 3D COHÉRENTE (mono + bi) :
+   - GLTF en DoubleSide (évite les faces invisibles)
+   - Overlays stables (depthWrite:false + polygonOffset) => fini les “trous”
+   - Masquage toiture/pannes sécurisé (évite de cacher la charpente)
+   - renderOrder overlays au-dessus de la structure
 ========================================================= */
 
 /* ---------------------------
@@ -576,36 +582,33 @@ let lastInlineCanvasHeight = 0;
 
 /* =========================================================
    MASQUAGE "CHIRURGICAL" des pièces GLTF de toiture/pannes
-   Objectif : enlever uniquement la "toiture" du gltf sans toucher aux poteaux/cadres.
 ========================================================= */
 
-// Mots-clés (si tu veux ajouter : ajoute ici)
 const HIDE_NAME_RX = /(roof|toit|toiture|cover|sheet|bac|t[ôo]le|panel|panne|purlin|sabliere|sablière|fa[iî]ti[eè]re|ridge|rafter|chevron)/i;
+// ✅ sécurité : ne jamais masquer les éléments de structure
+const KEEP_NAME_RX = /(poteau|post|column|frame|portique|upright|pillar|leg)/i;
 
 function setStructureUpperVisibility(eaveWorldY, bbox, type) {
   if (!structureGroup) return;
 
-  const tol = 0.06; // tolérance globale
+  const tol = 0.06;
   const hideFromY = eaveWorldY - tol;
 
   const tmpBox = new THREE.Box3();
   const tmpSize = new THREE.Vector3();
   const tmpCenter = new THREE.Vector3();
 
-  // repères dimensions globales (aide heuristique)
   const lenX = bbox ? (bbox.max.x - bbox.min.x) : 10;
   const widthZ = bbox ? (bbox.max.z - bbox.min.z) : 6;
 
-  // 1) reset visibilité à chaque rebuild
+  // reset visibilité à chaque rebuild
   structureGroup.traverse((obj) => {
     if (obj && obj.isMesh) obj.visible = true;
   });
 
-  // 2) heuristique "chirurgicale"
   structureGroup.traverse((obj) => {
     if (!obj.isMesh) return;
 
-    // bbox locale (en world)
     tmpBox.setFromObject(obj);
     tmpBox.getSize(tmpSize);
     tmpBox.getCenter(tmpCenter);
@@ -618,39 +621,31 @@ function setStructureUpperVisibility(eaveWorldY, bbox, type) {
     const name = String(obj.name || "");
     const matName = String(obj.material?.name || "");
 
-    // ✅ Toujours garder les gros éléments verticaux (poteaux / cadres)
-    const isStructuralTall = sizeY > 0.85; // poteaux > 0.85m en général
+    const isStructuralTall = sizeY > 0.85;
 
-    // ✅ Typique des éléments de toiture (plats / pannes) : faible hauteur Y, grande portée X/Z
-    const looksLikeRoofPiece =
-      (sizeY <= 0.35) &&
+    const nameSuggestsKeep = KEEP_NAME_RX.test(name) || KEEP_NAME_RX.test(matName);
+
+    // heuristique TRÈS stricte (évite de masquer des cadres)
+    const looksLikeRoofPieceStrict =
+      (sizeY <= 0.18) &&
       (
-        sizeX >= Math.min(1.2, lenX * 0.35) ||   // long en X
-        sizeZ >= Math.min(1.2, widthZ * 0.35)    // large en Z
+        sizeX >= Math.min(2.0, lenX * 0.50) ||
+        sizeZ >= Math.min(2.0, widthZ * 0.50)
       );
 
-    // ✅ Test par nom (le plus fiable si tes meshes ont des noms)
     const nameSuggestsRoof = HIDE_NAME_RX.test(name) || HIDE_NAME_RX.test(matName);
-
-    // ✅ Test par altitude : au-dessus de l'égout
     const isAboveEave = centerY >= hideFromY;
-
-    // ✅ Cas bipente : parfois la toiture gltf est en deux pans, on coupe aussi les pièces très hautes même si petites
     const veryHighSmall = (centerY >= (eaveWorldY + 0.25)) && (sizeY <= 0.45);
 
-    // Décision
-    if (!isStructuralTall) {
-      // 1) si le nom indique toiture/pannes -> hide direct (quand c'est au-dessus de l'égout)
+    if (!isStructuralTall && !nameSuggestsKeep) {
       if (nameSuggestsRoof && isAboveEave) {
         obj.visible = false;
         return;
       }
-      // 2) sinon heuristique géométrique
-      if (isAboveEave && looksLikeRoofPiece) {
+      if (isAboveEave && looksLikeRoofPieceStrict) {
         obj.visible = false;
         return;
       }
-      // 3) filet de sécurité (pièce minuscule très haute)
       if (veryHighSmall) {
         obj.visible = false;
         return;
@@ -703,6 +698,7 @@ function buildStudio() {
       metalness: 0,
       transparent: true,
       opacity: 0.95,
+      depthWrite: false,
     })
   );
   groundDecal.rotation.x = -Math.PI / 2;
@@ -733,7 +729,6 @@ function buildStudio() {
 
 /* =========================================================
    PROFILÉ SIGMA 170 (ép. 2mm) — GALVA PRO
-   (barre orientée sur X, section dans Y/Z)
 ========================================================= */
 
 const MM = 0.001;
@@ -753,6 +748,7 @@ function makeGalvaMat() {
     color: 0xd3d3d3,
     metalness: 0.35,
     roughness: 0.35,
+    side: THREE.DoubleSide,
   });
 }
 
@@ -793,25 +789,20 @@ function createSigma170Beam(lengthX, mat) {
     return m;
   };
 
-  // Plats hauts 34mm
   addH((zOuterL + zTopL2) / 2, yTop, (zTopL2 - zOuterL));
   addH((zTopR2 + zOuterR) / 2, yTop, (zOuterR - zTopR2));
 
-  // Marche + plats vers le milieu
   addV(zTopL2 + T / 2, (yTop + yMid) / 2, (yTop - yMid));
   addH((zTopL2 + zMidL) / 2, yMid, Math.abs(zMidL - zTopL2));
 
   addV(zTopR2 - T / 2, (yTop + yMid) / 2, (yTop - yMid));
   addH((zMidR + zTopR2) / 2, yMid, Math.abs(zTopR2 - zMidR));
 
-  // Plat central 60mm
   addH(0, yMid, MID);
 
-  // Âmes verticales 56mm
   addV(zOuterL + T / 2, (yTop + yBot) / 2, (yTop - yBot));
   addV(zOuterR - T / 2, (yTop + yBot) / 2, (yTop - yBot));
 
-  // Retours bas 15mm
   addH((zOuterL + (zOuterL + LIP)) / 2, yBot, LIP);
   addH(((zOuterR - LIP) + zOuterR) / 2, yBot, LIP);
 
@@ -983,15 +974,19 @@ function loadModelForType(type) {
     (gltf) => {
       baseModule = gltf.scene;
 
-      // Structure gris clair (réel)
+      // ✅ Structure GLTF : DoubleSide + normals (évite “zones invisibles”)
       baseModule.traverse((obj) => {
         if (!obj.isMesh) return;
         obj.castShadow = SHADOW_ENABLED;
         obj.receiveShadow = SHADOW_ENABLED;
+
+        if (obj.geometry?.computeVertexNormals) obj.geometry.computeVertexNormals();
+
         obj.material = new THREE.MeshStandardMaterial({
           color: 0xc9c9c9,
           metalness: 0.12,
           roughness: 0.55,
+          side: THREE.DoubleSide, // ✅ CRUCIAL
         });
       });
 
@@ -1078,6 +1073,12 @@ function materialWithTexture({ color, tex, opacity }) {
     side: THREE.DoubleSide,
     metalness: 0.08,
     roughness: 0.78,
+
+    // ✅ anti “trous” / tri transparent
+    depthWrite: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -1,
   });
 
   if (tex) {
@@ -1137,7 +1138,6 @@ function rebuildOverlays(bbox) {
   const eaveY = min.y + height;
   const angle = Math.atan(PITCH_RATIO);
 
-  // ✅ Masquage chirurgical des pièces GLTF "toiture/pannes"
   setStructureUpperVisibility(eaveY, bbox, getSelectedType());
 
   const roofMat = materialWithTexture({
@@ -1156,6 +1156,7 @@ function rebuildOverlays(bbox) {
     color: getTrimColor3D(),
     metalness: 0.10,
     roughness: 0.55,
+    side: THREE.DoubleSide,
   });
 
   const slopeType = getSelectedType();
@@ -1169,7 +1170,6 @@ function rebuildOverlays(bbox) {
     const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.userData.kind = "roof";
 
-    // façade A = +Z = côté haut
     roof.rotation.x = -angle;
 
     const lift = (widthZ / 2) * Math.sin(angle);
@@ -1177,6 +1177,7 @@ function rebuildOverlays(bbox) {
 
     roof.position.set(cx, centerY, cz);
     roof.castShadow = SHADOW_ENABLED;
+    roof.receiveShadow = SHADOW_ENABLED;
     overlayGroup.add(roof);
 
     overlayGroup.userData.roof = { type: "mono", roof, centerY, eaveY };
@@ -1192,6 +1193,7 @@ function rebuildOverlays(bbox) {
     roofPlusZ.rotation.x = +angle;
     roofPlusZ.position.set(cx, centerY, cz + halfW / 2);
     roofPlusZ.castShadow = SHADOW_ENABLED;
+    roofPlusZ.receiveShadow = SHADOW_ENABLED;
     overlayGroup.add(roofPlusZ);
 
     const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
@@ -1199,6 +1201,7 @@ function rebuildOverlays(bbox) {
     roofMinusZ.rotation.x = -angle;
     roofMinusZ.position.set(cx, centerY, cz - halfW / 2);
     roofMinusZ.castShadow = SHADOW_ENABLED;
+    roofMinusZ.receiveShadow = SHADOW_ENABLED;
     overlayGroup.add(roofMinusZ);
 
     overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ, centerY, eaveY };
@@ -1206,7 +1209,6 @@ function rebuildOverlays(bbox) {
 
   /* ============================
      CHARPENTE PRO (visible) — BIPENTE
-     ✅ Sigma 170 (ép. 2mm) galvanisé
   ============================ */
   if (slopeType === "bi") {
     const halfW = widthZ / 2;
@@ -1224,52 +1226,14 @@ function rebuildOverlays(bbox) {
 
     const galva = makeGalvaMat();
 
-    // Panne faîtière (horizontale)
-    addSigmaBeam(frameFX, {
-      len: lenX,
-      x: cx,
-      y: underRidge,
-      z: cz,
-      rx: 0, ry: 0, rz: 0,
-      mat: galva
-    });
+    addSigmaBeam(frameFX, { len: lenX, x: cx, y: underRidge, z: cz, rx: 0, ry: 0, rz: 0, mat: galva });
 
-    // Deux pannes inclinées (visuel)
     const t = 0.55;
-    addSigmaBeam(frameFX, {
-      len: lenX,
-      x: cx,
-      y: underRidge - (ridgeH * t),
-      z: cz + (halfW * t),
-      rx: +angle, ry: 0, rz: 0,
-      mat: galva
-    });
-    addSigmaBeam(frameFX, {
-      len: lenX,
-      x: cx,
-      y: underRidge - (ridgeH * t),
-      z: cz - (halfW * t),
-      rx: -angle, ry: 0, rz: 0,
-      mat: galva
-    });
+    addSigmaBeam(frameFX, { len: lenX, x: cx, y: underRidge - (ridgeH * t), z: cz + (halfW * t), rx: +angle, ry: 0, rz: 0, mat: galva });
+    addSigmaBeam(frameFX, { len: lenX, x: cx, y: underRidge - (ridgeH * t), z: cz - (halfW * t), rx: -angle, ry: 0, rz: 0, mat: galva });
 
-    // Pannes d’égout (horizontales)
-    addSigmaBeam(frameFX, {
-      len: lenX,
-      x: cx,
-      y: underEave,
-      z: cz + halfW - 0.03,
-      rx: 0, ry: 0, rz: 0,
-      mat: galva
-    });
-    addSigmaBeam(frameFX, {
-      len: lenX,
-      x: cx,
-      y: underEave,
-      z: cz - halfW + 0.03,
-      rx: 0, ry: 0, rz: 0,
-      mat: galva
-    });
+    addSigmaBeam(frameFX, { len: lenX, x: cx, y: underEave, z: cz + halfW - 0.03, rx: 0, ry: 0, rz: 0, mat: galva });
+    addSigmaBeam(frameFX, { len: lenX, x: cx, y: underEave, z: cz - halfW + 0.03, rx: 0, ry: 0, rz: 0, mat: galva });
   }
 
   /* ============================
@@ -1458,6 +1422,11 @@ function rebuildOverlays(bbox) {
   if (slopeType === "bi" && optFaitiereDouble) {
     addTrimBox(lenX + 0.02, TRIM_TH, TRIM_W, cx, (ridgeY_bi + ROOF_GAP) - 0.015, cz);
   }
+
+  // ✅ overlays au-dessus de la structure (stabilité visuelle)
+  overlayGroup.traverse((o) => {
+    if (o.isMesh) o.renderOrder = 10;
+  });
 
   // Sol
   if (groundPlane) groundPlane.position.y = min.y;
@@ -1706,3 +1675,4 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   calculatePriceAndRecap();
 });
+
