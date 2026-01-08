@@ -854,5 +854,12 @@ input[type="text"]:focus, select:focus{
   .viewer-column { order: 2; }
   .recap-column { order: 3; }
 }
+/* Désactiver le sticky sur le récap, garder seulement la 3D collée */
+@media (min-width: 992px) {
+  .recap-panel {
+    position: static;
+    top: auto;
+  }
+}
 
 }
