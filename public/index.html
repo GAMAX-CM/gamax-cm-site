@@ -127,46 +127,67 @@
               </div>
             </div>
 
-            <!-- 3. TOITURE -->
-            <h3>3. Toiture</h3>
-            <div class="field">
-              <label>Type de couverture</label>
-              <div class="bardage-grid">
-                <label class="bardage-choice">
-                  <input type="radio" name="roofType" value="bac_simple" checked>
-                  <div class="bardage-card type-card">
-                    <span class="bardage-label-main">Bac acier simple</span>
-                    <span class="bardage-label-sub">
-                      Tôle nervurée standard, économique.
-                    </span>
-                  </div>
-                </label>
+<!-- 3. TOITURE -->
+<h3>3. Toiture</h3>
+<div class="field">
+  <label>Type de couverture</label>
+  <div class="bardage-grid">
 
-                <label class="bardage-choice">
-                  <input type="radio" name="roofType" value="bac_regul">
-                  <div class="bardage-card type-card">
-                    <span class="bardage-label-main">
-                      Bac acier avec régulateur de condensation
-                    </span>
-                    <span class="bardage-label-sub">
-                      Recommandé si l’abri est bardé (limite la condensation).
-                    </span>
-                  </div>
-                </label>
+    <!-- Bac acier simple -->
+    <label class="bardage-choice">
+      <input type="radio" name="roofType" value="bac_simple" checked>
+      <div class="bardage-card type-card">
+        <img
+          src="assets/toiture-bac-acier.png"
+          alt="Profil de bac acier de toiture"
+          class="cover-img"
+        >
+        <span class="bardage-label-main">Bac acier simple</span>
+        <span class="bardage-label-sub">
+          Tôle nervurée standard, économique.
+        </span>
+      </div>
+    </label>
 
-                <label class="bardage-choice">
-                  <input type="radio" name="roofType" value="sandwich40">
-                  <div class="bardage-card type-card">
-                    <span class="bardage-label-main">
-                      Panneau sandwich ép. 40&nbsp;mm
-                    </span>
-                    <span class="bardage-label-sub">
-                      Meilleure isolation thermique, intérieur plus confortable.
-                    </span>
-                  </div>
-                </label>
-              </div>
-            </div>
+    <!-- Bac acier avec régulateur -->
+    <label class="bardage-choice">
+      <input type="radio" name="roofType" value="bac_regul">
+      <div class="bardage-card type-card">
+        <img
+          src="assets/toiture-bac-acier.png"
+          alt="Profil de bac acier avec régulateur de condensation"
+          class="cover-img"
+        >
+        <span class="bardage-label-main">
+          Bac acier avec régulateur de condensation
+        </span>
+        <span class="bardage-label-sub">
+          Recommandé si l’abri est bardé (limite la condensation).
+        </span>
+      </div>
+    </label>
+
+    <!-- Panneau sandwich 40 -->
+    <label class="bardage-choice">
+      <input type="radio" name="roofType" value="sandwich40">
+      <div class="bardage-card type-card">
+        <img
+          src="assets/toiture-sandwich.png"
+          alt="Panneau sandwich de toiture épaisseur 40 mm"
+          class="cover-img"
+        >
+        <span class="bardage-label-main">
+          Panneau sandwich ép. 40&nbsp;mm
+        </span>
+        <span class="bardage-label-sub">
+          Meilleure isolation thermique, intérieur plus confortable.
+        </span>
+      </div>
+    </label>
+
+  </div>
+</div>
+
 
             <!-- 3.2 COULEUR TOITURE -->
             <div class="field">
