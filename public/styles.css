@@ -861,5 +861,34 @@ input[type="text"]:focus, select:focus{
     top: auto;
   }
 }
+/* ============================
+   Cartes sélectionnées (toiture, bardage, options)
+   ============================ */
+
+.bardage-choice input[type="radio"]:checked + .bardage-card,
+.bardage-choice input[type="checkbox"]:checked + .bardage-card {
+  background: #000000;                /* fond noir comme type d'abri */
+  color: #ffffff;
+  border-color: #c8a96a;              /* ton doré GAMAX */
+  box-shadow: 0 0 0 1px #c8a96a,
+              0 12px 30px rgba(0, 0, 0, 0.35);
+  transform: translateY(-2px);
+}
+
+/* Texte à l'intérieur des cartes sélectionnées */
+.bardage-choice input:checked + .bardage-card .bardage-label-main {
+  color: #ffffff;
+}
+
+.bardage-choice input:checked + .bardage-card .bardage-label-sub {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Petite transition pour que ça soit plus doux */
+.bardage-card {
+  transition: background 0.2s ease, color 0.2s ease,
+              box-shadow 0.2s ease, transform 0.2s ease,
+              border-color 0.2s ease;
+}
 
 }
