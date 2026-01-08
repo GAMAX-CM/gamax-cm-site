@@ -12,6 +12,10 @@
    - Overlays stables (depthWrite:false + polygonOffset) => fini les “trous”
    - Masquage toiture/pannes sécurisé (évite de cacher la charpente)
    - renderOrder overlays au-dessus de la structure
+
+   ✅ NOUVEAUTÉ : CONFIG CENTRALE
+   - buildConfigFromUI() = une seule vérité (type, dimensions, bardage, couleurs, options, livraison)
+   - Prix + récap + 3D lisent tous cette même config
 ========================================================= */
 
 /* ---------------------------
@@ -321,17 +325,112 @@ function applyOptionAvailabilityByType() {
 }
 
 /* ---------------------------
-   4) CALCUL PRIX + RÉCAP
+   4) CONFIG CENTRALE + CALCUL PRIX + RÉCAP
 ---------------------------- */
 
-function calculatePriceAndRecap() {
+/**
+ * buildConfigFromUI
+ * Une seule vérité pour :
+ * - type / dimensions / surface / nb de travées
+ * - couverture / bardage / couleurs
+ * - options d’habillage
+ * - livraison
+ */
+function buildConfigFromUI() {
   const type = getSelectedType();
+
   const width = parseFloat($("width")?.value || "0");
   const length = parseFloat($("length")?.value || "0");
   const height = parseFloat($("height")?.value || "0");
-  if (!width || !length || !height) return;
+  const area = (width && length) ? width * length : 0;
 
-  const area = width * length;
+  const roofType = document.querySelector('input[name="roofType"]:checked')?.value || null;
+  const claddingType = document.querySelector('input[name="claddingType"]:checked')?.value || null;
+
+  const claddingSideInputs = document.querySelectorAll('input[name="claddingSide"]:checked');
+  const claddings = Array.from(claddingSideInputs).map((el) => el.value);
+
+  const roofColor = document.querySelector('input[name="roofColor"]:checked')?.value || "Non précisée";
+  const claddingColor = document.querySelector('input[name="claddingColor"]:checked')?.value || "Non précisée";
+  const trimColor = document.querySelector('input[name="trimColor"]:checked')?.value || "Non précisée";
+
+  const deliveryMode = getDeliveryMode();
+  const postalCode = ($("postalCode")?.value || "").trim();
+  const city = $("city")?.value || "";
+
+  const optInstall        = !!$("optInstall")?.checked;
+  const optAngles         = !!$("optAngles")?.checked;
+  const optRejetEau       = !!$("optRejetEau")?.checked;
+  const optFaitiereDouble = !!$("optFaitiereDouble")?.checked;
+  const optFaitiereSimple = !!$("optFaitiereSimple")?.checked;
+  const optFaitiereSolin  = !!$("optFaitiereSolin")?.checked;
+  const optGrandeRive     = !!$("optGrandeRive")?.checked;
+  const optRiveSolin      = !!$("optRiveSolin")?.checked;
+  const grB = !!$("optGrandeRiveB")?.checked;
+  const grD = !!$("optGrandeRiveD")?.checked;
+  const rsB = !!$("optRiveSolinB")?.checked;
+  const rsD = !!$("optRiveSolinD")?.checked;
+
+  const bays = getBayCount(length);
+
+  return {
+    type,
+    width,
+    length,
+    height,
+    area,
+    bays,
+
+    roofType,
+    claddingType,
+    claddings,
+
+    roofColor,
+    claddingColor,
+    trimColor,
+
+    deliveryMode,
+    postalCode,
+    city,
+
+    options: {
+      install: optInstall,
+      angles: optAngles,
+      rejetEau: optRejetEau,
+      faitiereDouble: optFaitiereDouble,
+      faitiereSimple: optFaitiereSimple,
+      faitiereSolin: optFaitiereSolin,
+      grandeRive: optGrandeRive,
+      riveSolin: optRiveSolin,
+      grandeRiveB: grB,
+      grandeRiveD: grD,
+      riveSolinB: rsB,
+      riveSolinD: rsD,
+    },
+  };
+}
+
+function calculatePriceAndRecap() {
+  const cfg = buildConfigFromUI();
+  const {
+    type,
+    width,
+    length,
+    height,
+    area,
+    claddings,
+    roofType,
+    claddingType,
+    roofColor,
+    claddingColor,
+    trimColor,
+    deliveryMode,
+    postalCode,
+    city,
+    options,
+  } = cfg;
+
+  if (!width || !length || !height) return;
 
   const sizeKey = width + "x" + length;
   let structureBase = STRUCTURE_PRICE_TABLE[type]?.[sizeKey] ?? 0;
@@ -342,48 +441,31 @@ function calculatePriceAndRecap() {
     structureBase *= 1 + steps * 0.1;
   }
 
-  const roofType = document.querySelector('input[name="roofType"]:checked')?.value;
   const roofUnit = ROOF_PRICE_PER_M2[roofType] ?? 0;
   const roofCost = area * roofUnit;
 
   let claddingArea = 0;
-  const claddings = document.querySelectorAll('input[name="claddingSide"]:checked');
-  claddings.forEach((el) => {
-    if (el.value === "A" || el.value === "C") claddingArea += length * height;
+  claddings.forEach((code) => {
+    if (code === "A" || code === "C") claddingArea += length * height;
     else claddingArea += width * height;
   });
 
-  const claddingType = document.querySelector('input[name="claddingType"]:checked')?.value;
   const cladUnit = CLADDING_PRICE_PER_M2[claddingType] ?? 0;
   const claddingCost = claddingArea * cladUnit;
 
-  const optInstall        = $("optInstall");
-  const optRiveSolin      = $("optRiveSolin");
-  const optGrandeRive     = $("optGrandeRive");
-  const optAngles         = $("optAngles");
-  const optRejetEau       = $("optRejetEau");
-  const optFaitiereDouble = $("optFaitiereDouble");
-  const optFaitiereSimple = $("optFaitiereSimple");
-  const optFaitiereSolin  = $("optFaitiereSolin");
-
-  const grB = $("optGrandeRiveB"), grD = $("optGrandeRiveD");
-  const rsB = $("optRiveSolinB"),  rsD = $("optRiveSolinD");
-
   const finishingSelected =
-    (optRiveSolin?.checked) ||
-    (optGrandeRive?.checked) ||
-    (optAngles?.checked) ||
-    (optRejetEau?.checked) ||
-    (optFaitiereDouble?.checked) ||
-    (optFaitiereSimple?.checked) ||
-    (optFaitiereSolin?.checked);
+    options.riveSolin ||
+    options.grandeRive ||
+    options.angles ||
+    options.rejetEau ||
+    options.faitiereDouble ||
+    options.faitiereSimple ||
+    options.faitiereSolin;
 
   let optionsPrice = 0;
   if (finishingSelected) optionsPrice += area * OPTIONS_PRICES.finishingPerM2;
-  if (optInstall?.checked) optionsPrice += area * OPTIONS_PRICES.installPerM2;
+  if (options.install) optionsPrice += area * OPTIONS_PRICES.installPerM2;
 
-  const deliveryMode = getDeliveryMode();
-  const postalCode = ($("postalCode")?.value || "").trim();
   const delivery = (deliveryMode === "retrait") ? 0 : getDeliveryPrice(postalCode);
 
   let totalHT = structureBase + roofCost + claddingCost + optionsPrice + delivery;
@@ -392,53 +474,16 @@ function calculatePriceAndRecap() {
 
   const typeLabel = (type === "bi") ? "Abris bipente" : "Abris monopente";
 
-  const claddingChecked = Array.from(claddings);
-  const claddingCount = claddingChecked.length;
-
+  const claddingCount = claddings.length;
   let claddingAreaText = "";
   if (claddingCount === 0) {
     claddingAreaText = "Abris ouvert (sans bardage)";
   } else {
-    const codes = claddingChecked.map((c) => c.value);
-    const sides = codes.map((code) => FACADE_LABELS[code] || ("Façade " + code));
+    const sides = claddings.map((code) => FACADE_LABELS[code] || ("Façade " + code));
     claddingAreaText =
       claddingCount + " façade(s) bardée(s) : " +
-      sides.join(", ") + " (env. " + claddingArea.toFixed(1) + " m²)";
-  }
-
-  const roofColor = document.querySelector('input[name="roofColor"]:checked')?.value || "Non précisée";
-  const claddingColor = document.querySelector('input[name="claddingColor"]:checked')?.value || "Non précisée";
-  const trimColor = document.querySelector('input[name="trimColor"]:checked')?.value || "Non précisée";
-
-  const selectedOptions = [];
-  if (optRejetEau?.checked) selectedOptions.push("Rejet d’eau");
-  if (optAngles?.checked) selectedOptions.push("Angles de bardage");
-
-  if (optGrandeRive?.checked) {
-    const sides = [];
-    if (grB?.checked) sides.push("B");
-    if (grD?.checked) sides.push("D");
-    selectedOptions.push("Grande rive" + (sides.length ? ` (côté ${sides.join("+")})` : ""));
-  }
-
-  if (optRiveSolin?.checked) {
-    const sides = [];
-    if (rsB?.checked) sides.push("B");
-    if (rsD?.checked) sides.push("D");
-    selectedOptions.push("Rive avec solin" + (sides.length ? ` (côté ${sides.join("+")})` : ""));
-  }
-
-  if (optFaitiereSolin?.checked) selectedOptions.push("Faîtière avec solin");
-  if (optFaitiereSimple?.checked) selectedOptions.push("Faîtière simple");
-  if (optFaitiereDouble?.checked) selectedOptions.push("Faîtière double");
-  if (optInstall?.checked) selectedOptions.push("Pose par nos équipes");
-
-  let addressText = "";
-  if (deliveryMode === "retrait") {
-    addressText = "Retrait à l’atelier GAMAX-CM (Tonneins)";
-  } else {
-    const city = $("city")?.value || "";
-    addressText = postalCode ? (postalCode + (city ? (" " + city) : "")) : "Non renseignée";
+      sides.join(", ") +
+      " (env. " + claddingArea.toFixed(1).replace(".", ",") + " m²)";
   }
 
   const dimTxt =
@@ -453,6 +498,36 @@ function calculatePriceAndRecap() {
     (deliveryMode === "retrait")
       ? "0 € HT (retrait)"
       : (delivery ? (formatCurrency(delivery) + " HT") : "À définir");
+
+  let addressText = "";
+  if (deliveryMode === "retrait") {
+    addressText = "Retrait à l’atelier GAMAX-CM (Tonneins)";
+  } else {
+    addressText = postalCode ? (postalCode + (city ? (" " + city) : "")) : "Non renseignée";
+  }
+
+  const selectedOptions = [];
+  if (options.rejetEau) selectedOptions.push("Rejet d’eau");
+  if (options.angles) selectedOptions.push("Angles de bardage");
+
+  if (options.grandeRive) {
+    const sides = [];
+    if (options.grandeRiveB) sides.push("B");
+    if (options.grandeRiveD) sides.push("D");
+    selectedOptions.push("Grande rive" + (sides.length ? ` (côté ${sides.join("+")})` : ""));
+  }
+
+  if (options.riveSolin) {
+    const sides = [];
+    if (options.riveSolinB) sides.push("B");
+    if (options.riveSolinD) sides.push("D");
+    selectedOptions.push("Rive avec solin" + (sides.length ? ` (côté ${sides.join("+")})` : ""));
+  }
+
+  if (options.faitiereSolin)  selectedOptions.push("Faîtière avec solin");
+  if (options.faitiereSimple) selectedOptions.push("Faîtière simple");
+  if (options.faitiereDouble) selectedOptions.push("Faîtière double");
+  if (options.install)        selectedOptions.push("Pose par nos équipes");
 
   // ----- HTML -----
   let recapHTML = "";
@@ -505,7 +580,7 @@ function calculatePriceAndRecap() {
   recapText += "Ce devis est une estimation indicative. Un devis définitif vous sera transmis par GAMAX-CM.\n";
 
   afficherRecapitulatif(recapHTML, recapText);
-  update3DFromConfig();
+  update3DFromConfig(cfg); // ✅ 3D = même config que le devis
 }
 
 function afficherRecapitulatif(recapHTML, recapTextForStorage) {
@@ -833,9 +908,11 @@ function getCladdingColor3D() { return getRALColorFromRadio("claddingColor"); }
 function getTrimColor3D() { return getRALColorFromRadio("trimColor"); }
 
 function getCurrentDimensions() {
-  const width = parseFloat($("width")?.value || "3");
-  const length = parseFloat($("length")?.value || "5");
-  const height = parseFloat($("height")?.value || "2.15");
+  // ✅ On lit désormais les dimensions depuis la config centrale
+  const cfg = buildConfigFromUI();
+  const width = cfg.width || 3;
+  const length = cfg.length || 5;
+  const height = cfg.height || 2.15;
   return { width, length, height };
 }
 
@@ -991,7 +1068,7 @@ function loadModelForType(type) {
       });
 
       baseBBox = new THREE.Box3().setFromObject(baseModule);
-      update3DFromConfig();
+      update3DFromConfig(); // 1er build 3D basé sur la config courante
     },
     undefined,
     (err) => console.error("Erreur GLTF :", err)
@@ -1014,18 +1091,20 @@ function animateThree() {
   renderer?.render?.(scene, camera);
 }
 
-function buildStructureFromConfig() {
+function buildStructureFromConfig(cfg) {
   if (!baseModule || !baseBBox) return null;
 
   if (structureGroup) scene.remove(structureGroup);
   structureGroup = new THREE.Group();
   scene.add(structureGroup);
 
-  const type = getSelectedType();
+  const type = cfg?.type || getSelectedType();
   const baseCfg = MODELS[type]?.base || MODELS.mono.base;
 
-  const { width, length, height } = getCurrentDimensions();
-  const bays = getBayCount(length);
+  const width  = cfg?.width  ?? getCurrentDimensions().width;
+  const length = cfg?.length ?? getCurrentDimensions().length;
+  const height = cfg?.height ?? getCurrentDimensions().height;
+  const bays   = cfg?.bays   ?? getBayCount(length);
   const bayLengthM = length / bays;
 
   const baseSize = new THREE.Vector3();
@@ -1359,14 +1438,14 @@ function rebuildOverlays(bbox) {
     return m;
   }
 
-  const optAngles = $("optAngles")?.checked;
-  const optRejetEau = $("optRejetEau")?.checked;
+  const optAngles         = $("optAngles")?.checked;
+  const optRejetEau       = $("optRejetEau")?.checked;
   const optFaitiereDouble = $("optFaitiereDouble")?.checked;
   const optFaitiereSimple = $("optFaitiereSimple")?.checked;
-  const optFaitiereSolin = $("optFaitiereSolin")?.checked;
+  const optFaitiereSolin  = $("optFaitiereSolin")?.checked;
 
   const optGrandeRive = $("optGrandeRive")?.checked;
-  const optRiveSolin = $("optRiveSolin")?.checked;
+  const optRiveSolin  = $("optRiveSolin")?.checked;
 
   const grB2 = $("optGrandeRiveB")?.checked;
   const grD2 = $("optGrandeRiveD")?.checked;
@@ -1497,9 +1576,10 @@ function updateOverlayStylesOnly() {
   overlayGroup.userData?.applyCladdingVisibility?.();
 }
 
-function update3DFromConfig() {
+function update3DFromConfig(configOverride) {
   if (!baseModule) return;
-  const bbox = buildStructureFromConfig();
+  const cfg = configOverride || buildConfigFromUI();
+  const bbox = buildStructureFromConfig(cfg);
   rebuildOverlays(bbox);
   updateOverlayStylesOnly();
 }
@@ -1675,4 +1755,3 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   calculatePriceAndRecap();
 });
-
