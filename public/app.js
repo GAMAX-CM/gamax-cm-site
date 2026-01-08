@@ -1208,22 +1208,21 @@ function rebuildOverlays(bbox) {
   const cx = (min.x + max.x) / 2;
   const cz = (min.z + max.z) / 2;
 
-let roofThick = ROOF_THICKNESS * GLOBAL_SCALE;
-let cladThick = CLAD_THICKNESS * GLOBAL_SCALE;
+  let roofThick = ROOF_THICKNESS * GLOBAL_SCALE;
+  let cladThick = CLAD_THICKNESS * GLOBAL_SCALE;
 
-const roofType = document.querySelector('input[name="roofType"]:checked')?.value;
-const claddingType = document.querySelector('input[name="claddingType"]:checked')?.value;
+  const roofType = document.querySelector('input[name="roofType"]:checked')?.value;
+  const claddingType = document.querySelector('input[name="claddingType"]:checked')?.value;
 
-// Toiture sandwich visuellement plus épaisse
-if (roofType === "sandwich40") {
-  roofThick *= 1.8;  // tu ajustes si tu veux plus ou moins
-}
+  // Toiture sandwich visuellement plus épaisse
+  if (roofType === "sandwich40") {
+    roofThick *= 1.8;
+  }
 
-// Bardage sandwich légèrement plus épais
-if (claddingType === "sandwich40") {
-  cladThick *= 1.5;
-}
-
+  // Bardage sandwich légèrement plus épais
+  if (claddingType === "sandwich40") {
+    cladThick *= 1.5;
+  }
 
   const eps = 0.004 * Math.max(lenX, widthZ);
 
@@ -1466,6 +1465,7 @@ if (claddingType === "sandwich40") {
   const rsB2 = $("optRiveSolinB")?.checked;
   const rsD2 = $("optRiveSolinD")?.checked;
 
+  // Angles verticaux
   if (optAngles) {
     const h = Math.max(panelHeightA, panelHeightC);
     const y = min.y + h / 2;
@@ -1475,6 +1475,7 @@ if (claddingType === "sandwich40") {
     addTrimBox(TRIM_TH, h, TRIM_W, max.x + eps, y, max.z + eps);
   }
 
+  // Rejet d’eau bas
   if (optRejetEau) {
     const y = min.y + 0.05;
     const zA = max.z + eps;
@@ -1493,13 +1494,67 @@ if (claddingType === "sandwich40") {
     if (showD) addTrimBox(TRIM_W, TRIM_TH, widthZ, max.x + eps, y, cz);
   }
 
-  const topRefY = (slopeType === "mono") ? (ridgeY_mono + ROOF_GAP) : (ridgeY_bi + ROOF_GAP);
-
+  // 🔧 RIVES SUR PIGNONS : suivent la pente du toit (mono + bi)
   function addGableTrim(side) {
     const x = (side === "B") ? (min.x - eps) : (max.x + eps);
-    addTrimBox(TRIM_W, TRIM_TH, widthZ + 0.02, x, topRefY - 0.02, cz);
+
+    if (slopeType === "mono") {
+      // Une seule pente (du pan C vers pan A)
+      const dy = ridgeY_mono - eaveY;
+      const centerY = eaveY + dy / 2 + ROOF_GAP;
+      const sizeZ = widthZ + 0.04;
+
+      addTrimBox(
+        TRIM_W,
+        TRIM_TH,
+        sizeZ,
+        x,
+        centerY,
+        cz,
+        -angle,   // pente dans le même sens que la toiture mono
+        0,
+        0,
+        true
+      );
+    } else {
+      // Bipente : deux segments de rive par pignon (C->faîtage et A->faîtage)
+      const dy = ridgeY_bi - eaveY;
+      const segZ = (widthZ / 2) + 0.02;
+      const centerY = eaveY + dy / 2 + ROOF_GAP;
+
+      // Segment côté C -> faîtage
+      addTrimBox(
+        TRIM_W,
+        TRIM_TH,
+        segZ,
+        x,
+        centerY,
+        cz - segZ / 2,
+        +angle,   // pente vers le centre
+        0,
+        0,
+        true
+      );
+
+      // Segment côté A -> faîtage
+      addTrimBox(
+        TRIM_W,
+        TRIM_TH,
+        segZ,
+        x,
+        centerY,
+        cz + segZ / 2,
+        -angle,   // pente vers le centre (sens opposé)
+        0,
+        0,
+        true
+      );
+    }
   }
 
+  const topRefY = (slopeType === "mono") ? (ridgeY_mono + ROOF_GAP) : (ridgeY_bi + ROOF_GAP);
+
+  // Grandes rives / rives avec solin (sur pente)
   if (optGrandeRive) {
     if (grB2) addGableTrim("B");
     if (grD2) addGableTrim("D");
@@ -1509,6 +1564,7 @@ if (claddingType === "sandwich40") {
     if (rsD2) addGableTrim("D");
   }
 
+  // Faîtières
   if (slopeType === "mono" && (optFaitiereSimple || optFaitiereSolin)) {
     addTrimBox(lenX + 0.02, TRIM_TH, TRIM_W, cx, (ridgeY_mono + ROOF_GAP) - 0.015, max.z - 0.02);
   }
