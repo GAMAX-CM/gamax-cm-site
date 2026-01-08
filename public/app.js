@@ -1208,8 +1208,22 @@ function rebuildOverlays(bbox) {
   const cx = (min.x + max.x) / 2;
   const cz = (min.z + max.z) / 2;
 
-  const roofThick = ROOF_THICKNESS * GLOBAL_SCALE;
-  const cladThick = CLAD_THICKNESS * GLOBAL_SCALE;
+let roofThick = ROOF_THICKNESS * GLOBAL_SCALE;
+let cladThick = CLAD_THICKNESS * GLOBAL_SCALE;
+
+const roofType = document.querySelector('input[name="roofType"]:checked')?.value;
+const claddingType = document.querySelector('input[name="claddingType"]:checked')?.value;
+
+// Toiture sandwich visuellement plus épaisse
+if (roofType === "sandwich40") {
+  roofThick *= 1.8;  // tu ajustes si tu veux plus ou moins
+}
+
+// Bardage sandwich légèrement plus épais
+if (claddingType === "sandwich40") {
+  cladThick *= 1.5;
+}
+
 
   const eps = 0.004 * Math.max(lenX, widthZ);
 
