@@ -1,5 +1,5 @@
 /* =========================================================
-   GAMAX-CM — styles.css (COMPLET)
+   GAMAX-CM — styles.css (3 colonnes : 3D | CONFIG | RÉCAP)
 ========================================================= */
 
 /* =========================
@@ -18,8 +18,6 @@
   --radius-lg:18px;
   --shadow-soft:0 18px 45px rgba(0,0,0,.08);
   --shadow-light:0 10px 22px rgba(0,0,0,.06);
-
-  --option-thumb-bg:#efe2c8;
 }
 
 /* =========================
@@ -29,11 +27,10 @@
 html,body{height:100%}
 body{
   margin:0;
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   color:var(--text);
   background:linear-gradient(180deg,#fbf7f1 0%, var(--beige) 60%, #f8f2ea 100%);
 }
-
 img{max-width:100%;display:block}
 a{color:inherit}
 
@@ -52,7 +49,6 @@ a{color:inherit}
   background:#000;
   border-bottom:1px solid rgba(255,255,255,.06);
 }
-
 .header-inner{
   height:64px;
   display:flex;
@@ -88,16 +84,9 @@ a{color:inherit}
    HERO
 ========================= */
 main{padding-top:18px}
-.hero{
-  padding:34px 0 8px;
-}
-.hero-inner{
-  display:flex;
-  justify-content:flex-start;
-}
-.hero-text{
-  max-width:720px;
-}
+.hero{padding:34px 0 8px;}
+.hero-inner{display:flex;justify-content:flex-start;}
+.hero-text{max-width:720px;}
 .hero-text h1{
   margin:0 0 10px;
   font-size:2.25rem;
@@ -117,7 +106,7 @@ main{padding-top:18px}
 /* =========================
    BOUTONS
 ========================= */
-.btn, .btn-primary, .btn-ghost{
+.btn,.btn-primary,.btn-ghost{
   display:inline-flex;
   align-items:center;
   justify-content:center;
@@ -129,17 +118,17 @@ main{padding-top:18px}
   border:1px solid transparent;
   text-decoration:none;
   cursor:pointer;
-  transition:transform .12s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease;
+  transition:transform .12s ease, box-shadow .12s ease,
+             background .12s ease, border-color .12s ease;
 }
-
 .btn-primary{
   background:var(--accent);
   color:#000;
-  box-shadow:0 0 0 1px #000, 0 14px 26px rgba(0,0,0,.20);
+  box-shadow:0 0 0 1px #000,0 14px 26px rgba(0,0,0,.20);
   text-transform:uppercase;
   letter-spacing:.06em;
 }
-.btn-primary:hover{background:var(--accent-dark);transform:translateY(-1px)}
+.btn-primary:hover{background:var(--accent-dark);transform:translateY(-1px);}
 .btn-ghost{
   background:transparent;
   border-color:rgba(0,0,0,.18);
@@ -154,7 +143,7 @@ main{padding-top:18px}
 /* =========================
    SECTIONS
 ========================= */
-.section{padding:26px 0}
+.section{padding:26px 0;}
 .section-header.left h2{
   margin:0 0 6px;
   font-size:1.6rem;
@@ -167,42 +156,34 @@ main{padding-top:18px}
 
 /* =========================
    CONFIGURATEUR : LAYOUT 3 COLONNES
-   recap | configurateur | vue 3D
+   Gauche : vue 3D | Centre : config | Droite : récap
 ========================= */
+
 .configurator-layout{
   margin-top:18px;
   display:flex;
   align-items:flex-start;
-  gap:28px;
+  gap:2.4rem;
 }
 
-/* Colonne gauche : récapitulatif */
-.recap-column{
-  flex:1 1 26%;
-  min-width:260px;
-}
+/* On réordonne les colonnes avec flex-order :
+   HTML = recap-column, config-form, viewer-column
+   Affichage = viewer-column (gauche) | config-form (centre) | recap-column (droite)
+*/
+.recap-column{order:3;flex:1.1;min-width:0;}
+.config-form{order:2;flex:2.2;min-width:0;}
+.viewer-column{order:1;flex:1.1;min-width:0;}
 
-/* Colonne centrale : formulaire */
+/* =========================
+   FORMULAIRE (colonne centrale)
+========================= */
 .config-form{
-  flex:1.8 1 44%;
-  min-width:360px;
-
   background:#fff;
   border-radius:var(--radius-lg);
   padding:22px 22px 26px;
   box-shadow:var(--shadow-soft);
   border:1px solid var(--beige-dark);
 }
-
-/* Colonne droite : vue 3D */
-.viewer-column{
-  flex:1.2 1 30%;
-  min-width:260px;
-}
-
-/* =========================
-   FORMULAIRE
-========================= */
 .config-form h3{
   margin:18px 0 10px;
   font-size:1.1rem;
@@ -210,29 +191,23 @@ main{padding-top:18px}
 
 .form-grid{
   display:grid;
-  grid-template-columns:repeat(3, minmax(0, 1fr));
+  grid-template-columns:repeat(3,minmax(0,1fr));
   gap:14px;
 }
-.address-grid{grid-template-columns:repeat(2, minmax(0, 1fr))}
+.address-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
 
-.field{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-}
-
+.field{display:flex;flex-direction:column;gap:6px;}
 .field label{
   font-size:.9rem;
   font-weight:700;
 }
-
 .field-help{
   font-size:.82rem;
   color:var(--text-muted);
   margin:0;
 }
 
-input[type="text"], select{
+input[type="text"],select{
   border-radius:999px;
   border:1px solid #d3c5af;
   padding:9px 12px;
@@ -240,8 +215,7 @@ input[type="text"], select{
   font-family:inherit;
   background:#fbf7f1;
 }
-
-input[type="text"]:focus, select:focus{
+input[type="text"]:focus,select:focus{
   outline:2px solid var(--accent);
   outline-offset:0;
   background:#fff;
@@ -252,13 +226,12 @@ input[type="text"]:focus, select:focus{
 ========================= */
 .roof-type-grid{
   display:grid;
-  grid-template-columns:repeat(2, minmax(0, 1fr));
+  grid-template-columns:repeat(2,minmax(0,1fr));
   gap:16px;
   margin-bottom:10px;
 }
-
-.roof-card{cursor:pointer}
-.roof-card input{display:none}
+.roof-card{cursor:pointer;}
+.roof-card input{display:none;}
 
 .roof-card-inner{
   border-radius:18px;
@@ -272,20 +245,20 @@ input[type="text"]:focus, select:focus{
   gap:10px;
   min-height:120px;
   box-shadow:var(--shadow-light);
-  transition:transform .1s ease, box-shadow .1s ease, border-color .1s ease, background .1s ease;
+  transition:transform .1s ease, box-shadow .1s ease,
+             border-color .1s ease, background .1s ease, color .1s ease;
 }
-
-.roof-card-inner .roof-img{
-  max-width:80px;
-  height:auto;
-}
+.roof-img{max-width:80px;height:auto;}
 
 .roof-title{
   font-weight:600;
   font-size:.95rem;
+  letter-spacing:.01em;
+  line-height:1.2;
+  color:#111;
 }
 
-/* état sélectionné type d’abri */
+/* sélection type d’abri */
 .roof-card input:checked + .roof-card-inner{
   background:#111;
   color:#fff;
@@ -293,18 +266,20 @@ input[type="text"]:focus, select:focus{
   transform:translateY(-1px);
   box-shadow:0 15px 35px rgba(0,0,0,.25);
 }
+.roof-card input:checked + .roof-card-inner .roof-title{
+  color:#fff;
+}
 
 /* =========================
    BARDAGE / OPTIONS (CARTES)
 ========================= */
 .bardage-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
   gap:12px;
 }
-
-.bardage-choice{cursor:pointer}
-.bardage-choice input{display:none}
+.bardage-choice{cursor:pointer;}
+.bardage-choice input{display:none;}
 
 .bardage-card{
   border-radius:14px;
@@ -316,36 +291,46 @@ input[type="text"]:focus, select:focus{
   flex-direction:column;
   gap:4px;
   transition:
-    border-color .12s ease,
-    box-shadow .12s ease,
-    transform .12s ease,
-    background .12s ease,
-    color .12s ease;
+    background .2s ease,color .2s ease,
+    border-color .12s ease,box-shadow .12s ease,
+    transform .12s ease;
 }
-
-.type-card{min-height:92px}
+.type-card{min-height:92px;}
 
 .bardage-label-main{
   font-size:.95rem;
   font-weight:600;
+  letter-spacing:.01em;
+  line-height:1.2;
+  color:#111;
 }
-
 .bardage-label-sub{
   font-size:.83rem;
-  color:var(--text-muted);
+  color:rgba(0,0,0,.6);
 }
 
+/* Hover */
 .bardage-choice:hover .bardage-card{
   border-color:var(--accent);
   box-shadow:0 10px 24px rgba(0,0,0,.08);
   transform:translateY(-1px);
 }
 
-/* état désactivé (utilisé en JS) */
-.bardage-choice.is-disabled{opacity:.45;cursor:not-allowed}
-.bardage-choice.is-disabled .bardage-card{
-  transform:none !important;
-  box-shadow:none !important;
+/* Cartes sélectionnées : fond noir comme le type d’abri */
+.bardage-choice input[type="radio"]:checked + .bardage-card,
+.bardage-choice input[type="checkbox"]:checked + .bardage-card{
+  background:#000000;
+  color:#ffffff;
+  border-color:#c8a96a;
+  box-shadow:0 0 0 1px #c8a96a,
+             0 12px 30px rgba(0,0,0,0.35);
+  transform:translateY(-2px);
+}
+.bardage-choice input:checked + .bardage-card .bardage-label-main{
+  color:#ffffff;
+}
+.bardage-choice input:checked + .bardage-card .bardage-label-sub{
+  color:rgba(255,255,255,0.8);
 }
 
 /* =========================
@@ -353,12 +338,11 @@ input[type="text"]:focus, select:focus{
 ========================= */
 .ral-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(72px, 1fr));
+  grid-template-columns:repeat(auto-fit,minmax(72px,1fr));
   gap:10px;
 }
-
-.ral-choice{cursor:pointer}
-.ral-choice input{display:none}
+.ral-choice{cursor:pointer;}
+.ral-choice input{display:none;}
 
 .ral-box{
   height:32px;
@@ -380,17 +364,14 @@ input[type="text"]:focus, select:focus{
 }
 
 /* =========================
-   OPTIONS COMPLÉMENTAIRES
+   OPTIONS COMPLÉMENTAIRES — côtés B / D
 ========================= */
 .option-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
   gap:14px;
 }
 
-/* =========================
-   CHOIX DES CÔTÉS (B / D)
-========================= */
 .option-sides{
   margin-top:8px;
   display:flex;
@@ -398,24 +379,18 @@ input[type="text"]:focus, select:focus{
   gap:10px;
   flex-wrap:wrap;
 }
-
 .option-sides-label{
   font-size:.82rem;
   color:var(--text-muted);
   font-weight:600;
 }
-
 .option-side{
   cursor:pointer;
   display:inline-flex;
   align-items:center;
   gap:8px;
 }
-
-.option-side input{
-  display:none;
-}
-
+.option-side input{display:none;}
 .option-side span{
   height:32px;
   min-width:52px;
@@ -431,28 +406,19 @@ input[type="text"]:focus, select:focus{
   color:#111;
   border:2px solid transparent;
   box-shadow:var(--shadow-light);
-  user-select:none;
-  transition:transform .1s ease, box-shadow .1s ease, border-color .1s ease, background .1s ease;
+  transition:transform .1s ease, box-shadow .1s ease,
+             border-color .1s ease, background .1s ease;
 }
-
 .option-side:hover span{
   transform:translateY(-1px);
   box-shadow:0 10px 22px rgba(0,0,0,.12);
   border-color:rgba(200,169,106,.75);
 }
-
 .option-side input:checked + span{
   border-color:#000;
   background:#fff;
   transform:translateY(-1px);
   box-shadow:0 10px 22px rgba(0,0,0,.16);
-}
-
-.option-side input:disabled + span{
-  opacity:.45;
-  cursor:not-allowed;
-  transform:none;
-  box-shadow:none;
 }
 
 /* =========================
@@ -463,7 +429,6 @@ input[type="text"]:focus, select:focus{
   flex-wrap:wrap;
   gap:12px;
 }
-
 .delivery-choice{
   display:inline-flex;
   align-items:center;
@@ -478,7 +443,7 @@ input[type="text"]:focus, select:focus{
 .delivery-choice input{accent-color:var(--accent);margin:0}
 
 /* =========================
-   RÉCAP + VUE 3D (PANELS)
+   PANELS 3D & RÉCAP (colonnes extérieures)
 ========================= */
 .sidepanel{
   border-radius:var(--radius-lg);
@@ -486,7 +451,48 @@ input[type="text"]:focus, select:focus{
   box-shadow:var(--shadow-soft);
 }
 
-/* Récapitulatif à gauche */
+/* Vue 3D (à gauche) */
+.viewer-panel{
+  background:#fff;
+  border:1px solid var(--beige-dark);
+}
+.viewer-panel h2{
+  margin:0 0 4px;
+  font-size:1.1rem;
+}
+.viewer-wrapper{
+  margin-top:8px;
+  border-radius:16px;
+  background:linear-gradient(145deg,#f8f1e6,#ffffff);
+  border:1px solid var(--beige-dark);
+  padding:10px 10px 12px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.viewer-3d{
+  width:100%;
+  min-height:240px;
+  border-radius:12px;
+  background:radial-gradient(circle at top,#d3d7df 0,#bec2cb 40%,#a9aeb7 100%);
+  display:block;
+}
+.viewer-fullscreen-btn{align-self:flex-end;margin-top:6px;}
+.viewer-toolbar{
+  display:none;
+  justify-content:space-between;
+  align-items:center;
+  margin-top:4px;
+}
+.viewer-toolbar-right{display:inline-flex;gap:4px;}
+.viewer-caption{
+  margin:4px 0 0;
+  font-size:.78rem;
+  color:var(--text-muted);
+  text-align:right;
+}
+
+/* Récap (à droite) */
 .recap-panel{
   background:#000;
   color:#fff;
@@ -501,68 +507,31 @@ input[type="text"]:focus, select:focus{
   font-size:.85rem;
   color:rgba(255,255,255,.7);
 }
-
 .recap-text{
   background:#050505;
   border-radius:12px;
   border:1px solid #2a2a2a;
   padding:16px 18px;
-  font-family:"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   font-size:.9rem;
   line-height:1.6;
   letter-spacing:.01em;
   color:#f2f2f2;
   white-space:pre-line;
+  max-height:420px;
+  overflow:auto;
 }
-.recap-text strong{
-  font-weight:700;
-  color:#fff;
-}
+.recap-text strong{font-weight:700;color:#fff;}
 
-/* Vue 3D à droite */
-.viewer-panel{
-  background:#fff;
-  border:1px solid var(--beige-dark);
-}
-.viewer-panel h2{
-  margin:0 0 4px;
-  font-size:1.1rem;
-}
-
-.viewer-wrapper{
-  margin-top:8px;
-  border-radius:16px;
-  background:linear-gradient(145deg, #f8f1e6, #ffffff);
-  border:1px solid var(--beige-dark);
-  padding:10px 10px 12px;
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-}
-
-.viewer-3d{
-  width:100%;
-  min-height:240px;
-  border-radius:12px;
-  background:radial-gradient(circle at top, #d3d7df 0, #bec2cb 40%, #a9aeb7 100%);
-  display:block;
-}
-
-.viewer-fullscreen-btn{align-self:flex-end;margin-top:6px}
-
-.viewer-toolbar{
-  display:none;
-  justify-content:space-between;
-  align-items:center;
-  margin-top:4px;
-}
-.viewer-toolbar-right{display:inline-flex;gap:4px}
-
-.viewer-caption{
-  margin:4px 0 0;
-  font-size:.78rem;
-  color:var(--text-muted);
-  text-align:right;
+/* =========================
+   STICKY : 3D & RÉCAP TOUJOURS VISIBLES SUR DESKTOP
+========================= */
+@media (min-width: 992px){
+  .viewer-panel,
+  .recap-panel{
+    position:sticky;
+    top:90px;   /* ajuste si ton header change de hauteur */
+  }
 }
 
 /* =========================
@@ -580,7 +549,7 @@ input[type="text"]:focus, select:focus{
   text-decoration:none;
   font-weight:700;
 }
-.contact-block a:hover{text-decoration:underline}
+.contact-block a:hover{text-decoration:underline;}
 
 .site-footer{
   padding:14px 0 18px;
@@ -602,7 +571,6 @@ input[type="text"]:focus, select:focus{
   flex-direction:column;
   gap:10px;
 }
-
 .viewer-wrapper.is-fullscreen .viewer-3d{
   width:100% !important;
   flex:1;
@@ -610,114 +578,47 @@ input[type="text"]:focus, select:focus{
   border-radius:14px;
   background:#111;
 }
-
-.viewer-wrapper.is-fullscreen .viewer-toolbar{display:flex}
-.viewer-wrapper.is-fullscreen .viewer-fullscreen-btn{display:none}
-.viewer-wrapper.is-fullscreen .viewer-caption{color:rgba(255,255,255,.75)}
-
-/* =========================================================
-   TYPO CARTES – LISIBILITÉ
-========================================================= */
-.bardage-label-main,
-.roof-title{
-  font-weight:600;
-  font-size:0.95rem;
-  letter-spacing:0.01em;
-  line-height:1.2;
-  color:#111;
-}
-
-.bardage-label-sub{
-  font-weight:400;
-  font-size:0.82rem;
-  line-height:1.4;
-  color:rgba(0,0,0,0.6);
-}
-
-.ral-box{
-  font-weight:500;
-  font-size:0.75rem;
-  letter-spacing:0.03em;
-}
-
-/* =========================
-   CARTES SÉLECTIONNÉES
-   (toiture, bardage, options)
-========================= */
-.bardage-choice input[type="radio"]:checked + .bardage-card,
-.bardage-choice input[type="checkbox"]:checked + .bardage-card{
-  background:#000;
-  color:#fff;
-  border-color:var(--accent);
-  box-shadow:
-    0 0 0 1px var(--accent),
-    0 12px 30px rgba(0,0,0,0.35);
-  transform:translateY(-2px);
-}
-
-.bardage-choice input:checked + .bardage-card .bardage-label-main{
-  color:#fff;
-}
-.bardage-choice input:checked + .bardage-card .bardage-label-sub{
-  color:rgba(255,255,255,0.8);
+.viewer-wrapper.is-fullscreen .viewer-toolbar{display:flex;}
+.viewer-wrapper.is-fullscreen .viewer-fullscreen-btn{display:none;}
+.viewer-wrapper.is-fullscreen .viewer-caption{
+  color:rgba(255,255,255,.75);
 }
 
 /* =========================
    RESPONSIVE
 ========================= */
-@media (max-width: 1024px){
-  main{padding-top:10px}
+@media (max-width:1024px){
+  main{padding-top:10px;}
 
   .configurator-layout{
     flex-direction:column;
   }
 
-  .recap-column,
-  .config-form,
-  .viewer-column{
-    min-width:0;
-    width:100%;
-  }
+  /* Ordre mobile : config d’abord, puis 3D, puis récap */
+  .config-form{order:1;}
+  .viewer-column{order:2;}
+  .recap-column{order:3;}
 
-  /* ordre sur tablette / petit écran : config, 3D, récap */
-  .config-form{order:1}
-  .viewer-column{order:2}
-  .recap-column{order:3}
-
-  .hero-text h1{font-size:2rem}
-}
-
-@media (max-width: 768px){
-  .header-inner{height:60px}
-  .main-nav a{margin-left:16px;font-size:.9rem}
-  .form-grid{grid-template-columns:1fr}
-  .address-grid{grid-template-columns:1fr}
-  .config-form{padding:18px 16px 22px}
-  .contact-block{padding:18px 16px 22px}
-  .bardage-label-main,
-  .roof-title{font-size:0.92rem}
-  .bardage-label-sub{font-size:0.8rem}
-}
-
-@media (max-width: 480px){
-  .hero-text h1{font-size:1.7rem}
-  .hero-actions{flex-direction:column;align-items:flex-start}
-  .viewer-3d{min-height:210px}
-}
-
-/* =========================
-   STICKY — uniquement la vue 3D
-========================= */
-@media (min-width: 992px){
-  #viewer3d-wrapper{
-    position:sticky;
-    top:90px;   /* ajuste si le header change */
-    z-index:5;
-  }
-
-  /* récap non-sticky pour le laisser défiler */
+  .viewer-panel,
   .recap-panel{
     position:static;
     top:auto;
   }
+
+  .hero-text h1{font-size:2rem;}
+}
+
+@media (max-width:768px){
+  .header-inner{height:60px;}
+  .main-nav a{margin-left:16px;font-size:.9rem;}
+  .form-grid{grid-template-columns:1fr;}
+  .address-grid{grid-template-columns:1fr;}
+  .config-form{padding:18px 16px 22px;}
+  .contact-block{padding:18px 16px 22px;}
+}
+
+@media (max-width:480px){
+  .hero-text h1{font-size:1.7rem;}
+  .hero-actions{flex-direction:column;align-items:flex-start;}
+  .viewer-3d{min-height:210px;}
 }
