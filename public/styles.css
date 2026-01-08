@@ -168,7 +168,6 @@ main{padding-top:18px}
 }
 
 /* Ordre visuel : 3D (gauche) | Config (centre) | Récap (droite) */
-/* 🔧 Colonnes un peu plus larges : centre très large, côtés élargis */
 .recap-column{order:3;flex:1.35;min-width:0;}
 .config-form{order:2;flex:2.7;min-width:0;}
 .viewer-column{order:1;flex:1.35;min-width:0;}
@@ -294,21 +293,33 @@ input[type="text"]:focus,select:focus{
     border-color .12s ease,box-shadow .12s ease,
     transform .12s ease;
 }
+
+/* 🔧 Hauteur uniforme des cartes (toiture / bardage / habillages) */
+.bardage-card.type-card,
+.bardage-card.option-card{
+  min-height:180px;              /* ajuste à ton goût (170–190) */
+  justify-content:flex-start;
+}
+.bardage-card .cover-img,
+.bardage-card .cover-visual{
+  margin-bottom:10px;
+}
+
 /* Visuels réalistes toiture / bardage dans les cartes */
-.cover-img {
-  width: 100%;
-  max-height: 130px;
-  object-fit: contain;
-  border-radius: 10px;
-  display: block;
-  margin-bottom: 10px;
-  background: #f5f5f5;
+.cover-img{
+  width:100%;
+  max-height:130px;
+  object-fit:contain;
+  border-radius:10px;
+  display:block;
+  background:#f5f5f5;
 }
 
 /* Quand la carte est sélectionnée (fond noir), on garde une bonne lisibilité du visuel */
-.bardage-choice input:checked + .bardage-card .cover-img {
-  filter: brightness(1.05) contrast(1.1);
+.bardage-choice input:checked + .bardage-card .cover-img{
+  filter:brightness(1.05) contrast(1.1);
 }
+
 .type-card{min-height:92px;}
 
 .bardage-label-main{
@@ -346,6 +357,7 @@ input[type="text"]:focus,select:focus{
 .bardage-choice input:checked + .bardage-card .bardage-label-sub{
   color:rgba(255,255,255,0.8);
 }
+
 /* =========================
    VISUELS PROFIL COUVERTURE
    - cover-visual--bac : nervures bac acier
@@ -359,7 +371,6 @@ input[type="text"]:focus,select:focus{
   background:#e6e1d7;
   position:relative;
   overflow:hidden;
-  margin-bottom:8px;
 }
 
 /* Bac acier : nervures en relief */
@@ -544,7 +555,7 @@ input[type="text"]:focus,select:focus{
 }
 .viewer-3d{
   width:100%;
-  min-height:260px; /* un peu plus haut visuellement */
+  min-height:260px;
   border-radius:12px;
   background:radial-gradient(circle at top,#d3d7df 0,#bec2cb 40%,#a9aeb7 100%);
   display:block;
