@@ -214,27 +214,46 @@
             <!-- 4. BARDAGE -->
             <h3>4. Bardage</h3>
 
-            <!-- 4.1 TYPE DE BARDAGE -->
-            <div class="field">
-              <label>Type de bardage</label>
-              <div class="bardage-grid">
-                <label class="bardage-choice">
-                  <input type="radio" name="claddingType" value="bac_simple" checked>
-                  <div class="bardage-card type-card">
-                    <span class="bardage-label-main">Bac acier simple</span>
-                    <span class="bardage-label-sub">Bardage simple peau, économique.</span>
-                  </div>
-                </label>
+     <!-- 4.1 TYPE DE BARDAGE -->
+<div class="field">
+  <label>Type de bardage</label>
+  <div class="bardage-grid">
 
-                <label class="bardage-choice">
-                  <input type="radio" name="claddingType" value="sandwich40">
-                  <div class="bardage-card type-card">
-                    <span class="bardage-label-main">Panneau sandwich ép. 40&nbsp;mm</span>
-                    <span class="bardage-label-sub">Bardage isolé pour un confort intérieur amélioré.</span>
-                  </div>
-                </label>
-              </div>
-            </div>
+    <!-- Bardage bac acier simple -->
+    <label class="bardage-choice">
+      <input type="radio" name="claddingType" value="bac_simple" checked>
+      <div class="bardage-card type-card">
+        <img
+          src="assets/bardage-bac-acier.png"
+          alt="Profil de bac acier pour bardage"
+          class="cover-img"
+        >
+        <span class="bardage-label-main">Bac acier simple</span>
+        <span class="bardage-label-sub">
+          Bardage simple peau, économique.
+        </span>
+      </div>
+    </label>
+
+    <!-- Bardage sandwich 40 -->
+    <label class="bardage-choice">
+      <input type="radio" name="claddingType" value="sandwich40">
+      <div class="bardage-card type-card">
+        <img
+          src="assets/bardage-sandwich.png"
+          alt="Panneau sandwich de bardage épaisseur 40 mm"
+          class="cover-img"
+        >
+        <span class="bardage-label-main">Panneau sandwich ép. 40&nbsp;mm</span>
+        <span class="bardage-label-sub">
+          Bardage isolé pour un confort intérieur amélioré.
+        </span>
+      </div>
+    </label>
+
+  </div>
+</div>
+
 
             <!-- 4.2 COULEUR BARDAGE -->
             <div class="field">
