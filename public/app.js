@@ -1063,12 +1063,13 @@ function loadModelForType(type) {
 
         if (obj.geometry?.computeVertexNormals) obj.geometry.computeVertexNormals();
 
-  obj.material = new THREE.MeshStandardMaterial({
-  color: 0xf3f3f3,   // plus clair
-  metalness: 0.18,
-  roughness: 0.42,
+obj.material = new THREE.MeshStandardMaterial({
+  color: 0xc5ccd5,   // gris galva légèrement bleuté
+  metalness: 0.55,   // plus métallique
+  roughness: 0.32,
   side: THREE.DoubleSide,
 });
+;
 
       });
 
