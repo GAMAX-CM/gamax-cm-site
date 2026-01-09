@@ -1200,7 +1200,7 @@ function rebuildOverlays(bbox) {
   let roofThick = ROOF_THICKNESS * GLOBAL_SCALE;
   let cladThick = CLAD_THICKNESS * GLOBAL_SCALE;
 
-  const roofType = document.querySelector('input[name="roofType"]:checked')?.value;
+  const roofType     = document.querySelector('input[name="roofType"]:checked')?.value;
   const claddingType = document.querySelector('input[name="claddingType"]:checked')?.value;
 
   // Toiture sandwich visuellement plus épaisse
@@ -1212,6 +1212,7 @@ function rebuildOverlays(bbox) {
   if (claddingType === "sandwich40") {
     cladThick *= 1.5;
   }
+
 
   const eps = 0.004 * Math.max(lenX, widthZ);
 
