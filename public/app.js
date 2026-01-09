@@ -1567,9 +1567,9 @@ function rebuildOverlays(bbox) {
     if (rsD2) addGableTrim("D");
   }
 
-  // Faîtières
-  // On les place légèrement AU-DESSUS de la couverture pour bien les voir
-  const FAITIERE_OFFSET_Y = 0.04; // ~4 cm au-dessus du bac acier
+    // Faîtières
+  // On les place AU-DESSUS de la couverture pour bien les voir
+  const FAITIERE_OFFSET_Y = 0.10; // ~10 cm au-dessus du bac acier
 
   if (slopeType === "mono" && (optFaitiereSimple || optFaitiereSolin)) {
     addTrimBox(
