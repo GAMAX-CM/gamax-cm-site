@@ -227,6 +227,7 @@ input[type="text"]:focus,select:focus{
   grid-template-columns:repeat(2,minmax(0,1fr));
   gap:16px;
   margin-bottom:10px;
+  align-items:stretch;           /* 🔧 cartes même hauteur */
 }
 .roof-card{cursor:pointer;}
 .roof-card input{display:none;}
@@ -242,6 +243,7 @@ input[type="text"]:focus,select:focus{
   justify-content:center;
   gap:10px;
   min-height:120px;
+  height:100%;                  /* 🔧 occupe toute la cellule */
   box-shadow:var(--shadow-light);
   transition:transform .1s ease, box-shadow .1s ease,
              border-color .1s ease, background .1s ease, color .1s ease;
@@ -275,8 +277,12 @@ input[type="text"]:focus,select:focus{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
   gap:12px;
+  align-items:stretch;          /* 🔧 lignes homogènes */
 }
-.bardage-choice{cursor:pointer;}
+.bardage-choice{
+  cursor:pointer;
+  display:flex;                 /* 🔧 permet à la carte de s’étirer */
+}
 .bardage-choice input{display:none;}
 
 .bardage-card{
@@ -288,6 +294,7 @@ input[type="text"]:focus,select:focus{
   display:flex;
   flex-direction:column;
   gap:4px;
+  height:100%;                  /* 🔧 même hauteur que les autres */
   transition:
     background .2s ease,color .2s ease,
     border-color .12s ease,box-shadow .12s ease,
@@ -297,7 +304,7 @@ input[type="text"]:focus,select:focus{
 /* Visuels réalistes toiture / bardage dans les cartes */
 .cover-img {
   width: 100%;
-  max-height: 110px;            /* 🔧 un peu plus compact */
+  max-height: 110px;
   object-fit: contain;
   border-radius: 10px;
   display: block;
@@ -348,7 +355,6 @@ input[type="text"]:focus,select:focus{
 
 /* =========================
    VISUELS PROFIL COUVERTURE
-   (optionnels si tu gardes aussi les images)
 ========================= */
 
 .cover-visual{
@@ -441,6 +447,15 @@ input[type="text"]:focus,select:focus{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
   gap:14px;
+  align-items:stretch;          /* 🔧 cartes options même hauteur */
+}
+
+/* si tes cartes d’options ont une classe .option-card,
+   elles s’étireront aussi correctement */
+.option-card{
+  height:100%;
+  display:flex;
+  flex-direction:column;
 }
 
 .option-sides{
@@ -594,8 +609,6 @@ input[type="text"]:focus,select:focus{
 }
 .recap-text strong{font-weight:700;color:#fff;}
 
-/* 🔁 Plus de sticky : les colonnes 3D & récap défilent normalement */
-
 /* =========================
    CONTACT + FOOTER
 ========================= */
@@ -678,3 +691,4 @@ input[type="text"]:focus,select:focus{
   .hero-actions{flex-direction:column;align-items:flex-start;}
   .viewer-3d{min-height:210px;}
 }
+
