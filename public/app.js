@@ -622,8 +622,8 @@ const GLOBAL_SCALE = 1;
 // pente 10% (mono & bi)
 const PITCH_RATIO = 0.10;
 
-const ROOF_OPACITY = 0.985;
-const CLAD_OPACITY = 0.985;
+const ROOF_OPACITY = 0.78;
+const CLAD_OPACITY = 0.9;
 
 // épaisseurs
 const ROOF_THICKNESS = 0.06;
@@ -767,17 +767,18 @@ function buildStudio() {
     studioGroup.add(groundPlane);
   }
 
-  groundDecal = new THREE.Mesh(
-    new THREE.PlaneGeometry(60, 60),
-    new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      roughness: 1,
-      metalness: 0,
-      transparent: true,
-      opacity: 0.95,
-      depthWrite: false,
-    })
-  );
+groundDecal = new THREE.Mesh(
+  new THREE.PlaneGeometry(60, 60),
+  new THREE.MeshStandardMaterial({
+    color: 0xf2eee6,   // un peu beige
+    roughness: 1,
+    metalness: 0,
+    transparent: true,
+    opacity: 0.82,     // moins fort → l’abri ressort plus
+    depthWrite: false,
+  })
+);
+
   groundDecal.rotation.x = -Math.PI / 2;
   groundDecal.position.y = -0.002;
   studioGroup.add(groundDecal);
@@ -822,9 +823,10 @@ const SIGMA170 = {
 
 function makeGalvaMat() {
   return new THREE.MeshStandardMaterial({
-    color: 0xd3d3d3,
-    metalness: 0.35,
-    roughness: 0.35,
+color: 0xd0d5dd,  // galva un peu bleuté, mieux lisible
+metalness: 0.45,
+roughness: 0.32,
+
     side: THREE.DoubleSide,
   });
 }
@@ -1061,12 +1063,13 @@ function loadModelForType(type) {
 
         if (obj.geometry?.computeVertexNormals) obj.geometry.computeVertexNormals();
 
-        obj.material = new THREE.MeshStandardMaterial({
-          color: 0xc9c9c9,
-          metalness: 0.12,
-          roughness: 0.55,
-          side: THREE.DoubleSide, // ✅ CRUCIAL
-        });
+  obj.material = new THREE.MeshStandardMaterial({
+  color: 0xf3f3f3,   // plus clair
+  metalness: 0.18,
+  roughness: 0.42,
+  side: THREE.DoubleSide,
+});
+
       });
 
       baseBBox = new THREE.Box3().setFromObject(baseModule);
@@ -1621,12 +1624,14 @@ function rebuildOverlays(bbox) {
     const center = new THREE.Vector3(cx, min.y + height * 0.55, cz);
     controls.target.set(center.x, center.y, center.z);
 
-    const d = Math.max(lenX, widthZ, height);
-    camera.position.set(
-      center.x + d * 1.22,
-      center.y + d * 0.85,
-      center.z + d * 1.22
-    );
+  const d = Math.max(lenX, widthZ, height);
+// plus proche de l’abri
+camera.position.set(
+  center.x + d * 0.9,
+  center.y + d * 0.7,
+  center.z + d * 0.9
+);
+
   }
 }
 
