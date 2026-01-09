@@ -328,14 +328,6 @@ function applyOptionAvailabilityByType() {
    4) CONFIG CENTRALE + CALCUL PRIX + RÉCAP
 ---------------------------- */
 
-/**
- * buildConfigFromUI
- * Une seule vérité pour :
- * - type / dimensions / surface / nb de travées
- * - couverture / bardage / couleurs
- * - options d’habillage
- * - livraison
- */
 function buildConfigFromUI() {
   const type = getSelectedType();
 
@@ -497,7 +489,7 @@ function calculatePriceAndRecap() {
   const livTxt =
     (deliveryMode === "retrait")
       ? "0 € HT (retrait)"
-      : (delivery ? (formatCurrency(delivery) + " HT") : "À définir");
+      : (delivery ? (formatCurrency(delivery) + " HT") : "À définir";
 
   let addressText = "";
   if (deliveryMode === "retrait") {
@@ -580,7 +572,7 @@ function calculatePriceAndRecap() {
   recapText += "Ce devis est une estimation indicative. Un devis définitif vous sera transmis par GAMAX-CM.\n";
 
   afficherRecapitulatif(recapHTML, recapText);
-  update3DFromConfig(cfg); // ✅ 3D = même config que le devis
+  update3DFromConfig(cfg);
 }
 
 function afficherRecapitulatif(recapHTML, recapTextForStorage) {
@@ -676,7 +668,6 @@ function setStructureUpperVisibility(eaveWorldY, bbox, type) {
   const lenX = bbox ? (bbox.max.x - bbox.min.x) : 10;
   const widthZ = bbox ? (bbox.max.z - bbox.min.z) : 6;
 
-  // reset visibilité à chaque rebuild
   structureGroup.traverse((obj) => {
     if (obj && obj.isMesh) obj.visible = true;
   });
@@ -697,10 +688,8 @@ function setStructureUpperVisibility(eaveWorldY, bbox, type) {
     const matName = String(obj.material?.name || "");
 
     const isStructuralTall = sizeY > 0.85;
-
     const nameSuggestsKeep = KEEP_NAME_RX.test(name) || KEEP_NAME_RX.test(matName);
 
-    // heuristique TRÈS stricte (évite de masquer des cadres)
     const looksLikeRoofPieceStrict =
       (sizeY <= 0.18) &&
       (
@@ -908,7 +897,6 @@ function getCladdingColor3D() { return getRALColorFromRadio("claddingColor"); }
 function getTrimColor3D() { return getRALColorFromRadio("trimColor"); }
 
 function getCurrentDimensions() {
-  // ✅ On lit désormais les dimensions depuis la config centrale
   const cfg = buildConfigFromUI();
   const width = cfg.width || 3;
   const length = cfg.length || 5;
@@ -1051,7 +1039,6 @@ function loadModelForType(type) {
     (gltf) => {
       baseModule = gltf.scene;
 
-      // ✅ Structure GLTF : DoubleSide + normals (évite “zones invisibles”)
       baseModule.traverse((obj) => {
         if (!obj.isMesh) return;
         obj.castShadow = SHADOW_ENABLED;
@@ -1063,12 +1050,12 @@ function loadModelForType(type) {
           color: 0xc9c9c9,
           metalness: 0.12,
           roughness: 0.55,
-          side: THREE.DoubleSide, // ✅ CRUCIAL
+          side: THREE.DoubleSide,
         });
       });
 
       baseBBox = new THREE.Box3().setFromObject(baseModule);
-      update3DFromConfig(); // 1er build 3D basé sur la config courante
+      update3DFromConfig();
     },
     undefined,
     (err) => console.error("Erreur GLTF :", err)
@@ -1152,8 +1139,6 @@ function materialWithTexture({ color, tex, opacity }) {
     side: THREE.DoubleSide,
     metalness: 0.08,
     roughness: 0.78,
-
-    // ✅ anti “trous” / tri transparent
     depthWrite: false,
     polygonOffset: true,
     polygonOffsetFactor: -1,
@@ -1192,6 +1177,10 @@ function createBiGableShape(widthZ, y0, yEave, yRidge) {
   return s;
 }
 
+/* =========================================================
+   REBUILD OVERLAYS (TOITURE / BARDAGE / HABILLAGES 3D)
+========================================================= */
+
 function rebuildOverlays(bbox) {
   if (!bbox) return;
 
@@ -1217,14 +1206,6 @@ function rebuildOverlays(bbox) {
   // Toiture sandwich visuellement plus épaisse
   if (roofType === "sandwich40") {
     roofThick *= 1.8;
-      
-     if (slopeType === "mono" && (optFaitiereSimple || optFaitiereSolin)) {
-    addTrimBox(lenX + 0.02, TRIM_TH, TRIM_W, cx, (ridgeY_mono + ROOF_GAP) - 0.015, max.z - 0.02);
-  }
-  if (slopeType === "bi" && optFaitiereDouble) {
-    addTrimBox(lenX + 0.02, TRIM_TH, TRIM_W, cx, (ridgeY_bi + ROOF_GAP) - 0.015, cz);
-  }
-
   }
 
   // Bardage sandwich légèrement plus épais
@@ -1503,11 +1484,11 @@ function rebuildOverlays(bbox) {
   }
 
   // 🔧 RIVES SUR PIGNONS : suivent la pente du toit (mono + bi)
-  function addGableTrim(side) {
+  function addInclinedGableTrim(side) {
     const x = (side === "B") ? (min.x - eps) : (max.x + eps);
 
     if (slopeType === "mono") {
-      // Une seule pente (du pan C vers pan A)
+      // Mono : une seule pente, la rive suit le plan de toit
       const dy = ridgeY_mono - eaveY;
       const centerY = eaveY + dy / 2 + ROOF_GAP;
       const sizeZ = widthZ + 0.04;
@@ -1519,16 +1500,17 @@ function rebuildOverlays(bbox) {
         x,
         centerY,
         cz,
-        -angle,   // pente dans le même sens que la toiture mono
+        -angle, // même rotation que la toiture mono
         0,
         0,
         true
       );
     } else {
-      // Bipente : deux segments de rive par pignon (C->faîtage et A->faîtage)
+      // Bipente : 2 segments par pignon, chacun suit son pan
+      const halfW = widthZ / 2;
       const dy = ridgeY_bi - eaveY;
-      const segZ = (widthZ / 2) + 0.02;
       const centerY = eaveY + dy / 2 + ROOF_GAP;
+      const segZ = halfW + 0.02;
 
       // Segment côté C -> faîtage
       addTrimBox(
@@ -1538,7 +1520,7 @@ function rebuildOverlays(bbox) {
         x,
         centerY,
         cz - segZ / 2,
-        +angle,   // pente vers le centre
+        +angle,
         0,
         0,
         true
@@ -1552,7 +1534,7 @@ function rebuildOverlays(bbox) {
         x,
         centerY,
         cz + segZ / 2,
-        -angle,   // pente vers le centre (sens opposé)
+        -angle,
         0,
         0,
         true
@@ -1560,16 +1542,14 @@ function rebuildOverlays(bbox) {
     }
   }
 
-  const topRefY = (slopeType === "mono") ? (ridgeY_mono + ROOF_GAP) : (ridgeY_bi + ROOF_GAP);
-
   // Grandes rives / rives avec solin (sur pente)
   if (optGrandeRive) {
-    if (grB2) addGableTrim("B");
-    if (grD2) addGableTrim("D");
+    if (grB2) addInclinedGableTrim("B");
+    if (grD2) addInclinedGableTrim("D");
   }
   if (optRiveSolin) {
-    if (rsB2) addGableTrim("B");
-    if (rsD2) addGableTrim("D");
+    if (rsB2) addInclinedGableTrim("B");
+    if (rsD2) addInclinedGableTrim("D");
   }
 
   // Faîtières
@@ -1580,7 +1560,7 @@ function rebuildOverlays(bbox) {
     addTrimBox(lenX + 0.02, TRIM_TH, TRIM_W, cx, (ridgeY_bi + ROOF_GAP) - 0.015, cz);
   }
 
-  // ✅ overlays au-dessus de la structure (stabilité visuelle)
+  // ✅ overlays au-dessus de la structure
   overlayGroup.traverse((o) => {
     if (o.isMesh) o.renderOrder = 10;
   });
