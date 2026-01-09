@@ -1813,3 +1813,4 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   calculatePriceAndRecap();
 });
+
