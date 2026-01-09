@@ -697,20 +697,26 @@ function setStructureUpperVisibility(eaveWorldY, bbox, type) {
     const matName = String(obj.material?.name || "");
 
     const isStructuralTall = sizeY > 0.85;
-
     const nameSuggestsKeep = KEEP_NAME_RX.test(name) || KEEP_NAME_RX.test(matName);
+    const nameSuggestsRoof = HIDE_NAME_RX.test(name) || HIDE_NAME_RX.test(matName);
+    const isAboveEave = centerY >= hideFromY;
+    const veryHighSmall = (centerY >= (eaveWorldY + 0.25)) && (sizeY <= 0.45);
 
-    // heuristique TRÈS stricte (évite de masquer des cadres)
+    // 🔧 pour le MONOPENTE : on ne masque que ce qui est clairement nommé "toiture/panne"
+    if (type === "mono") {
+      if (!isStructuralTall && !nameSuggestsKeep && nameSuggestsRoof && isAboveEave) {
+        obj.visible = false;
+      }
+      return;
+    }
+
+    // 🔧 pour le BIPENTE : on garde l’heuristique stricte
     const looksLikeRoofPieceStrict =
       (sizeY <= 0.18) &&
       (
         sizeX >= Math.min(2.0, lenX * 0.50) ||
         sizeZ >= Math.min(2.0, widthZ * 0.50)
       );
-
-    const nameSuggestsRoof = HIDE_NAME_RX.test(name) || HIDE_NAME_RX.test(matName);
-    const isAboveEave = centerY >= hideFromY;
-    const veryHighSmall = (centerY >= (eaveWorldY + 0.25)) && (sizeY <= 0.45);
 
     if (!isStructuralTall && !nameSuggestsKeep) {
       if (nameSuggestsRoof && isAboveEave) {
@@ -728,6 +734,7 @@ function setStructureUpperVisibility(eaveWorldY, bbox, type) {
     }
   });
 }
+
 
 function createContactShadowTexture(size = 256) {
   const c = document.createElement("canvas");
@@ -770,14 +777,15 @@ function buildStudio() {
 groundDecal = new THREE.Mesh(
   new THREE.PlaneGeometry(60, 60),
   new THREE.MeshStandardMaterial({
-    color: 0xf2eee6,   // un peu beige
+    color: 0xf2ede3,   // beige clair
     roughness: 1,
     metalness: 0,
     transparent: true,
-    opacity: 0.82,     // moins fort → l’abri ressort plus
+    opacity: 0.9,
     depthWrite: false,
   })
 );
+
 
   groundDecal.rotation.x = -Math.PI / 2;
   groundDecal.position.y = -0.002;
@@ -823,13 +831,13 @@ const SIGMA170 = {
 
 function makeGalvaMat() {
   return new THREE.MeshStandardMaterial({
-color: 0xd0d5dd,  // galva un peu bleuté, mieux lisible
-metalness: 0.45,
-roughness: 0.32,
-
+    color: 0xc1c8d2,   // gris galva
+    metalness: 0.65,
+    roughness: 0.28,
     side: THREE.DoubleSide,
   });
 }
+
 
 function createSigma170Beam(lengthX, mat) {
   const g = new THREE.Group();
@@ -1016,14 +1024,6 @@ function initThree() {
 
   const tl = new THREE.TextureLoader();
 
-  tl.load(PAVE_TEX_PATH, (tex) => {
-    tex.encoding = THREE.sRGBEncoding;
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(10, 10);
-    if (groundDecal?.material) {
-      groundDecal.material.map = tex;
-      groundDecal.material.needsUpdate = true;
-    }
   });
 
   tl.load(ROOF_TEX_PATH, (tex) => {
