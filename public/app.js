@@ -1568,17 +1568,31 @@ function rebuildOverlays(bbox) {
   }
 
   // Faîtières
+  // On les place légèrement AU-DESSUS de la couverture pour bien les voir
+  const FAITIERE_OFFSET_Y = 0.04; // ~4 cm au-dessus du bac acier
+
   if (slopeType === "mono" && (optFaitiereSimple || optFaitiereSolin)) {
-    addTrimBox(lenX + 0.02, TRIM_TH, TRIM_W, cx, (ridgeY_mono + ROOF_GAP) - 0.015, max.z - 0.02);
-  }
-  if (slopeType === "bi" && optFaitiereDouble) {
-    addTrimBox(lenX + 0.02, TRIM_TH, TRIM_W, cx, (ridgeY_bi + ROOF_GAP) - 0.015, cz);
+    addTrimBox(
+      lenX + 0.02,
+      TRIM_TH,
+      TRIM_W,
+      cx,
+      (ridgeY_mono + ROOF_GAP) + FAITIERE_OFFSET_Y,
+      max.z - 0.02
+    );
   }
 
-  // ✅ overlays au-dessus de la structure (stabilité visuelle)
-  overlayGroup.traverse((o) => {
-    if (o.isMesh) o.renderOrder = 10;
-  });
+  if (slopeType === "bi" && optFaitiereDouble) {
+    addTrimBox(
+      lenX + 0.02,
+      TRIM_TH,
+      TRIM_W,
+      cx,
+      (ridgeY_bi + ROOF_GAP) + FAITIERE_OFFSET_Y,
+      cz
+    );
+  }
+
 
   // Sol
   if (groundPlane) groundPlane.position.y = min.y;
