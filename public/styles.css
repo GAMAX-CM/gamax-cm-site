@@ -563,7 +563,7 @@ input[type="text"]:focus,select:focus{
 }
 .viewer-3d{
   width:100%;
-  min-height:260px;
+  min-height:320px;
   border-radius:12px;
   background:radial-gradient(circle at top,#d3d7df 0,#bec2cb 40%,#a9aeb7 100%);
   display:block;
