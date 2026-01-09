@@ -1569,7 +1569,7 @@ function rebuildOverlays(bbox) {
 
     // Faîtières
   // On les place AU-DESSUS de la couverture pour bien les voir
-  const FAITIERE_OFFSET_Y = 0.12; // ~12 cm au-dessus du bac acier
+  const FAITIERE_OFFSET_Y = 0.08; // ~8 cm au-dessus du bac acier
 
   if (slopeType === "mono" && (optFaitiereSimple || optFaitiereSolin)) {
     addTrimBox(
