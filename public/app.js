@@ -1495,7 +1495,6 @@ function rebuildOverlays(bbox) {
     if (showB) addTrimBox(TRIM_W, TRIM_TH, widthZ, min.x - eps, y, cz);
     if (showD) addTrimBox(TRIM_W, TRIM_TH, widthZ, max.x + eps, y, cz);
   }
-
   // 🔧 RIVES SUR PIGNONS : suivent la pente du toit (mono + bi)
   function addGableTrim(side) {
     const x = (side === "B") ? (min.x - eps) : (max.x + eps);
@@ -1524,7 +1523,7 @@ function rebuildOverlays(bbox) {
       const segZ = (widthZ / 2) + 0.02;
       const centerY = eaveY + dy / 2 + ROOF_GAP;
 
-      // Segment côté C -> faîtage
+      // Segment côté C -> faîtage (même signe que le pan C = roofMinusZ)
       addTrimBox(
         TRIM_W,
         TRIM_TH,
@@ -1532,13 +1531,13 @@ function rebuildOverlays(bbox) {
         x,
         centerY,
         cz - segZ / 2,
-        +angle,   // pente vers le centre
+        -angle,   // ⬅️ AVANT c’était +angle (inversé)
         0,
         0,
         true
       );
 
-      // Segment côté A -> faîtage
+      // Segment côté A -> faîtage (même signe que le pan A = roofPlusZ)
       addTrimBox(
         TRIM_W,
         TRIM_TH,
@@ -1546,13 +1545,15 @@ function rebuildOverlays(bbox) {
         x,
         centerY,
         cz + segZ / 2,
-        -angle,   // pente vers le centre (sens opposé)
+        +angle,   // ⬅️ AVANT c’était -angle (inversé)
         0,
         0,
         true
       );
     }
   }
+
+
 
   const topRefY = (slopeType === "mono") ? (ridgeY_mono + ROOF_GAP) : (ridgeY_bi + ROOF_GAP);
 
