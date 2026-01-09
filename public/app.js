@@ -328,14 +328,6 @@ function applyOptionAvailabilityByType() {
    4) CONFIG CENTRALE + CALCUL PRIX + RÉCAP
 ---------------------------- */
 
-/**
- * buildConfigFromUI
- * Une seule vérité pour :
- * - type / dimensions / surface / nb de travées
- * - couverture / bardage / couleurs
- * - options d’habillage
- * - livraison
- */
 function buildConfigFromUI() {
   const type = getSelectedType();
 
@@ -580,7 +572,7 @@ function calculatePriceAndRecap() {
   recapText += "Ce devis est une estimation indicative. Un devis définitif vous sera transmis par GAMAX-CM.\n";
 
   afficherRecapitulatif(recapHTML, recapText);
-  update3DFromConfig(cfg); // ✅ 3D = même config que le devis
+  update3DFromConfig(cfg);
 }
 
 function afficherRecapitulatif(recapHTML, recapTextForStorage) {
@@ -618,18 +610,14 @@ const MODELS = {
 };
 
 const GLOBAL_SCALE = 1;
-
-// pente 10% (mono & bi)
 const PITCH_RATIO = 0.10;
 
 const ROOF_OPACITY = 0.78;
 const CLAD_OPACITY = 0.9;
 
-// épaisseurs
 const ROOF_THICKNESS = 0.06;
 const CLAD_THICKNESS = 0.032;
 
-// contact / ajustements
 const ROOF_GAP = -0.015;
 const CLAD_TOP_GAP = 0.010;
 const UNDER_ROOF_CLEARANCE = 0.012;
@@ -660,7 +648,6 @@ let lastInlineCanvasHeight = 0;
 ========================================================= */
 
 const HIDE_NAME_RX = /(roof|toit|toiture|cover|sheet|bac|t[ôo]le|panel|panne|purlin|sabliere|sablière|fa[iî]ti[eè]re|ridge|rafter|chevron)/i;
-// ✅ sécurité : ne jamais masquer les éléments de structure
 const KEEP_NAME_RX = /(poteau|post|column|frame|portique|upright|pillar|leg)/i;
 
 function setStructureUpperVisibility(eaveWorldY, bbox, type) {
@@ -676,7 +663,6 @@ function setStructureUpperVisibility(eaveWorldY, bbox, type) {
   const lenX = bbox ? (bbox.max.x - bbox.min.x) : 10;
   const widthZ = bbox ? (bbox.max.z - bbox.min.z) : 6;
 
-  // reset visibilité à chaque rebuild
   structureGroup.traverse((obj) => {
     if (obj && obj.isMesh) obj.visible = true;
   });
@@ -702,7 +688,7 @@ function setStructureUpperVisibility(eaveWorldY, bbox, type) {
     const isAboveEave = centerY >= hideFromY;
     const veryHighSmall = (centerY >= (eaveWorldY + 0.25)) && (sizeY <= 0.45);
 
-    // 🔧 pour le MONOPENTE : on ne masque que ce qui est clairement nommé "toiture/panne"
+    // MONOPENTE : on ne masque que ce qui est clairement "toiture/panne"
     if (type === "mono") {
       if (!isStructuralTall && !nameSuggestsKeep && nameSuggestsRoof && isAboveEave) {
         obj.visible = false;
@@ -710,7 +696,7 @@ function setStructureUpperVisibility(eaveWorldY, bbox, type) {
       return;
     }
 
-    // 🔧 pour le BIPENTE : on garde l’heuristique stricte
+    // BIPENTE : heuristique stricte
     const looksLikeRoofPieceStrict =
       (sizeY <= 0.18) &&
       (
@@ -735,7 +721,6 @@ function setStructureUpperVisibility(eaveWorldY, bbox, type) {
   });
 }
 
-
 function createContactShadowTexture(size = 256) {
   const c = document.createElement("canvas");
   c.width = c.height = size;
@@ -749,14 +734,12 @@ function createContactShadowTexture(size = 256) {
   g.addColorStop(1, "rgba(0,0,0,0)");
 
   ctx.fillStyle = g;
-  // ⬇⬇⬇ ICI la correction : 4ème argument = hauteur
   ctx.fillRect(0, 0, size, size);
 
   const tex = new THREE.CanvasTexture(c);
   tex.needsUpdate = true;
   return tex;
 }
-
 
 function buildStudio() {
   if (!scene) return;
@@ -774,19 +757,17 @@ function buildStudio() {
     studioGroup.add(groundPlane);
   }
 
-groundDecal = new THREE.Mesh(
-  new THREE.PlaneGeometry(60, 60),
-  new THREE.MeshStandardMaterial({
-    color: 0xf2ede3,   // beige clair
-    roughness: 1,
-    metalness: 0,
-    transparent: true,
-    opacity: 0.9,
-    depthWrite: false,
-  })
-);
-
-
+  groundDecal = new THREE.Mesh(
+    new THREE.PlaneGeometry(60, 60),
+    new THREE.MeshStandardMaterial({
+      color: 0xf2ede3,
+      roughness: 1,
+      metalness: 0,
+      transparent: true,
+      opacity: 0.9,
+      depthWrite: false,
+    })
+  );
   groundDecal.rotation.x = -Math.PI / 2;
   groundDecal.position.y = -0.002;
   studioGroup.add(groundDecal);
@@ -831,13 +812,12 @@ const SIGMA170 = {
 
 function makeGalvaMat() {
   return new THREE.MeshStandardMaterial({
-    color: 0xc1c8d2,   // gris galva
+    color: 0xc1c8d2,
     metalness: 0.65,
     roughness: 0.28,
     side: THREE.DoubleSide,
   });
 }
-
 
 function createSigma170Beam(lengthX, mat) {
   const g = new THREE.Group();
@@ -920,7 +900,6 @@ function getCladdingColor3D() { return getRALColorFromRadio("claddingColor"); }
 function getTrimColor3D() { return getRALColorFromRadio("trimColor"); }
 
 function getCurrentDimensions() {
-  // ✅ On lit désormais les dimensions depuis la config centrale
   const cfg = buildConfigFromUI();
   const width = cfg.width || 3;
   const length = cfg.length || 5;
@@ -1024,8 +1003,6 @@ function initThree() {
 
   const tl = new THREE.TextureLoader();
 
-  });
-
   tl.load(ROOF_TEX_PATH, (tex) => {
     tex.encoding = THREE.sRGBEncoding;
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
@@ -1055,7 +1032,6 @@ function loadModelForType(type) {
     (gltf) => {
       baseModule = gltf.scene;
 
-      // ✅ Structure GLTF : DoubleSide + normals (évite “zones invisibles”)
       baseModule.traverse((obj) => {
         if (!obj.isMesh) return;
         obj.castShadow = SHADOW_ENABLED;
@@ -1063,18 +1039,16 @@ function loadModelForType(type) {
 
         if (obj.geometry?.computeVertexNormals) obj.geometry.computeVertexNormals();
 
-obj.material = new THREE.MeshStandardMaterial({
-  color: 0xc5ccd5,   // gris galva légèrement bleuté
-  metalness: 0.55,   // plus métallique
-  roughness: 0.32,
-  side: THREE.DoubleSide,
-});
-;
-
+        obj.material = new THREE.MeshStandardMaterial({
+          color: 0xc5ccd5,
+          metalness: 0.55,
+          roughness: 0.32,
+          side: THREE.DoubleSide,
+        });
       });
 
       baseBBox = new THREE.Box3().setFromObject(baseModule);
-      update3DFromConfig(); // 1er build 3D basé sur la config courante
+      update3DFromConfig();
     },
     undefined,
     (err) => console.error("Erreur GLTF :", err)
@@ -1158,8 +1132,6 @@ function materialWithTexture({ color, tex, opacity }) {
     side: THREE.DoubleSide,
     metalness: 0.08,
     roughness: 0.78,
-
-    // ✅ anti “trous” / tri transparent
     depthWrite: false,
     polygonOffset: true,
     polygonOffsetFactor: -1,
@@ -1173,7 +1145,6 @@ function materialWithTexture({ color, tex, opacity }) {
   return mat;
 }
 
-// pignon mono (trapèze)
 function createMonoGableShape(widthZ, y0, yLow, yHigh) {
   const halfW = widthZ / 2;
   const s = new THREE.Shape();
@@ -1185,7 +1156,6 @@ function createMonoGableShape(widthZ, y0, yLow, yHigh) {
   return s;
 }
 
-// pignon bi (maison)
 function createBiGableShape(widthZ, y0, yEave, yRidge) {
   const halfW = widthZ / 2;
   const s = new THREE.Shape();
@@ -1220,12 +1190,9 @@ function rebuildOverlays(bbox) {
   const roofType = document.querySelector('input[name="roofType"]:checked')?.value;
   const claddingType = document.querySelector('input[name="claddingType"]:checked')?.value;
 
-  // Toiture sandwich visuellement plus épaisse
   if (roofType === "sandwich40") {
-    roofThick *= 1.8;  // tu ajustes si tu veux plus ou moins
+    roofThick *= 1.8;
   }
-
-  // Bardage sandwich légèrement plus épais
   if (claddingType === "sandwich40") {
     cladThick *= 1.5;
   }
@@ -1259,10 +1226,7 @@ function rebuildOverlays(bbox) {
 
   const slopeType = getSelectedType();
 
-  /* ============================
-     TOITURE — COLLE + PENTE 10%
-  ============================ */
-
+  // TOITURE
   if (slopeType === "mono") {
     const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ);
     const roof = new THREE.Mesh(roofGeo, roofMat);
@@ -1305,9 +1269,7 @@ function rebuildOverlays(bbox) {
     overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ, centerY, eaveY };
   }
 
-  /* ============================
-     CHARPENTE PRO (visible) — BIPENTE
-  ============================ */
+  // CHARPENTE PRO BIPENTE
   if (slopeType === "bi") {
     const halfW = widthZ / 2;
     const ridgeH = halfW * PITCH_RATIO;
@@ -1334,10 +1296,7 @@ function rebuildOverlays(bbox) {
     addSigmaBeam(frameFX, { len: lenX, x: cx, y: underEave, z: cz - halfW + 0.03, rx: 0, ry: 0, rz: 0, mat: galva });
   }
 
-  /* ============================
-     BARDAGE — COLLE SOUS COUVERTURE
-  ============================ */
-
+  // BARDAGE
   const ridgeY_mono = eaveY + (widthZ * PITCH_RATIO);
   const ridgeY_bi   = eaveY + ((widthZ / 2) * PITCH_RATIO);
 
@@ -1439,9 +1398,7 @@ function rebuildOverlays(bbox) {
   applyCladdingVisibility();
   overlayGroup.userData.applyCladdingVisibility = applyCladdingVisibility;
 
-  /* ============================
-     HABILLAGES (3D)
-  ============================ */
+  // HABILLAGES
   const TRIM_TH = 0.018;
   const TRIM_W  = 0.070;
 
@@ -1471,7 +1428,6 @@ function rebuildOverlays(bbox) {
   const rsB2 = $("optRiveSolinB")?.checked;
   const rsD2 = $("optRiveSolinD")?.checked;
 
-  // Angles verticaux
   if (optAngles) {
     const h = Math.max(panelHeightA, panelHeightC);
     const y = min.y + h / 2;
@@ -1481,7 +1437,6 @@ function rebuildOverlays(bbox) {
     addTrimBox(TRIM_TH, h, TRIM_W, max.x + eps, y, max.z + eps);
   }
 
-  // Rejet d’eau bas
   if (optRejetEau) {
     const y = min.y + 0.05;
     const zA = max.z + eps;
@@ -1499,12 +1454,11 @@ function rebuildOverlays(bbox) {
     if (showB) addTrimBox(TRIM_W, TRIM_TH, widthZ, min.x - eps, y, cz);
     if (showD) addTrimBox(TRIM_W, TRIM_TH, widthZ, max.x + eps, y, cz);
   }
-  // 🔧 RIVES SUR PIGNONS : suivent la pente du toit (mono + bi)
+
   function addGableTrim(side) {
     const x = (side === "B") ? (min.x - eps) : (max.x + eps);
 
     if (slopeType === "mono") {
-      // Une seule pente (du pan C vers pan A)
       const dy = ridgeY_mono - eaveY;
       const centerY = eaveY + dy / 2 + ROOF_GAP;
       const sizeZ = widthZ + 0.04;
@@ -1516,18 +1470,16 @@ function rebuildOverlays(bbox) {
         x,
         centerY,
         cz,
-        -angle,   // pente dans le même sens que la toiture mono
+        -angle,
         0,
         0,
         true
       );
     } else {
-      // Bipente : deux segments de rive par pignon (C->faîtage et A->faîtage)
       const dy = ridgeY_bi - eaveY;
       const segZ = (widthZ / 2) + 0.02;
       const centerY = eaveY + dy / 2 + ROOF_GAP;
 
-      // Segment côté C -> faîtage (même signe que le pan C = roofMinusZ)
       addTrimBox(
         TRIM_W,
         TRIM_TH,
@@ -1535,13 +1487,12 @@ function rebuildOverlays(bbox) {
         x,
         centerY,
         cz - segZ / 2,
-        -angle,   // ⬅️ AVANT c’était +angle (inversé)
+        -angle,
         0,
         0,
         true
       );
 
-      // Segment côté A -> faîtage (même signe que le pan A = roofPlusZ)
       addTrimBox(
         TRIM_W,
         TRIM_TH,
@@ -1549,7 +1500,7 @@ function rebuildOverlays(bbox) {
         x,
         centerY,
         cz + segZ / 2,
-        +angle,   // ⬅️ AVANT c’était -angle (inversé)
+        +angle,
         0,
         0,
         true
@@ -1557,11 +1508,8 @@ function rebuildOverlays(bbox) {
     }
   }
 
-
-
   const topRefY = (slopeType === "mono") ? (ridgeY_mono + ROOF_GAP) : (ridgeY_bi + ROOF_GAP);
 
-  // Grandes rives / rives avec solin (sur pente)
   if (optGrandeRive) {
     if (grB2) addGableTrim("B");
     if (grD2) addGableTrim("D");
@@ -1571,9 +1519,8 @@ function rebuildOverlays(bbox) {
     if (rsD2) addGableTrim("D");
   }
 
-    // Faîtières
-  // On les place AU-DESSUS de la couverture pour bien les voir
-  const FAITIERE_OFFSET_Y = 0.08; // ~8 cm au-dessus du bac acier
+  // Faîtières au-dessus du bac
+  const FAITIERE_OFFSET_Y = 0.08;
 
   if (slopeType === "mono" && (optFaitiereSimple || optFaitiereSolin)) {
     addTrimBox(
@@ -1597,6 +1544,10 @@ function rebuildOverlays(bbox) {
     );
   }
 
+  // overlays au-dessus de la structure
+  overlayGroup.traverse((o) => {
+    if (o.isMesh) o.renderOrder = 10;
+  });
 
   // Sol
   if (groundPlane) groundPlane.position.y = min.y;
@@ -1611,7 +1562,6 @@ function rebuildOverlays(bbox) {
     groundDecal.material.needsUpdate = true;
   }
 
-  // Contact shadow
   if (contactShadow) {
     const pad = 0.20;
     contactShadow.geometry.dispose();
@@ -1620,19 +1570,16 @@ function rebuildOverlays(bbox) {
     contactShadow.material.opacity = 0.55;
   }
 
-  // Caméra
   if (controls && camera) {
     const center = new THREE.Vector3(cx, min.y + height * 0.55, cz);
     controls.target.set(center.x, center.y, center.z);
 
-  const d = Math.max(lenX, widthZ, height);
-// plus proche de l’abri
-camera.position.set(
-  center.x + d * 0.9,
-  center.y + d * 0.7,
-  center.z + d * 0.9
-);
-
+    const d = Math.max(lenX, widthZ, height);
+    camera.position.set(
+      center.x + d * 0.9,
+      center.y + d * 0.7,
+      center.z + d * 0.9
+    );
   }
 }
 
