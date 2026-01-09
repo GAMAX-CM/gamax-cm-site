@@ -742,12 +742,14 @@ function createContactShadowTexture(size = 256) {
   g.addColorStop(1, "rgba(0,0,0,0)");
 
   ctx.fillStyle = g;
-  ctx.fillRect(0, 0, size);
+  // ⬇⬇⬇ ICI la correction : 4ème argument = hauteur
+  ctx.fillRect(0, 0, size, size);
 
   const tex = new THREE.CanvasTexture(c);
   tex.needsUpdate = true;
   return tex;
 }
+
 
 function buildStudio() {
   if (!scene) return;
