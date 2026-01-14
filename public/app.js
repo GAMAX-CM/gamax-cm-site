@@ -926,6 +926,31 @@ function addSigmaBeam(group, { len, x, y, z, rx = 0, ry = 0, rz = 0, mat = null 
   group.add(beam);
   return beam;
 }
+// Marque dans userData quels meshes doivent vraiment s'allonger en largeur (axe Z)
+// => typiquement les traverses / pannes longues, mais pas les poteaux, bracons, platines, etc.
+function markWidthSensitiveMeshes(root) {
+  const tmpBox = new THREE.Box3();
+  const tmpSize = new THREE.Vector3();
+
+  root.traverse((obj) => {
+    if (!obj.isMesh) return;
+
+    // bbox en coordonnées monde du mesh dans le GLTF d'origine
+    tmpBox.setFromObject(obj);
+    tmpBox.getSize(tmpSize);
+
+    const sizeX = tmpSize.x;
+    const sizeY = tmpSize.y;
+    const sizeZ = tmpSize.z;
+
+    const maxXY = Math.max(sizeX, sizeY);
+
+    // Si Z est nettement plus grand que X et Y => c'est une pièce "longue" dans la largeur
+    const isWidthBeam = sizeZ > maxXY * 1.5;
+
+    obj.userData.widthSensitive = isWidthBeam;
+  });
+}
 
 /* ---------------------------
    Couleurs RAL -> 3D
