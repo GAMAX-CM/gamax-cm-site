@@ -1,3 +1,4 @@
+
 /* =========================================================
    GAMAX-CM — CONFIGURATEUR + RÉCAP + VUE 3D (THREE r146)
    Fichier : public/app.js
@@ -1248,6 +1249,9 @@ function rebuildOverlays(bbox) {
   const slopeType = getSelectedType();
   const angle      = (slopeType === "mono") ? monoRoofAngle  : biRoofAngle;
   const pitchRatio = (slopeType === "mono") ? monoPitchRatio : biPitchRatio;
+  // Constant pitch (user choice B)
+  // pitchRatio stays from GLTF calibration; does not scale with width
+
 
   setStructureUpperVisibility(eaveY, bbox, slopeType);
 
