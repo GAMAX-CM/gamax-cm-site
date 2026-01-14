@@ -5,7 +5,7 @@
    ✅ Version complète + rendu PRO des profilés :
    - Profilé SIGMA 170 (ép. 2 mm galvanisé) en 3D (tôle pliée)
    - Masquage "chirurgical" des pièces GLTF de toiture/pannes (sans cacher les poteaux)
-   - Toiture/bardage calculés en overlay (pente 10% constante)
+   - Toiture/bardage calculés en overlay (pente calée sur le GLTF)
 
    ✅ PATCH 3D COHÉRENTE (mono + bi) :
    - GLTF en DoubleSide (évite les faces invisibles)
@@ -13,7 +13,7 @@
    - Masquage toiture/pannes sécurisé (évite de cacher la charpente)
    - renderOrder overlays au-dessus de la structure
 
-   ✅ NOUVEAUTÉ : CONFIG CENTRALE
+   ✅ CONFIG CENTRALE
    - buildConfigFromUI() = une seule vérité (type, dimensions, bardage, couleurs, options, livraison)
    - Prix + récap + 3D lisent tous cette même config
 ========================================================= */
@@ -145,7 +145,7 @@ function populateDimensions() {
 }
 
 /* ---------------------------
-   2.5) HELPERS RÉCAP (HTML + TEXTE)
+   2.5) HELPERS RÉCAP
 ---------------------------- */
 
 function L(label) { return `<strong>${label}</strong>`; }
@@ -233,7 +233,7 @@ function updateDeliveryUI() {
 }
 
 /* ---------------------------
-   3.5) OPTIONS — CÔTÉS (Rive / Grande rive)
+   3.5) OPTIONS — CÔTÉS
 ---------------------------- */
 
 function isChecked(id) { return !!$(id)?.checked; }
@@ -325,7 +325,7 @@ function applyOptionAvailabilityByType() {
 }
 
 /* ---------------------------
-   4) CONFIG CENTRALE + CALCUL PRIX + RÉCAP
+   4) CONFIG & PRIX
 ---------------------------- */
 
 function buildConfigFromUI() {
@@ -386,18 +386,18 @@ function buildConfigFromUI() {
     city,
 
     options: {
-      install: optInstall,
-      angles: optAngles,
-      rejetEau: optRejetEau,
+      install:        optInstall,
+      angles:         optAngles,
+      rejetEau:       optRejetEau,
       faitiereDouble: optFaitiereDouble,
       faitiereSimple: optFaitiereSimple,
-      faitiereSolin: optFaitiereSolin,
-      grandeRive: optGrandeRive,
-      riveSolin: optRiveSolin,
-      grandeRiveB: grB,
-      grandeRiveD: grD,
-      riveSolinB: rsB,
-      riveSolinD: rsD,
+      faitiereSolin:  optFaitiereSolin,
+      grandeRive:     optGrandeRive,
+      riveSolin:      optRiveSolin,
+      grandeRiveB:    grB,
+      grandeRiveD:    grD,
+      riveSolinB:     rsB,
+      riveSolinD:     rsD,
     },
   };
 }
@@ -610,7 +610,13 @@ const MODELS = {
 };
 
 const GLOBAL_SCALE = 1;
-const PITCH_RATIO = 0.10;
+
+// pente par défaut ~10 % (sera recalée sur le GLTF)
+const DEFAULT_PITCH_RATIO = 0.10;
+let monoPitchRatio = DEFAULT_PITCH_RATIO;
+let biPitchRatio   = DEFAULT_PITCH_RATIO;
+let monoRoofAngle  = Math.atan(DEFAULT_PITCH_RATIO);
+let biRoofAngle    = Math.atan(DEFAULT_PITCH_RATIO);
 
 const ROOF_OPACITY = 0.78;
 const CLAD_OPACITY = 0.9;
@@ -644,7 +650,7 @@ let cladTex = null;
 let lastInlineCanvasHeight = 0;
 
 /* =========================================================
-   MASQUAGE "CHIRURGICAL" des pièces GLTF de toiture/pannes
+   MASQUAGE "CHIRURGICAL" & CALAGE PENTE
 ========================================================= */
 
 const HIDE_NAME_RX = /(roof|toit|toiture|cover|sheet|bac|t[ôo]le|panel|panne|purlin|sabliere|sablière|fa[iî]ti[eè]re|ridge|rafter|chevron)/i;
@@ -688,7 +694,6 @@ function setStructureUpperVisibility(eaveWorldY, bbox, type) {
     const isAboveEave = centerY >= hideFromY;
     const veryHighSmall = (centerY >= (eaveWorldY + 0.25)) && (sizeY <= 0.45);
 
-    // MONOPENTE : on ne masque que ce qui est clairement "toiture/panne"
     if (type === "mono") {
       if (!isStructuralTall && !nameSuggestsKeep && nameSuggestsRoof && isAboveEave) {
         obj.visible = false;
@@ -696,7 +701,6 @@ function setStructureUpperVisibility(eaveWorldY, bbox, type) {
       return;
     }
 
-    // BIPENTE : heuristique stricte
     const looksLikeRoofPieceStrict =
       (sizeY <= 0.18) &&
       (
@@ -719,6 +723,37 @@ function setStructureUpperVisibility(eaveWorldY, bbox, type) {
       }
     }
   });
+}
+
+// 🔧 NOUVEAU : on lit la pente réelle sur le GLTF
+function calibrateRoofAngle(type) {
+  if (!baseModule) return;
+  let foundAngle = null;
+
+  baseModule.traverse((obj) => {
+    if (!obj.isMesh) return;
+    const name = String(obj.name || "");
+    const matName = String(obj.material?.name || "");
+    if (KEEP_NAME_RX.test(name) || KEEP_NAME_RX.test(matName)) return;
+    if (!HIDE_NAME_RX.test(name) && !HIDE_NAME_RX.test(matName)) return;
+
+    const ax = Math.abs(obj.rotation.x);
+    if (ax > 0.01) {
+      foundAngle = ax;
+    }
+  });
+
+  if (!foundAngle) return;
+
+  const ratio = Math.tan(foundAngle);
+
+  if (type === "mono") {
+    monoRoofAngle = foundAngle;
+    monoPitchRatio = ratio;
+  } else {
+    biRoofAngle = foundAngle;
+    biPitchRatio = ratio;
+  }
 }
 
 function createContactShadowTexture(size = 256) {
@@ -795,7 +830,7 @@ function buildStudio() {
 }
 
 /* =========================================================
-   PROFILÉ SIGMA 170 (ép. 2mm) — GALVA PRO
+   PROFILÉ SIGMA 170 — GALVA
 ========================================================= */
 
 const MM = 0.001;
@@ -885,7 +920,7 @@ function addSigmaBeam(group, { len, x, y, z, rx = 0, ry = 0, rz = 0, mat = null 
 }
 
 /* ---------------------------
-   Couleurs 3D depuis RAL
+   Couleurs RAL -> 3D
 ---------------------------- */
 
 function getRALColorFromRadio(name) {
@@ -914,6 +949,10 @@ function getBayCount(length) {
   if (length <= 24) return 4;
   return 6;
 }
+
+/* ---------------------------
+   Init Three.js
+---------------------------- */
 
 function initThree() {
   const canvas = $("viewer3d");
@@ -1048,6 +1087,10 @@ function loadModelForType(type) {
       });
 
       baseBBox = new THREE.Box3().setFromObject(baseModule);
+
+      // 🔧 On cale la pente sur le GLTF courant
+      calibrateRoofAngle(type);
+
       update3DFromConfig();
     },
     undefined,
@@ -1201,9 +1244,12 @@ function rebuildOverlays(bbox) {
 
   const { height } = getCurrentDimensions();
   const eaveY = min.y + height;
-  const angle = Math.atan(PITCH_RATIO);
 
-  setStructureUpperVisibility(eaveY, bbox, getSelectedType());
+  const slopeType = getSelectedType();
+  const angle      = (slopeType === "mono") ? monoRoofAngle  : biRoofAngle;
+  const pitchRatio = (slopeType === "mono") ? monoPitchRatio : biPitchRatio;
+
+  setStructureUpperVisibility(eaveY, bbox, slopeType);
 
   const roofMat = materialWithTexture({
     color: getRoofColor3D(),
@@ -1224,9 +1270,10 @@ function rebuildOverlays(bbox) {
     side: THREE.DoubleSide,
   });
 
-  const slopeType = getSelectedType();
+  /* ============================
+     TOITURE
+  ============================ */
 
-  // TOITURE
   if (slopeType === "mono") {
     const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ);
     const roof = new THREE.Mesh(roofGeo, roofMat);
@@ -1269,10 +1316,12 @@ function rebuildOverlays(bbox) {
     overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ, centerY, eaveY };
   }
 
-  // CHARPENTE PRO BIPENTE
+  /* ============================
+     CHARPENTE PRO (bipente)
+  ============================ */
   if (slopeType === "bi") {
     const halfW = widthZ / 2;
-    const ridgeH = halfW * PITCH_RATIO;
+    const ridgeH = halfW * pitchRatio;
 
     const r = overlayGroup.userData?.roof;
     const roofCenterY = r?.centerY ?? (eaveY + roofThick);
@@ -1296,9 +1345,12 @@ function rebuildOverlays(bbox) {
     addSigmaBeam(frameFX, { len: lenX, x: cx, y: underEave, z: cz - halfW + 0.03, rx: 0, ry: 0, rz: 0, mat: galva });
   }
 
-  // BARDAGE
-  const ridgeY_mono = eaveY + (widthZ * PITCH_RATIO);
-  const ridgeY_bi   = eaveY + ((widthZ / 2) * PITCH_RATIO);
+  /* ============================
+     BARDAGE
+  ============================ */
+
+  const ridgeY_mono = eaveY + (widthZ      * pitchRatio);
+  const ridgeY_bi   = eaveY + ((widthZ/2) * pitchRatio);
 
   let topA = eaveY;
   let topC = eaveY;
@@ -1398,7 +1450,10 @@ function rebuildOverlays(bbox) {
   applyCladdingVisibility();
   overlayGroup.userData.applyCladdingVisibility = applyCladdingVisibility;
 
-  // HABILLAGES
+  /* ============================
+     HABILLAGES
+  ============================ */
+
   const TRIM_TH = 0.018;
   const TRIM_W  = 0.070;
 
@@ -1428,6 +1483,7 @@ function rebuildOverlays(bbox) {
   const rsB2 = $("optRiveSolinB")?.checked;
   const rsD2 = $("optRiveSolinD")?.checked;
 
+  // Angles verticaux
   if (optAngles) {
     const h = Math.max(panelHeightA, panelHeightC);
     const y = min.y + h / 2;
@@ -1437,6 +1493,7 @@ function rebuildOverlays(bbox) {
     addTrimBox(TRIM_TH, h, TRIM_W, max.x + eps, y, max.z + eps);
   }
 
+  // Rejet d’eau
   if (optRejetEau) {
     const y = min.y + 0.05;
     const zA = max.z + eps;
@@ -1455,6 +1512,7 @@ function rebuildOverlays(bbox) {
     if (showD) addTrimBox(TRIM_W, TRIM_TH, widthZ, max.x + eps, y, cz);
   }
 
+  // Rives suivant la pente
   function addGableTrim(side) {
     const x = (side === "B") ? (min.x - eps) : (max.x + eps);
 
@@ -1508,8 +1566,6 @@ function rebuildOverlays(bbox) {
     }
   }
 
-  const topRefY = (slopeType === "mono") ? (ridgeY_mono + ROOF_GAP) : (ridgeY_bi + ROOF_GAP);
-
   if (optGrandeRive) {
     if (grB2) addGableTrim("B");
     if (grD2) addGableTrim("D");
@@ -1519,7 +1575,7 @@ function rebuildOverlays(bbox) {
     if (rsD2) addGableTrim("D");
   }
 
-  // Faîtières au-dessus du bac
+  // Faîtières au-dessus de la couverture
   const FAITIERE_OFFSET_Y = 0.08;
 
   if (slopeType === "mono" && (optFaitiereSimple || optFaitiereSolin)) {
@@ -1694,7 +1750,7 @@ function setup3DFullscreenUI() {
 }
 
 /* ---------------------------
-   7) INIT — LIAISONS EVENTS
+   7) INIT — EVENTS
 ---------------------------- */
 
 document.addEventListener("DOMContentLoaded", async () => {
