@@ -1117,17 +1117,19 @@ function animateThree() {
 function buildStructureFromConfig(cfg) {
   if (!baseModule || !baseBBox) return null;
 
+  // On recrée le groupe structure
   if (structureGroup) scene.remove(structureGroup);
   structureGroup = new THREE.Group();
   scene.add(structureGroup);
 
-  const type = cfg?.type || getSelectedType();
+  const type   = cfg?.type   || getSelectedType();
   const baseCfg = MODELS[type]?.base || MODELS.mono.base;
 
   const width  = cfg?.width  ?? getCurrentDimensions().width;
   const length = cfg?.length ?? getCurrentDimensions().length;
   const height = cfg?.height ?? getCurrentDimensions().height;
   const bays   = cfg?.bays   ?? getBayCount(length);
+
   const bayLengthM = length / bays;
 
   const baseSize = new THREE.Vector3();
@@ -1138,23 +1140,33 @@ function buildStructureFromConfig(cfg) {
   for (let i = 0; i < bays; i++) {
     const clone = baseModule.clone(true);
 
+    // Mise à l’échelle de la travée complète
     const scaleX = (bayLengthM / baseCfg.length) * GLOBAL_SCALE;
     const scaleZ = (width      / baseCfg.width ) * GLOBAL_SCALE;
     const scaleY = (height     / baseCfg.height) * GLOBAL_SCALE;
 
-    // 👉 on scale la travée pour la longueur / hauteur / largeur…
     clone.scale.set(scaleX, scaleY, scaleZ);
 
-    // … mais on évite que l'épaisseur des poteaux/profils gonfle en Z
+    // 👉 Correction UNIQUEMENT pour les poteaux :
+    // on utilise le même regex KEEP_NAME_RX que pour le masquage
     if (scaleZ !== 1) {
-      const invZ = 1 / scaleZ;
       clone.traverse((obj) => {
         if (!obj.isMesh) return;
-        // on neutralise le scaleZ sur la section des meshes
-        obj.scale.z *= invZ;
+
+        const name    = String(obj.name || "");
+        const matName = String(obj.material?.name || "");
+
+        const looksLikePost =
+          KEEP_NAME_RX.test(name) || KEEP_NAME_RX.test(matName);
+
+        if (looksLikePost) {
+          // on amincit le poteau en Z pour annuler l’effet “gonflé”
+          obj.scale.z /= scaleZ;
+        }
       });
     }
 
+    // Position de la travée suivant X
     const minXScaled = baseBBox.min.x * scaleX;
     const offsetX = currentX - minXScaled;
 
@@ -1165,6 +1177,7 @@ function buildStructureFromConfig(cfg) {
     currentX += segLength;
   }
 
+  // Recentrage et pose au sol
   let bbox = new THREE.Box3().setFromObject(structureGroup);
   const center = bbox.getCenter(new THREE.Vector3());
 
