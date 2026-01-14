@@ -1116,14 +1116,15 @@ function animateThree() {
    Correctif largeur : garder
    poteaux/bracons/platines fins
 ---------------------------- */
-// Corrige UNIQUEMENT les poteaux (très hauts et fins) pour que leur section
-// reste constante quand on change la largeur de l’abri.
-// On ne touche plus aux platines ni aux bracons pour qu’ils restent bien collés.
+// Corrige UNIQUEMENT les poteaux pour que leur section reste constante
+// quand on change la largeur. On NE TOUCHE PAS aux bracons ni aux platines.
 function fixWidthSensitiveParts(clone, widthFactor) {
   if (!widthFactor || Math.abs(widthFactor - 1) < 1e-3) return;
 
   const tmpBox  = new THREE.Box3();
   const tmpSize = new THREE.Vector3();
+  const tmpQuat = new THREE.Quaternion();
+  const tmpUp   = new THREE.Vector3();
 
   clone.traverse((obj) => {
     if (!obj.isMesh) return;
@@ -1131,10 +1132,20 @@ function fixWidthSensitiveParts(clone, widthFactor) {
     const name    = String(obj.name || "");
     const matName = String(obj.material?.name || "");
 
-    // Nom qui ressemble à un poteau / montant
+    // Nom qui évoque clairement un poteau / montant
     const nameLooksPost = KEEP_NAME_RX.test(name) || KEEP_NAME_RX.test(matName);
 
-    // Dimensions globales de la pièce
+    // Orientation globale de l’objet
+    obj.getWorldQuaternion(tmpQuat);
+    tmpUp.set(0, 1, 0).applyQuaternion(tmpQuat); // "haut" local de la pièce dans le monde
+
+    // Pièce quasiment verticale ?
+    const isVertical =
+      Math.abs(tmpUp.x) < 0.15 &&
+      Math.abs(tmpUp.z) < 0.15 &&
+      tmpUp.y > 0.85;
+
+    // Dimensions globales
     tmpBox.setFromObject(obj);
     tmpBox.getSize(tmpSize);
 
@@ -1142,17 +1153,19 @@ function fixWidthSensitiveParts(clone, widthFactor) {
     const sy = tmpSize.y;
     const sz = tmpSize.z;
 
-    // 👉 Poteaux : très hauts et assez fins
+    // Très haute et fine (poteau typique)
     const isTallSlender =
-      sy > 1.0 &&        // > 1 m de haut
+      sy > 1.0 &&            // > 1 m de haut
       sy > sx * 2.0 &&
       sy > sz * 2.0;
 
-    // On corrige UNIQUEMENT les poteaux
-    if (nameLooksPost || isTallSlender) {
-      // Annule l’augmentation de largeur en Z pour garder la même section
-      obj.scale.z /= widthFactor;
-    }
+    // 👉 On ne corrige que les vrais poteaux : verticaux + élancés ou nom explicite
+    const looksLikePost = nameLooksPost || (isVertical && isTallSlender);
+
+    if (!looksLikePost) return;
+
+    // Annule l’augmentation de largeur en Z pour garder la même section
+    obj.scale.z /= widthFactor;
   });
 }
 
