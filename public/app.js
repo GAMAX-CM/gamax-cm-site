@@ -1238,7 +1238,7 @@ function rebuildOverlays(bbox) {
   const min = bbox.min;
   const max = bbox.max;
 
-  const lenX = max.x - min.x;
+  const lenX   = max.x - min.x;
   const widthZ = max.z - min.z;
 
   const cx = (min.x + max.x) / 2;
@@ -1247,15 +1247,11 @@ function rebuildOverlays(bbox) {
   let roofThick = ROOF_THICKNESS * GLOBAL_SCALE;
   let cladThick = CLAD_THICKNESS * GLOBAL_SCALE;
 
-  const roofType = document.querySelector('input[name="roofType"]:checked')?.value;
-  const claddingType = document.querySelector('input[name="claddingType"]:checked')?.value;
+  const roofType      = document.querySelector('input[name="roofType"]:checked')?.value;
+  const claddingType  = document.querySelector('input[name="claddingType"]:checked')?.value;
 
-  if (roofType === "sandwich40") {
-    roofThick *= 1.8;
-  }
-  if (claddingType === "sandwich40") {
-    cladThick *= 1.5;
-  }
+  if (roofType === "sandwich40")  roofThick *= 1.8;
+  if (claddingType === "sandwich40") cladThick *= 1.5;
 
   const eps = 0.004 * Math.max(lenX, widthZ);
 
@@ -1263,8 +1259,15 @@ function rebuildOverlays(bbox) {
   const eaveY = min.y + height;
 
   const slopeType = getSelectedType();
-  const angle      = (slopeType === "mono") ? monoRoofAngle  : biRoofAngle;
+  const baseCfg   = MODELS[slopeType]?.base || MODELS.mono.base;
+  const baseWidthRef = (baseCfg.width || 1) * GLOBAL_SCALE;
+
   const pitchRatio = (slopeType === "mono") ? monoPitchRatio : biPitchRatio;
+  const angle      = (slopeType === "mono") ? monoRoofAngle  : biRoofAngle;
+
+  // ✅ deltaY = différence de hauteur égout/faîtage basée sur la largeur de référence GLTF
+  const deltaY_mono = baseWidthRef * pitchRatio;
+  const deltaY_bi   = (baseWidthRef / 2) * pitchRatio;
 
   setStructureUpperVisibility(eaveY, bbox, slopeType);
 
@@ -1298,7 +1301,9 @@ function rebuildOverlays(bbox) {
 
     roof.rotation.x = -angle;
 
-    const lift = (widthZ / 2) * Math.sin(angle);
+    // 🔧 différence de hauteur égout/faîtage fixe (basée sur baseWidthRef)
+    const deltaY = deltaY_mono;
+    const lift   = deltaY / 2; // rotation autour du centre de la tôle
     const centerY = (eaveY + ROOF_GAP) + (roofThick / 2) + lift;
 
     roof.position.set(cx, centerY, cz);
@@ -1311,7 +1316,8 @@ function rebuildOverlays(bbox) {
     const halfW = widthZ / 2;
     const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
 
-    const lift = (halfW / 2) * Math.sin(angle);
+    const deltaY = deltaY_bi;
+    const lift   = deltaY / 2;
     const centerY = (eaveY + ROOF_GAP) + (roofThick / 2) + lift;
 
     const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
@@ -1338,13 +1344,13 @@ function rebuildOverlays(bbox) {
   ============================ */
   if (slopeType === "bi") {
     const halfW = widthZ / 2;
-    const ridgeH = halfW * pitchRatio;
 
     const r = overlayGroup.userData?.roof;
     const roofCenterY = r?.centerY ?? (eaveY + roofThick);
 
+    const deltaY = deltaY_bi;
     const underRidge = (roofCenterY - roofThick / 2) - UNDER_ROOF_CLEARANCE;
-    const underEave  = underRidge - ridgeH;
+    const underEave  = underRidge - deltaY;
 
     const frameFX = new THREE.Group();
     frameFX.name = "frameFX";
@@ -1355,8 +1361,8 @@ function rebuildOverlays(bbox) {
     addSigmaBeam(frameFX, { len: lenX, x: cx, y: underRidge, z: cz, rx: 0, ry: 0, rz: 0, mat: galva });
 
     const t = 0.55;
-    addSigmaBeam(frameFX, { len: lenX, x: cx, y: underRidge - (ridgeH * t), z: cz + (halfW * t), rx: +angle, ry: 0, rz: 0, mat: galva });
-    addSigmaBeam(frameFX, { len: lenX, x: cx, y: underRidge - (ridgeH * t), z: cz - (halfW * t), rx: -angle, ry: 0, rz: 0, mat: galva });
+    addSigmaBeam(frameFX, { len: lenX, x: cx, y: underRidge - (deltaY * t), z: cz + (halfW * t), rx: +angle, ry: 0, rz: 0, mat: galva });
+    addSigmaBeam(frameFX, { len: lenX, x: cx, y: underRidge - (deltaY * t), z: cz - (halfW * t), rx: -angle, ry: 0, rz: 0, mat: galva });
 
     addSigmaBeam(frameFX, { len: lenX, x: cx, y: underEave, z: cz + halfW - 0.03, rx: 0, ry: 0, rz: 0, mat: galva });
     addSigmaBeam(frameFX, { len: lenX, x: cx, y: underEave, z: cz - halfW + 0.03, rx: 0, ry: 0, rz: 0, mat: galva });
@@ -1366,15 +1372,15 @@ function rebuildOverlays(bbox) {
      BARDAGE
   ============================ */
 
-  const ridgeY_mono = eaveY + (widthZ      * pitchRatio);
-  const ridgeY_bi   = eaveY + ((widthZ/2) * pitchRatio);
+  const ridgeY_mono = eaveY + deltaY_mono;
+  const ridgeY_bi   = eaveY + deltaY_bi;
 
   let topA = eaveY;
   let topC = eaveY;
 
   if (slopeType === "mono") {
     topA = ridgeY_mono - UNDER_ROOF_CLEARANCE;
-    topC = eaveY       - UNDER_ROOF_CLEARANCE;
+    topC = eaveY      - UNDER_ROOF_CLEARANCE;
   } else {
     topA = eaveY - UNDER_ROOF_CLEARANCE;
     topC = eaveY - UNDER_ROOF_CLEARANCE;
@@ -1396,7 +1402,7 @@ function rebuildOverlays(bbox) {
   let gableShapeD = null;
 
   if (slopeType === "mono") {
-    const yLow  = (eaveY       - UNDER_ROOF_CLEARANCE) - CLAD_TOP_GAP;
+    const yLow  = (eaveY      - UNDER_ROOF_CLEARANCE) - CLAD_TOP_GAP;
     const yHigh = (ridgeY_mono - UNDER_ROOF_CLEARANCE) - CLAD_TOP_GAP;
 
     const shapeB = createMonoGableShape(widthZ, min.y, yLow, yHigh);
@@ -1466,6 +1472,14 @@ function rebuildOverlays(bbox) {
 
   applyCladdingVisibility();
   overlayGroup.userData.applyCladdingVisibility = applyCladdingVisibility;
+
+  /* ============================
+     HABILLAGES (inchangé)
+  ============================ */
+
+  // ... (reprends ici **la même fin de fonction** que dans ton app.js actuel :
+  // trims, rives, faîtières, sol, contactShadow, caméra, etc.)
+}
 
   /* ============================
      HABILLAGES
