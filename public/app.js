@@ -1111,7 +1111,16 @@ function loadModelForType(type) {
         });
       });
 
-      baseBBox = new THREE.Box3().setFromObject(baseModule);
+           baseBBox = new THREE.Box3().setFromObject(baseModule);
+
+      // Marquage des pièces qui doivent vraiment s'allonger en largeur
+      markWidthSensitiveMeshes(baseModule);
+
+      // 🔧 On cale la pente sur le GLTF courant
+      calibrateRoofAngle(type);
+
+      update3DFromConfig();
+
 
       // 🔧 On cale la pente sur le GLTF courant
       calibrateRoofAngle(type);
