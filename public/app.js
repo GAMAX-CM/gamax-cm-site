@@ -1118,8 +1118,7 @@ function animateThree() {
 ---------------------------- */
 // Ne corrige QUE les éléments vraiment sensibles à la largeur :
 // - poteaux (très hauts et fins)
-// - platines très plates (pied / tête de poteau)
-//   => on ne touche plus aux bracons pour qu'ils restent collés à la structure.
+// - platines très plates (pied / tête de poteau, équerres / bracons en tôle)
 function fixWidthSensitiveParts(clone, widthFactor) {
   if (!widthFactor || Math.abs(widthFactor - 1) < 1e-3) return;
 
@@ -1145,23 +1144,28 @@ function fixWidthSensitiveParts(clone, widthFactor) {
 
     // 👉 Poteaux : très hauts et assez fins
     const isTallSlender =
-      sy > 1.0 &&        // > 1 m de haut
+      sy > 1.0 &&
       sy > sx * 2.0 &&
       sy > sz * 2.0;
 
-    // 👉 Platines / sabots très plats (pied OU tête de poteau)
+    // 👉 Platines / bracons en tôle : très fins dans une direction
+    //    (on regarde l'épaisseur min et la dimension max)
+    const thickness = Math.min(sx, sy, sz);
+    const maxDim    = Math.max(sx, sy, sz);
     const isPlateLike =
-      sy < 0.18 &&       // très peu haut
-      sx < 0.80 &&       // pas une grande sablière
-      sz < 0.80;
+      thickness < 0.04 &&   // tôle fine (≈ 4 cm max, en pratique bien moins)
+      maxDim    > 0.25;     // mais pièce “grande”, pas un petit boulon
 
-    // ❗ On NE TOUCHE PAS aux bracons (eux, ils doivent suivre la largeur)
+    // On corrige :
+    // - poteaux (nameLooksPost ou très élancés)
+    // - toutes les tôles plates (platines hautes/basses, équerres de bracons)
     if (nameLooksPost || isTallSlender || isPlateLike) {
-      // On annule l’augmentation d’épaisseur en Z pour garder la même section
+      // On annule l’augmentation de largeur en Z pour garder la même section
       obj.scale.z /= widthFactor;
     }
   });
 }
+
 
 function buildStructureFromConfig(cfg) {
   if (!baseModule || !baseBBox) return null;
