@@ -1139,10 +1139,21 @@ function buildStructureFromConfig(cfg) {
     const clone = baseModule.clone(true);
 
     const scaleX = (bayLengthM / baseCfg.length) * GLOBAL_SCALE;
-    const scaleZ = (width / baseCfg.width) * GLOBAL_SCALE;
-    const scaleY = (height / baseCfg.height) * GLOBAL_SCALE;
+    const scaleZ = (width      / baseCfg.width ) * GLOBAL_SCALE;
+    const scaleY = (height     / baseCfg.height) * GLOBAL_SCALE;
 
+    // 👉 on scale la travée pour la longueur / hauteur / largeur…
     clone.scale.set(scaleX, scaleY, scaleZ);
+
+    // … mais on évite que l'épaisseur des poteaux/profils gonfle en Z
+    if (scaleZ !== 1) {
+      const invZ = 1 / scaleZ;
+      clone.traverse((obj) => {
+        if (!obj.isMesh) return;
+        // on neutralise le scaleZ sur la section des meshes
+        obj.scale.z *= invZ;
+      });
+    }
 
     const minXScaled = baseBBox.min.x * scaleX;
     const offsetX = currentX - minXScaled;
@@ -1166,6 +1177,7 @@ function buildStructureFromConfig(cfg) {
   bbox = new THREE.Box3().setFromObject(structureGroup);
   return bbox;
 }
+
 
 function materialWithTexture({ color, tex, opacity }) {
   const mat = new THREE.MeshStandardMaterial({
