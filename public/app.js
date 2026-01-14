@@ -1122,13 +1122,13 @@ function buildStructureFromConfig(cfg) {
   structureGroup = new THREE.Group();
   scene.add(structureGroup);
 
-  const type   = cfg?.type   || getSelectedType();
+  const type    = cfg?.type   || getSelectedType();
   const baseCfg = MODELS[type]?.base || MODELS.mono.base;
 
-  const width  = cfg?.width  ?? getCurrentDimensions().width;
-  const length = cfg?.length ?? getCurrentDimensions().length;
-  const height = cfg?.height ?? getCurrentDimensions().height;
-  const bays   = cfg?.bays   ?? getBayCount(length);
+  const width   = cfg?.width  ?? getCurrentDimensions().width;
+  const length  = cfg?.length ?? getCurrentDimensions().length;
+  const height  = cfg?.height ?? getCurrentDimensions().height;
+  const bays    = cfg?.bays   ?? getBayCount(length);
 
   const bayLengthM = length / bays;
 
@@ -1140,27 +1140,42 @@ function buildStructureFromConfig(cfg) {
   for (let i = 0; i < bays; i++) {
     const clone = baseModule.clone(true);
 
-    // Mise à l’échelle de la travée complète
+    // Mise à l’échelle globale de la travée
     const scaleX = (bayLengthM / baseCfg.length) * GLOBAL_SCALE;
     const scaleZ = (width      / baseCfg.width ) * GLOBAL_SCALE;
     const scaleY = (height     / baseCfg.height) * GLOBAL_SCALE;
 
     clone.scale.set(scaleX, scaleY, scaleZ);
 
-    // 👉 Correction UNIQUEMENT pour les poteaux :
-    // on utilise le même regex KEEP_NAME_RX que pour le masquage
+    // ✅ Correction UNIQUEMENT pour les poteaux :
+    //   - soit le nom ressemble à un poteau
+    //   - soit la géométrie est très haute et fine (slender)
     if (scaleZ !== 1) {
+      const tmpBox  = new THREE.Box3();
+      const tmpSize = new THREE.Vector3();
+
       clone.traverse((obj) => {
         if (!obj.isMesh) return;
 
         const name    = String(obj.name || "");
         const matName = String(obj.material?.name || "");
 
-        const looksLikePost =
+        const nameLooksPost =
           KEEP_NAME_RX.test(name) || KEEP_NAME_RX.test(matName);
 
+        // Taille dans l’espace du clone (déjà scalé)
+        tmpBox.setFromObject(obj);
+        tmpBox.getSize(tmpSize);
+
+        const isVeryTall   = tmpSize.y > 1.2; // > ~1,2 m
+        const isSlenderY   =
+          tmpSize.y > tmpSize.x * 2.0 &&
+          tmpSize.y > tmpSize.z * 2.0;
+
+        const looksLikePost = nameLooksPost || (isVeryTall && isSlenderY);
+
         if (looksLikePost) {
-          // on amincit le poteau en Z pour annuler l’effet “gonflé”
+          // On annule l’augmentation de largeur uniquement sur Z
           obj.scale.z /= scaleZ;
         }
       });
@@ -1177,7 +1192,7 @@ function buildStructureFromConfig(cfg) {
     currentX += segLength;
   }
 
-  // Recentrage et pose au sol
+  // Recentrage et mise au sol
   let bbox = new THREE.Box3().setFromObject(structureGroup);
   const center = bbox.getCenter(new THREE.Vector3());
 
@@ -1190,6 +1205,7 @@ function buildStructureFromConfig(cfg) {
   bbox = new THREE.Box3().setFromObject(structureGroup);
   return bbox;
 }
+
 
 
 function materialWithTexture({ color, tex, opacity }) {
