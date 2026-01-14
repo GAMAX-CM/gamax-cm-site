@@ -1163,8 +1163,6 @@ function fixWidthSensitiveParts(clone, widthFactor) {
   });
 }
 
-
-
 function buildStructureFromConfig(cfg) {
   if (!baseModule || !baseBBox) return null;
 
@@ -1198,7 +1196,7 @@ function buildStructureFromConfig(cfg) {
     // scale global
     clone.scale.set(scaleX, scaleY, scaleZ);
 
-    // 🔧 corrige poteaux / bracons / platines pour garder la même section
+    // 🔧 corrige poteaux / platines pour garder la même section
     fixWidthSensitiveParts(clone, widthFactor);
 
     const minXScaled = baseBBox.min.x * scaleX;
@@ -1303,8 +1301,28 @@ function rebuildOverlays(bbox) {
   const eaveY = min.y + height;
 
   const slopeType = getSelectedType();
-  const angle      = (slopeType === "mono") ? monoRoofAngle  : biRoofAngle;
-  const pitchRatio = (slopeType === "mono") ? monoPitchRatio : biPitchRatio;
+
+  // 🔧 Pente EFFECTIVE calculée sur la structure déjà mise à l’échelle
+  let basePitchRatio = (slopeType === "mono") ? monoPitchRatio : biPitchRatio;
+  let effectivePitch = basePitchRatio;
+
+  if (slopeType === "mono") {
+    const ridgeFromBBox = max.y - 0.02;
+    const deltaY = ridgeFromBBox - eaveY;
+    if (deltaY > 0.01 && widthZ > 0.001) {
+      effectivePitch = deltaY / widthZ;
+    }
+  } else {
+    const halfW = widthZ / 2;
+    const ridgeFromBBox = max.y - 0.02;
+    const deltaY = ridgeFromBBox - eaveY;
+    if (deltaY > 0.01 && halfW > 0.001) {
+      effectivePitch = deltaY / halfW;
+    }
+  }
+
+  const angle = Math.atan(effectivePitch);
+  const pitchRatio = effectivePitch;
 
   setStructureUpperVisibility(eaveY, bbox, slopeType);
 
