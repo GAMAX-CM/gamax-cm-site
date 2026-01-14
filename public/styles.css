@@ -550,9 +550,9 @@ input[type="text"]:focus,select:focus{
   padding:16px 18px 18px;
   box-shadow:var(--shadow-soft);
 
-  /* 👇 rend le bloc “collant” au scroll */
+  /* bloc “collant” au scroll */
   position:sticky;
-  top:80px; /* environ = hauteur du header + petit marge */
+  top:80px; /* hauteur header + marge */
   max-height:calc(100vh - 100px);
   overflow:auto;
 }
@@ -601,7 +601,7 @@ input[type="text"]:focus,select:focus{
   padding:16px 18px 18px;
   box-shadow:var(--shadow-soft);
 
-  /* 👇 pareil : reste visible au scroll */
+  /* reste visible au scroll */
   position:sticky;
   top:80px;
   max-height:calc(100vh - 100px);
@@ -698,7 +698,8 @@ input[type="text"]:focus,select:focus{
   .recap-column{order:3;}
 
   .hero-text h1{font-size:2rem;}
-     /* Sur mobile/tablette, on désactive le sticky */
+
+  /* Sur mobile/tablette, on désactive le sticky */
   .viewer-panel,
   .recap-panel{
     position:static;
