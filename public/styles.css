@@ -546,6 +546,15 @@ input[type="text"]:focus,select:focus{
 .viewer-panel{
   background:#fff;
   border:1px solid var(--beige-dark);
+  border-radius:var(--radius-lg);
+  padding:16px 18px 18px;
+  box-shadow:var(--shadow-soft);
+
+  /* 👇 rend le bloc “collant” au scroll */
+  position:sticky;
+  top:80px; /* environ = hauteur du header + petit marge */
+  max-height:calc(100vh - 100px);
+  overflow:auto;
 }
 .viewer-panel h2{
   margin:0 0 4px;
@@ -588,6 +597,15 @@ input[type="text"]:focus,select:focus{
   background:#000;
   color:#fff;
   border:1px solid #000;
+  border-radius:var(--radius-lg);
+  padding:16px 18px 18px;
+  box-shadow:var(--shadow-soft);
+
+  /* 👇 pareil : reste visible au scroll */
+  position:sticky;
+  top:80px;
+  max-height:calc(100vh - 100px);
+  overflow:auto;
 }
 .recap-panel h2{
   margin:0 0 6px;
