@@ -73,7 +73,7 @@ const STRUCTURE_PRICE_TABLE = {
     "6x18": 2480, "6x20": 2980, "6x24": 3180, "6x25": 3640, "6x30": 3880,
   },
   bi: {
-    // (à compléter plus tard)
+    // à compléter si besoin plus tard
   },
 };
 
@@ -320,21 +320,13 @@ function applyOptionAvailabilityByType() {
   } else {
     if (optFaitiereDouble) optFaitiereDouble.disabled = false;
     if (optFaitiereSimple) { optFaitiereSimple.checked = false; optFaitiereSimple.disabled = true; }
-    if (optFaitiereSolin)  { optFaitiereSolin.checked  = false; optFaitiereSolin.disabled  = true; }
+    if (optFaitiereSolin)  { optFaitiereSolin.checked = false; optFaitiereSolin.disabled = true; }
   }
 }
 
 /* ---------------------------
    4) CONFIG & PRIX
 ---------------------------- */
-
-function getBayCount(length) {
-  if (length <= 6) return 1;
-  if (length <= 12) return 2;
-  if (length <= 18) return 3;
-  if (length <= 24) return 4;
-  return 6;
-}
 
 function buildConfigFromUI() {
   const type = getSelectedType();
@@ -604,7 +596,6 @@ window.goToOrderPage = function goToOrderPage() {
 
 const ROOF_TEX_PATH = "assets/texture-bac-acier.jpg";
 const CLAD_TEX_PATH = "assets/texture-bac-acier.jpg";
-const PAVE_TEX_PATH = "assets/texture-pave-gris.jpg";
 
 const MODELS = {
   mono: {
@@ -619,7 +610,7 @@ const MODELS = {
 
 const GLOBAL_SCALE = 1;
 
-// pente par défaut ~10 % (sera recalée sur le GLTF)
+// pente par défaut ~10 % (mise à jour depuis le GLTF)
 const DEFAULT_PITCH_RATIO = 0.10;
 let monoPitchRatio = DEFAULT_PITCH_RATIO;
 let biPitchRatio   = DEFAULT_PITCH_RATIO;
@@ -777,7 +768,7 @@ function createContactShadowTexture(size = 256) {
   g.addColorStop(1, "rgba(0,0,0,0)");
 
   ctx.fillStyle = g;
-  ctx.fillRect(0, 0, size, 0 + size);
+  ctx.fillRect(0, 0, size, size);
 
   const tex = new THREE.CanvasTexture(c);
   tex.needsUpdate = true;
@@ -838,11 +829,10 @@ function buildStudio() {
 }
 
 /* =========================================================
-   PROFILÉ SIGMA 170 — GALVA
+   PROFILÉ SIGMA 170 — GALVA (pour les pannes bipente)
 ========================================================= */
 
 const MM = 0.001;
-
 const SIGMA170 = {
   W: 170 * MM,
   TOP: 34 * MM,
@@ -926,31 +916,6 @@ function addSigmaBeam(group, { len, x, y, z, rx = 0, ry = 0, rz = 0, mat = null 
   group.add(beam);
   return beam;
 }
-// Marque dans userData quels meshes doivent vraiment s'allonger en largeur (axe Z)
-// => typiquement les traverses / pannes longues, mais pas les poteaux, bracons, platines, etc.
-function markWidthSensitiveMeshes(root) {
-  const tmpBox = new THREE.Box3();
-  const tmpSize = new THREE.Vector3();
-
-  root.traverse((obj) => {
-    if (!obj.isMesh) return;
-
-    // bbox en coordonnées monde du mesh dans le GLTF d'origine
-    tmpBox.setFromObject(obj);
-    tmpBox.getSize(tmpSize);
-
-    const sizeX = tmpSize.x;
-    const sizeY = tmpSize.y;
-    const sizeZ = tmpSize.z;
-
-    const maxXY = Math.max(sizeX, sizeY);
-
-    // Si Z est nettement plus grand que X et Y => c'est une pièce "longue" dans la largeur
-    const isWidthBeam = sizeZ > maxXY * 1.5;
-
-    obj.userData.widthSensitive = isWidthBeam;
-  });
-}
 
 /* ---------------------------
    Couleurs RAL -> 3D
@@ -973,6 +938,14 @@ function getCurrentDimensions() {
   const length = cfg.length || 5;
   const height = cfg.height || 2.15;
   return { width, length, height };
+}
+
+function getBayCount(length) {
+  if (length <= 6) return 1;
+  if (length <= 12) return 2;
+  if (length <= 18) return 3;
+  if (length <= 24) return 4;
+  return 6;
 }
 
 /* ---------------------------
@@ -1111,18 +1084,9 @@ function loadModelForType(type) {
         });
       });
 
-           baseBBox = new THREE.Box3().setFromObject(baseModule);
+      baseBBox = new THREE.Box3().setFromObject(baseModule);
 
-      // Marquage des pièces qui doivent vraiment s'allonger en largeur
-      markWidthSensitiveMeshes(baseModule);
-
-      // 🔧 On cale la pente sur le GLTF courant
-      calibrateRoofAngle(type);
-
-      update3DFromConfig();
-
-
-      // 🔧 On cale la pente sur le GLTF courant
+      // On cale la pente sur le GLTF courant
       calibrateRoofAngle(type);
 
       update3DFromConfig();
@@ -1148,88 +1112,92 @@ function animateThree() {
   renderer?.render?.(scene, camera);
 }
 
+/* ---------------------------
+   Correctif largeur : garder
+   poteaux/bracons/platines fins
+---------------------------- */
+
+function fixWidthSensitiveParts(clone, widthFactor) {
+  if (!widthFactor || Math.abs(widthFactor - 1) < 1e-3) return;
+
+  const tmpBox = new THREE.Box3();
+  const tmpSize = new THREE.Vector3();
+
+  clone.traverse((obj) => {
+    if (!obj.isMesh) return;
+
+    const name    = String(obj.name || "");
+    const matName = String(obj.material?.name || "");
+
+    // Poteaux / montants repérés par le nom
+    const nameLooksPost = KEEP_NAME_RX.test(name) || KEEP_NAME_RX.test(matName);
+
+    tmpBox.setFromObject(obj);
+    tmpBox.getSize(tmpSize);
+
+    const sx = tmpSize.x;
+    const sy = tmpSize.y;
+    const sz = tmpSize.z;
+
+    // Pièces très hautes et fines = poteaux
+    const isTallSlender =
+      sy > 0.8 &&           // hauteur > 0.8 m
+      sy > sx * 2 &&
+      sy > sz * 2;
+
+    // Bracons : plus courts que poteaux mais encore assez hauts
+    const isBraceLike =
+      sy > 0.3 && sy < 1.2 &&  // entre 0.3 et 1.2 m
+      sz < 0.35 && sx < 0.35;
+
+    // Platines de pied ou de tête : très plates
+    const isPlateLike =
+      sy < 0.12 &&            // très peu haut
+      sx < 0.60 && sz < 0.60; // pas des grandes sablières/pannes
+
+    if (nameLooksPost || isTallSlender || isBraceLike || isPlateLike) {
+      // On annule l'augmentation d'épaisseur en Z
+      obj.scale.z /= widthFactor;
+    }
+  });
+}
+
 function buildStructureFromConfig(cfg) {
   if (!baseModule || !baseBBox) return null;
 
-  // On recrée le groupe structure
   if (structureGroup) scene.remove(structureGroup);
   structureGroup = new THREE.Group();
   scene.add(structureGroup);
 
-  const type    = cfg?.type   || getSelectedType();
+  const type   = cfg?.type   || getSelectedType();
   const baseCfg = MODELS[type]?.base || MODELS.mono.base;
 
-  const width   = cfg?.width  ?? getCurrentDimensions().width;
-  const length  = cfg?.length ?? getCurrentDimensions().length;
-  const height  = cfg?.height ?? getCurrentDimensions().height;
-  const bays    = cfg?.bays   ?? getBayCount(length);
-
+  const width  = cfg?.width  ?? getCurrentDimensions().width;
+  const length = cfg?.length ?? getCurrentDimensions().length;
+  const height = cfg?.height ?? getCurrentDimensions().height;
+  const bays   = cfg?.bays   ?? getBayCount(length);
   const bayLengthM = length / bays;
 
   const baseSize = new THREE.Vector3();
   baseBBox.getSize(baseSize);
+
+  const widthFactor = width / baseCfg.width;
 
   let currentX = 0;
 
   for (let i = 0; i < bays; i++) {
     const clone = baseModule.clone(true);
 
-    // Mise à l’échelle globale de la travée
     const scaleX = (bayLengthM / baseCfg.length) * GLOBAL_SCALE;
-    const widthFactor = width / baseCfg.width;      // facteur d'agrandissement de la largeur réelle
     const scaleZ = widthFactor * GLOBAL_SCALE;
     const scaleY = (height / baseCfg.height) * GLOBAL_SCALE;
 
-    // Scale global du portique
+    // scale global
     clone.scale.set(scaleX, scaleY, scaleZ);
 
-    // 👉 Corrige localement les meshes qui NE doivent PAS grossir en Z
-    if (widthFactor !== 0 && widthFactor !== 1) {
-      clone.traverse((obj) => {
-        if (!obj.isMesh) return;
-        if (!obj.userData || obj.userData.widthSensitive) return;
+    // 🔧 corrige poteaux / bracons / platines pour garder la même section
+    fixWidthSensitiveParts(clone, widthFactor);
 
-        // On annule le scale en Z pour ces pièces (poteaux, bracons, platines…)
-        obj.scale.z /= widthFactor;
-      });
-    }
-
-
-    // ✅ Correction UNIQUEMENT pour les poteaux :
-    //   - soit le nom ressemble à un poteau
-    //   - soit la géométrie est très haute et fine (slender)
-    if (scaleZ !== 1) {
-      const tmpBox  = new THREE.Box3();
-      const tmpSize = new THREE.Vector3();
-
-      clone.traverse((obj) => {
-        if (!obj.isMesh) return;
-
-        const name    = String(obj.name || "");
-        const matName = String(obj.material?.name || "");
-
-        const nameLooksPost =
-          KEEP_NAME_RX.test(name) || KEEP_NAME_RX.test(matName);
-
-        // Taille dans l’espace du clone (déjà scalé)
-        tmpBox.setFromObject(obj);
-        tmpBox.getSize(tmpSize);
-
-        const isVeryTall   = tmpSize.y > 1.2; // > ~1,2 m
-        const isSlenderY   =
-          tmpSize.y > tmpSize.x * 2.0 &&
-          tmpSize.y > tmpSize.z * 2.0;
-
-        const looksLikePost = nameLooksPost || (isVeryTall && isSlenderY);
-
-        if (looksLikePost) {
-          // On annule l’augmentation de largeur uniquement sur Z
-          obj.scale.z /= scaleZ;
-        }
-      });
-    }
-
-    // Position de la travée suivant X
     const minXScaled = baseBBox.min.x * scaleX;
     const offsetX = currentX - minXScaled;
 
@@ -1240,7 +1208,6 @@ function buildStructureFromConfig(cfg) {
     currentX += segLength;
   }
 
-  // Recentrage et mise au sol
   let bbox = new THREE.Box3().setFromObject(structureGroup);
   const center = bbox.getCenter(new THREE.Vector3());
 
@@ -1253,8 +1220,6 @@ function buildStructureFromConfig(cfg) {
   bbox = new THREE.Box3().setFromObject(structureGroup);
   return bbox;
 }
-
-
 
 function materialWithTexture({ color, tex, opacity }) {
   const mat = new THREE.MeshStandardMaterial({
@@ -1335,28 +1300,8 @@ function rebuildOverlays(bbox) {
   const eaveY = min.y + height;
 
   const slopeType = getSelectedType();
-
-  // 🔧 Pente dynamique lue sur la structure réellement mise à l’échelle
-  // On mesure l’écart entre la sablière (eaveY) et le faîtage (max.y)
-  // puis on en déduit la pente effective.
-  let effectivePitch = (slopeType === "mono") ? monoPitchRatio : biPitchRatio;
-
-  if (slopeType === "mono") {
-    const ridgeFromBBox = max.y - 0.02;
-    const deltaY = ridgeFromBBox - eaveY;
-    if (deltaY > 0.01 && widthZ > 0.001) {
-      effectivePitch = deltaY / widthZ;
-    }
-  } else {
-    const halfW = widthZ / 2;
-    const ridgeFromBBox = max.y - 0.02;
-    const deltaY = ridgeFromBBox - eaveY;
-    if (deltaY > 0.01 && halfW > 0.001) {
-      effectivePitch = deltaY / halfW;
-    }
-  }
-
-  const angle = Math.atan(effectivePitch);
+  const angle      = (slopeType === "mono") ? monoRoofAngle  : biRoofAngle;
+  const pitchRatio = (slopeType === "mono") ? monoPitchRatio : biPitchRatio;
 
   setStructureUpperVisibility(eaveY, bbox, slopeType);
 
@@ -1430,7 +1375,7 @@ function rebuildOverlays(bbox) {
   ============================ */
   if (slopeType === "bi") {
     const halfW = widthZ / 2;
-    const ridgeH = halfW * effectivePitch;
+    const ridgeH = halfW * pitchRatio;
 
     const r = overlayGroup.userData?.roof;
     const roofCenterY = r?.centerY ?? (eaveY + roofThick);
@@ -1458,8 +1403,8 @@ function rebuildOverlays(bbox) {
      BARDAGE
   ============================ */
 
-  const ridgeY_mono = eaveY + (widthZ      * effectivePitch);
-  const ridgeY_bi   = eaveY + ((widthZ/2) * effectivePitch);
+  const ridgeY_mono = eaveY + (widthZ      * pitchRatio);
+  const ridgeY_bi   = eaveY + ((widthZ/2) * pitchRatio);
 
   let topA = eaveY;
   let topC = eaveY;
@@ -1795,10 +1740,10 @@ function update3DFromConfig(configOverride) {
 
 function setup3DFullscreenUI() {
   const wrapper = $("viewer3d-wrapper");
-  const canvas = $("viewer3d");
-  const btnFS = $("btnFullscreen3D");
-  const btnClose = $("btnClose3D");
-  const btnZoomIn = $("btnZoomIn3D");
+  const canvas  = $("viewer3d");
+  const btnFS   = $("btnFullscreen3D");
+  const btnClose   = $("btnClose3D");
+  const btnZoomIn  = $("btnZoomIn3D");
   const btnZoomOut = $("btnZoomOut3D");
   const toolbar = wrapper?.querySelector?.(".viewer-toolbar");
 
@@ -1834,12 +1779,10 @@ function setup3DFullscreenUI() {
   });
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      if (wrapper.classList.contains("is-fullscreen")) {
-        wrapper.classList.remove("is-fullscreen");
-        if (toolbar) toolbar.style.display = "";
-        setTimeout(resize3D, 80);
-      }
+    if (e.key === "Escape" && wrapper.classList.contains("is-fullscreen")) {
+      wrapper.classList.remove("is-fullscreen");
+      if (toolbar) toolbar.style.display = "";
+      setTimeout(resize3D, 80);
     }
   });
 
@@ -1872,7 +1815,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   await updateCityOptions();
 
   applyOptionAvailabilityByType();
+  setupSideOption("optGrandeRive", "optGrandeRiveB", "optGrandeRiveD");
+  setupSideOption("optRiveSolin",  "optRiveSolinB",  "optRiveSolinD");
+  enforceMutualExclusivePerSide();
 
+  // Type d’abri
   document.querySelectorAll('input[name="slopeType"]').forEach((el) => {
     el.addEventListener("change", () => {
       populateDimensions();
@@ -1882,10 +1829,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
+  // Dimensions
   ["width", "length", "height"].forEach((id) => {
     $(id)?.addEventListener("change", calculatePriceAndRecap);
   });
 
+  // Livraison
   document.querySelectorAll('input[name="deliveryMode"]').forEach((el) => {
     el.addEventListener("change", async () => {
       updateDeliveryUI();
@@ -1900,10 +1849,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   $("city")?.addEventListener("change", calculatePriceAndRecap);
 
+  // Toiture
   document.querySelectorAll('input[name="roofType"]').forEach((el) =>
     el.addEventListener("change", calculatePriceAndRecap)
   );
-
   document.querySelectorAll('input[name="roofColor"]').forEach((el) =>
     el.addEventListener("change", () => {
       calculatePriceAndRecap();
@@ -1911,53 +1860,51 @@ document.addEventListener("DOMContentLoaded", async () => {
     })
   );
 
+  // Bardage
   document.querySelectorAll('input[name="claddingType"]').forEach((el) =>
     el.addEventListener("change", calculatePriceAndRecap)
   );
-
   document.querySelectorAll('input[name="claddingColor"]').forEach((el) =>
     el.addEventListener("change", () => {
       calculatePriceAndRecap();
       updateOverlayStylesOnly();
     })
   );
-
   document.querySelectorAll('input[name="claddingSide"]').forEach((el) =>
     el.addEventListener("change", () => {
       calculatePriceAndRecap();
-      updateOverlayStylesOnly();
+      overlayGroup?.userData?.applyCladdingVisibility?.();
     })
   );
 
-  document.querySelectorAll('input[name="trimColor"]').forEach((el) =>
-    el.addEventListener("change", () => {
-      calculatePriceAndRecap();
-      update3DFromConfig();
-    })
-  );
-
-  setupSideOption("optGrandeRive", "optGrandeRiveB", "optGrandeRiveD");
-  setupSideOption("optRiveSolin",  "optRiveSolinB",  "optRiveSolinD");
-  enforceMutualExclusivePerSide();
-
+  // Options habillages & pose
   [
-    "optInstall",
-    "optAngles",
     "optRejetEau",
+    "optAngles",
     "optFaitiereDouble",
     "optFaitiereSimple",
     "optFaitiereSolin",
+    "optInstall",
     "optGrandeRive",
     "optRiveSolin",
-  ].forEach((id) =>
+    "optGrandeRiveB",
+    "optGrandeRiveD",
+    "optRiveSolinB",
+    "optRiveSolinD",
+  ].forEach((id) => {
     $(id)?.addEventListener("change", () => {
+      applyOptionAvailabilityByType();
+      enforceMutualExclusivePerSide();
       calculatePriceAndRecap();
       update3DFromConfig();
-    })
-  );
+    });
+  });
 
-  $("btnCalculate")?.addEventListener("click", calculatePriceAndRecap);
+  // Bouton calcul
+  $("btnCalculate")?.addEventListener("click", () => {
+    calculatePriceAndRecap();
+  });
 
+  // Premier calcul
   calculatePriceAndRecap();
 });
-
