@@ -950,7 +950,6 @@ function getBayCount(length) {
   if (length <= 24) return 4;
   return 6;
 }
-
 /* ---------------------------
    Init Three.js
 ---------------------------- */
@@ -988,6 +987,7 @@ function initThree() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   }
 
+  // Lumières
   scene.add(new THREE.AmbientLight(0xffffff, 0.52));
 
   const key = new THREE.DirectionalLight(0xffffff, 1.10);
@@ -1001,23 +1001,14 @@ function initThree() {
   key.shadow.camera.far = 120;
   scene.add(key);
 
-  const fill = new THREE.DirectionalLight(0xffffff, 0.42);
-  fill.position.set(-18, 14, 6);
-  scene.add(fill);
-
-  const topSoft = new THREE.DirectionalLight(0xffffff, 0.35);
-  topSoft.position.set(0, 30, 0);
-  scene.add(topSoft);
-
-  const rim = new THREE.DirectionalLight(0xfff3dd, 0.25);
-  rim.position.set(0, 12, -18);
-  scene.add(rim);
-
-  const hemi = new THREE.HemisphereLight(0xffffff, 0xe9dcc2, 0.50);
-  scene.add(hemi);
+  scene.add(new THREE.DirectionalLight(0xffffff, 0.42).position.set(-18, 14, 6));
+  scene.add(new THREE.DirectionalLight(0xffffff, 0.35).position.set(0, 30, 0));
+  scene.add(new THREE.DirectionalLight(0xfff3dd, 0.25).position.set(0, 12, -18));
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xe9dcc2, 0.50));
 
   buildStudio();
 
+  // Ombre au sol
   const contactTex = createContactShadowTexture(512);
   contactShadow = new THREE.Mesh(
     new THREE.PlaneGeometry(5, 5),
@@ -1031,6 +1022,7 @@ function initThree() {
   contactShadow.rotation.x = -Math.PI / 2;
   scene.add(contactShadow);
 
+  // Orbit controls
   controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
@@ -1041,6 +1033,7 @@ function initThree() {
   controls.minDistance = 5;
   controls.maxDistance = 35;
 
+  // Textures
   const tl = new THREE.TextureLoader();
 
   tl.load(ROOF_TEX_PATH, (tex) => {
@@ -1072,13 +1065,11 @@ function loadModelForType(type) {
     (gltf) => {
       baseModule = gltf.scene;
 
+      // Setup matière structure
       baseModule.traverse((obj) => {
         if (!obj.isMesh) return;
         obj.castShadow = SHADOW_ENABLED;
         obj.receiveShadow = SHADOW_ENABLED;
-
-        if (obj.geometry?.computeVertexNormals) obj.geometry.computeVertexNormals();
-
         obj.material = new THREE.MeshStandardMaterial({
           color: 0xc5ccd5,
           metalness: 0.55,
@@ -1089,7 +1080,7 @@ function loadModelForType(type) {
 
       baseBBox = new THREE.Box3().setFromObject(baseModule);
 
-      // 🔧 On cale la pente sur le GLTF courant
+      // Calibrage pente GLTF
       calibrateRoofAngle(type);
 
       update3DFromConfig();
@@ -1122,13 +1113,14 @@ function buildStructureFromConfig(cfg) {
   structureGroup = new THREE.Group();
   scene.add(structureGroup);
 
-  const type = cfg?.type || getSelectedType();
+  const type   = cfg?.type   || getSelectedType();
   const baseCfg = MODELS[type]?.base || MODELS.mono.base;
 
   const width  = cfg?.width  ?? getCurrentDimensions().width;
   const length = cfg?.length ?? getCurrentDimensions().length;
   const height = cfg?.height ?? getCurrentDimensions().height;
   const bays   = cfg?.bays   ?? getBayCount(length);
+
   const bayLengthM = length / bays;
 
   const baseSize = new THREE.Vector3();
@@ -1140,10 +1132,10 @@ function buildStructureFromConfig(cfg) {
     const clone = baseModule.clone(true);
 
     const scaleX = (bayLengthM / baseCfg.length) * GLOBAL_SCALE;
-    const scaleZ = (width / baseCfg.width) * GLOBAL_SCALE;
-    const scaleY = (height / baseCfg.height) * GLOBAL_SCALE;
+    const scaleY = (height     / baseCfg.height) * GLOBAL_SCALE;
 
-    clone.scale.set(scaleX, scaleY, scaleZ);
+    // ❗ PAS DE SCALE EN Z — sinon poteaux gonflent
+    clone.scale.set(scaleX, scaleY, GLOBAL_SCALE);
 
     const minXScaled = baseBBox.min.x * scaleX;
     const offsetX = currentX - minXScaled;
@@ -1155,127 +1147,24 @@ function buildStructureFromConfig(cfg) {
     currentX += segLength;
   }
 
+  // ➜ Recentrage structure
   let bbox = new THREE.Box3().setFromObject(structureGroup);
   const center = bbox.getCenter(new THREE.Vector3());
-
   structureGroup.position.x -= center.x;
-  structureGroup.position.z -= center.z;
+
+  // ➜ Élargissement correct en Z (sans scale)
+  structureGroup.scale.z = (width / baseCfg.width);
+
+  bbox = new THREE.Box3().setFromObject(structureGroup);
+  structureGroup.position.z -= bbox.getCenter(new THREE.Vector3()).z;
 
   bbox = new THREE.Box3().setFromObject(structureGroup);
   structureGroup.position.y -= bbox.min.y;
 
-  bbox = new THREE.Box3().setFromObject(structureGroup);
-  return bbox;
+  return new THREE.Box3().setFromObject(structureGroup);
 }
 
-function materialWithTexture({ color, tex, opacity }) {
-  const mat = new THREE.MeshStandardMaterial({
-    color,
-    transparent: true,
-    opacity,
-    side: THREE.DoubleSide,
-    metalness: 0.08,
-    roughness: 0.78,
-    depthWrite: false,
-    polygonOffset: true,
-    polygonOffsetFactor: -1,
-    polygonOffsetUnits: -1,
-  });
 
-  if (tex) {
-    mat.map = tex;
-    mat.map.needsUpdate = true;
-  }
-  return mat;
-}
-
-function createMonoGableShape(widthZ, y0, yLow, yHigh) {
-  const halfW = widthZ / 2;
-  const s = new THREE.Shape();
-  s.moveTo(-halfW, y0);
-  s.lineTo( halfW, y0);
-  s.lineTo( halfW, yHigh);
-  s.lineTo(-halfW, yLow);
-  s.lineTo(-halfW, y0);
-  return s;
-}
-
-function createBiGableShape(widthZ, y0, yEave, yRidge) {
-  const halfW = widthZ / 2;
-  const s = new THREE.Shape();
-  s.moveTo(-halfW, y0);
-  s.lineTo( halfW, y0);
-  s.lineTo( halfW, yEave);
-  s.lineTo( 0,     yRidge);
-  s.lineTo(-halfW, yEave);
-  s.lineTo(-halfW, y0);
-  return s;
-}
-
-function rebuildOverlays(bbox) {
-  if (!bbox) return;
-
-  if (overlayGroup) scene.remove(overlayGroup);
-  overlayGroup = new THREE.Group();
-  scene.add(overlayGroup);
-
-  const min = bbox.min;
-  const max = bbox.max;
-
-  const lenX = max.x - min.x;
-  const widthZ = max.z - min.z;
-
-  const cx = (min.x + max.x) / 2;
-  const cz = (min.z + max.z) / 2;
-
-  let roofThick = ROOF_THICKNESS * GLOBAL_SCALE;
-  let cladThick = CLAD_THICKNESS * GLOBAL_SCALE;
-
-  const roofType = document.querySelector('input[name="roofType"]:checked')?.value;
-  const claddingType = document.querySelector('input[name="claddingType"]:checked')?.value;
-
-  if (roofType === "sandwich40") {
-    roofThick *= 1.8;
-  }
-  if (claddingType === "sandwich40") {
-    cladThick *= 1.5;
-  }
-
-  const eps = 0.004 * Math.max(lenX, widthZ);
-
-  const { height } = getCurrentDimensions();
-  const eaveY = min.y + height;
-
-  const slopeType = getSelectedType();
-  const angle = Math.atan(pitchRatio);
-  const pitchRatio = (slopeType === "mono") ? monoPitchRatio : biPitchRatio;
-   // recalcul de l'angle en fonction de la largeur sélectionnée
-monoRoofAngle = Math.atan(widthZ * pitchRatio / widthZ);
-
-  // Constant pitch (user choice B)
-  // pitchRatio stays from GLTF calibration; does not scale with width
-
-
-  setStructureUpperVisibility(eaveY, bbox, slopeType);
-
-  const roofMat = materialWithTexture({
-    color: getRoofColor3D(),
-    tex: roofTex,
-    opacity: ROOF_OPACITY,
-  });
-
-  const cladMat = materialWithTexture({
-    color: getCladdingColor3D(),
-    tex: cladTex,
-    opacity: CLAD_OPACITY,
-  });
-
-  const trimMat = new THREE.MeshStandardMaterial({
-    color: getTrimColor3D(),
-    metalness: 0.10,
-    roughness: 0.55,
-    side: THREE.DoubleSide,
-  });
 
 /* ============================
    TOITURE
