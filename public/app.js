@@ -1176,10 +1176,24 @@ function buildStructureFromConfig(cfg) {
 
     // Mise à l’échelle globale de la travée
     const scaleX = (bayLengthM / baseCfg.length) * GLOBAL_SCALE;
-    const scaleZ = (width      / baseCfg.width ) * GLOBAL_SCALE;
-    const scaleY = (height     / baseCfg.height) * GLOBAL_SCALE;
+    const widthFactor = width / baseCfg.width;      // facteur d'agrandissement de la largeur réelle
+    const scaleZ = widthFactor * GLOBAL_SCALE;
+    const scaleY = (height / baseCfg.height) * GLOBAL_SCALE;
 
+    // Scale global du portique
     clone.scale.set(scaleX, scaleY, scaleZ);
+
+    // 👉 Corrige localement les meshes qui NE doivent PAS grossir en Z
+    if (widthFactor !== 0 && widthFactor !== 1) {
+      clone.traverse((obj) => {
+        if (!obj.isMesh) return;
+        if (!obj.userData || obj.userData.widthSensitive) return;
+
+        // On annule le scale en Z pour ces pièces (poteaux, bracons, platines…)
+        obj.scale.z /= widthFactor;
+      });
+    }
+
 
     // ✅ Correction UNIQUEMENT pour les poteaux :
     //   - soit le nom ressemble à un poteau
