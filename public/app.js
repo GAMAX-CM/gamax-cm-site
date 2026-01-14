@@ -1247,8 +1247,11 @@ function rebuildOverlays(bbox) {
   const eaveY = min.y + height;
 
   const slopeType = getSelectedType();
-  const angle      = (slopeType === "mono") ? monoRoofAngle  : biRoofAngle;
+  const angle = Math.atan(pitchRatio);
   const pitchRatio = (slopeType === "mono") ? monoPitchRatio : biPitchRatio;
+   // recalcul de l'angle en fonction de la largeur sélectionnée
+monoRoofAngle = Math.atan(widthZ * pitchRatio / widthZ);
+
   // Constant pitch (user choice B)
   // pitchRatio stays from GLTF calibration; does not scale with width
 
