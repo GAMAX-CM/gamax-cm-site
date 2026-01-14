@@ -698,6 +698,13 @@ input[type="text"]:focus,select:focus{
   .recap-column{order:3;}
 
   .hero-text h1{font-size:2rem;}
+     /* Sur mobile/tablette, on désactive le sticky */
+  .viewer-panel,
+  .recap-panel{
+    position:static;
+    max-height:none;
+    overflow:visible;
+  }
 }
 
 @media (max-width:768px){
