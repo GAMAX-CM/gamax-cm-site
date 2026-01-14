@@ -1116,11 +1116,14 @@ function animateThree() {
    Correctif largeur : garder
    poteaux/bracons/platines fins
 ---------------------------- */
-
+// Ne corrige QUE les éléments vraiment sensibles à la largeur :
+// - poteaux (très hauts et fins)
+// - platines très plates (pied / tête de poteau)
+//   => on ne touche plus aux bracons pour qu'ils restent collés à la structure.
 function fixWidthSensitiveParts(clone, widthFactor) {
   if (!widthFactor || Math.abs(widthFactor - 1) < 1e-3) return;
 
-  const tmpBox = new THREE.Box3();
+  const tmpBox  = new THREE.Box3();
   const tmpSize = new THREE.Vector3();
 
   clone.traverse((obj) => {
@@ -1129,9 +1132,10 @@ function fixWidthSensitiveParts(clone, widthFactor) {
     const name    = String(obj.name || "");
     const matName = String(obj.material?.name || "");
 
-    // Poteaux / montants repérés par le nom
+    // Nom qui ressemble à un poteau / montant
     const nameLooksPost = KEEP_NAME_RX.test(name) || KEEP_NAME_RX.test(matName);
 
+    // Dimensions globales de la pièce
     tmpBox.setFromObject(obj);
     tmpBox.getSize(tmpSize);
 
@@ -1139,28 +1143,27 @@ function fixWidthSensitiveParts(clone, widthFactor) {
     const sy = tmpSize.y;
     const sz = tmpSize.z;
 
-    // Pièces très hautes et fines = poteaux
+    // 👉 Poteaux : très hauts et assez fins
     const isTallSlender =
-      sy > 0.8 &&           // hauteur > 0.8 m
-      sy > sx * 2 &&
-      sy > sz * 2;
+      sy > 1.0 &&        // > 1 m de haut
+      sy > sx * 2.0 &&
+      sy > sz * 2.0;
 
-    // Bracons : plus courts que poteaux mais encore assez hauts
-    const isBraceLike =
-      sy > 0.3 && sy < 1.2 &&  // entre 0.3 et 1.2 m
-      sz < 0.35 && sx < 0.35;
-
-    // Platines de pied ou de tête : très plates
+    // 👉 Platines / sabots très plats (pied OU tête de poteau)
     const isPlateLike =
-      sy < 0.12 &&            // très peu haut
-      sx < 0.60 && sz < 0.60; // pas des grandes sablières/pannes
+      sy < 0.18 &&       // très peu haut
+      sx < 0.80 &&       // pas une grande sablière
+      sz < 0.80;
 
-    if (nameLooksPost || isTallSlender || isBraceLike || isPlateLike) {
-      // On annule l'augmentation d'épaisseur en Z
+    // ❗ On NE TOUCHE PAS aux bracons (eux, ils doivent suivre la largeur)
+    if (nameLooksPost || isTallSlender || isPlateLike) {
+      // On annule l’augmentation d’épaisseur en Z pour garder la même section
       obj.scale.z /= widthFactor;
     }
   });
 }
+
+
 
 function buildStructureFromConfig(cfg) {
   if (!baseModule || !baseBBox) return null;
