@@ -1274,51 +1274,60 @@ function rebuildOverlays(bbox) {
     side: THREE.DoubleSide,
   });
 
-  /* ============================
-     TOITURE
-  ============================ */
+/* ============================
+   TOITURE
+============================ */
 
-  if (slopeType === "mono") {
-    const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ);
-    const roof = new THREE.Mesh(roofGeo, roofMat);
-    roof.userData.kind = "roof";
+if (slopeType === "mono") {
+  const roofGeo = new THREE.BoxGeometry(lenX, roofThick, widthZ);
+  const roof = new THREE.Mesh(roofGeo, roofMat);
+  roof.userData.kind = "roof";
 
-    roof.rotation.x = -angle;
+  // Rotation de la pente
+  roof.rotation.x = -angle;
 
-    const lift = (widthZ / 2) * Math.sin(angle);
-    const centerY = (eaveY + ROOF_GAP) + (roofThick / 2) + lift;
+  // Calcul du lift vertical (centre de box)
+  const lift = (widthZ / 2) * Math.sin(angle);
+  const centerY = (eaveY + ROOF_GAP) + (roofThick / 2) + lift;
 
-    roof.position.set(cx, centerY, cz);
-    roof.castShadow = SHADOW_ENABLED;
-    roof.receiveShadow = SHADOW_ENABLED;
-    overlayGroup.add(roof);
+  // ✔ Repositionnement Z pour coller la couverture sur le faîtage côté max.z
+  const roofCenterZ = max.z - (widthZ / 2);
 
-    overlayGroup.userData.roof = { type: "mono", roof, centerY, eaveY };
-  } else {
-    const halfW = widthZ / 2;
-    const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
+  roof.position.set(cx, centerY, roofCenterZ);
+  roof.castShadow = SHADOW_ENABLED;
+  roof.receiveShadow = SHADOW_ENABLED;
+  overlayGroup.add(roof);
 
-    const lift = (halfW / 2) * Math.sin(angle);
-    const centerY = (eaveY + ROOF_GAP) + (roofThick / 2) + lift;
+  overlayGroup.userData.roof = { type: "mono", roof, centerY, eaveY };
 
-    const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
-    roofPlusZ.userData.kind = "roof";
-    roofPlusZ.rotation.x = +angle;
-    roofPlusZ.position.set(cx, centerY, cz + halfW / 2);
-    roofPlusZ.castShadow = SHADOW_ENABLED;
-    roofPlusZ.receiveShadow = SHADOW_ENABLED;
-    overlayGroup.add(roofPlusZ);
+} else {
+  // BIPENTE
+  const halfW = widthZ / 2;
+  const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
 
-    const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
-    roofMinusZ.userData.kind = "roof";
-    roofMinusZ.rotation.x = -angle;
-    roofMinusZ.position.set(cx, centerY, cz - halfW / 2);
-    roofMinusZ.castShadow = SHADOW_ENABLED;
-    roofMinusZ.receiveShadow = SHADOW_ENABLED;
-    overlayGroup.add(roofMinusZ);
+  const lift = (halfW / 2) * Math.sin(angle);
+  const centerY = (eaveY + ROOF_GAP) + (roofThick / 2) + lift;
 
-    overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ, centerY, eaveY };
-  }
+  // Vers +Z (faîtage droit)
+  const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
+  roofPlusZ.userData.kind = "roof";
+  roofPlusZ.rotation.x = +angle;
+  roofPlusZ.position.set(cx, centerY, max.z - (halfW / 2));
+  roofPlusZ.castShadow = SHADOW_ENABLED;
+  roofPlusZ.receiveShadow = SHADOW_ENABLED;
+  overlayGroup.add(roofPlusZ);
+
+  // Vers -Z (faîtage gauche)
+  const roofMinusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
+  roofMinusZ.userData.kind = "roof";
+  roofMinusZ.rotation.x = -angle;
+  roofMinusZ.position.set(cx, centerY, min.z + (halfW / 2));
+  roofMinusZ.castShadow = SHADOW_ENABLED;
+  roofMinusZ.receiveShadow = SHADOW_ENABLED;
+  overlayGroup.add(roofMinusZ);
+
+  overlayGroup.userData.roof = { type: "bi", roofPlusZ, roofMinusZ, centerY, eaveY };
+}
 
   /* ============================
      CHARPENTE PRO (bipente)
