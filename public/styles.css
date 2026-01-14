@@ -167,10 +167,29 @@ main{padding-top:18px}
   gap:2.4rem;
 }
 
-/* Ordre visuel : 3D (gauche) | Config (centre) | Récap (droite) */
-.recap-column{order:3;flex:1.35;min-width:0;}
-.config-form{order:2;flex:2.7;min-width:0;}
-.viewer-column{order:1;flex:1.35;min-width:0;}
+/* Ordre visuel : 3D (gauche) | Config (centre) | Récap (droite)
+   + sticky sur les colonnes latérales */
+.recap-column{
+  order:3;
+  flex:1.35;
+  min-width:0;
+  position:sticky;
+  top:80px;
+  align-self:flex-start;
+}
+.config-form{
+  order:2;
+  flex:2.7;
+  min-width:0;
+}
+.viewer-column{
+  order:1;
+  flex:1.35;
+  min-width:0;
+  position:sticky;
+  top:80px;
+  align-self:flex-start;
+}
 
 /* =========================
    FORMULAIRE (colonne centrale)
@@ -280,9 +299,8 @@ input[type="text"]:focus,select:focus{
   gap:12px;
 }
 
-/* ✅ Chaque item de la grille devient un flex-container
-   et la carte occupe toute la hauteur => toutes les cartes
-   d’une même ligne ont exactement la même hauteur */
+/* ✅ chaque item est un flex-container,
+   la carte occupe toute la hauteur de la cellule */
 .bardage-choice{
   cursor:pointer;
   display:flex;
@@ -298,8 +316,8 @@ input[type="text"]:focus,select:focus{
   display:flex;
   flex-direction:column;
   gap:4px;
-  flex:1;          /* occupe toute la hauteur de la cellule */
-  height:100%;     /* étirée comme les autres dans la même ligne */
+  flex:1;
+  height:100%;
   transition:
     background .2s ease,color .2s ease,
     border-color .12s ease,box-shadow .12s ease,
@@ -549,12 +567,6 @@ input[type="text"]:focus,select:focus{
   border-radius:var(--radius-lg);
   padding:16px 18px 18px;
   box-shadow:var(--shadow-soft);
-
-  /* bloc “collant” au scroll */
-  position:sticky;
-  top:80px; /* hauteur header + marge */
-  max-height:calc(100vh - 100px);
-  overflow:auto;
 }
 .viewer-panel h2{
   margin:0 0 4px;
@@ -600,12 +612,6 @@ input[type="text"]:focus,select:focus{
   border-radius:var(--radius-lg);
   padding:16px 18px 18px;
   box-shadow:var(--shadow-soft);
-
-  /* reste visible au scroll */
-  position:sticky;
-  top:80px;
-  max-height:calc(100vh - 100px);
-  overflow:auto;
 }
 .recap-panel h2{
   margin:0 0 6px;
@@ -700,11 +706,9 @@ input[type="text"]:focus,select:focus{
   .hero-text h1{font-size:2rem;}
 
   /* Sur mobile/tablette, on désactive le sticky */
-  .viewer-panel,
-  .recap-panel{
+  .viewer-column,
+  .recap-column{
     position:static;
-    max-height:none;
-    overflow:visible;
   }
 }
 
