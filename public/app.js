@@ -328,6 +328,14 @@ function applyOptionAvailabilityByType() {
    4) CONFIG & PRIX
 ---------------------------- */
 
+function getBayCount(length) {
+  if (length <= 6) return 1;
+  if (length <= 12) return 2;
+  if (length <= 18) return 3;
+  if (length <= 24) return 4;
+  return 6;
+}
+
 function buildConfigFromUI() {
   const type = getSelectedType();
 
@@ -611,8 +619,8 @@ const MODELS = {
 
 const GLOBAL_SCALE = 1;
 
-// pente par défaut ~5,85 % (sera recalée sur le GLTF si besoin)
-const DEFAULT_PITCH_RATIO = 0.102458042757100;
+// pente par défaut ~10 % (sera recalée sur le GLTF)
+const DEFAULT_PITCH_RATIO = 0.10;
 let monoPitchRatio = DEFAULT_PITCH_RATIO;
 let biPitchRatio   = DEFAULT_PITCH_RATIO;
 let monoRoofAngle  = Math.atan(DEFAULT_PITCH_RATIO);
@@ -769,7 +777,7 @@ function createContactShadowTexture(size = 256) {
   g.addColorStop(1, "rgba(0,0,0,0)");
 
   ctx.fillStyle = g;
-  ctx.fillRect(0, 0, size, size);
+  ctx.fillRect(0, 0, size, 0 + size);
 
   const tex = new THREE.CanvasTexture(c);
   tex.needsUpdate = true;
@@ -942,14 +950,6 @@ function getCurrentDimensions() {
   return { width, length, height };
 }
 
-function getBayCount(length) {
-  if (length <= 6) return 1;
-  if (length <= 12) return 2;
-  if (length <= 18) return 3;
-  if (length <= 24) return 4;
-  return 6;
-}
-
 /* ---------------------------
    Init Three.js
 ---------------------------- */
@@ -1088,7 +1088,7 @@ function loadModelForType(type) {
 
       baseBBox = new THREE.Box3().setFromObject(baseModule);
 
-      // 🔧 On cale la pente sur le GLTF courant (si différente)
+      // 🔧 On cale la pente sur le GLTF courant
       calibrateRoofAngle(type);
 
       update3DFromConfig();
@@ -1114,11 +1114,6 @@ function animateThree() {
   renderer?.render?.(scene, camera);
 }
 
-/* -------------------------------------------------------
-   5.1) STRUCTURE : CLONAGE EN LONGUEUR + ÉLARGISSEMENT Z
-   (poteaux gardent leur épaisseur)
--------------------------------------------------------- */
-
 function buildStructureFromConfig(cfg) {
   if (!baseModule || !baseBBox) return null;
 
@@ -1126,14 +1121,13 @@ function buildStructureFromConfig(cfg) {
   structureGroup = new THREE.Group();
   scene.add(structureGroup);
 
-  const type    = cfg?.type   || getSelectedType();
+  const type = cfg?.type || getSelectedType();
   const baseCfg = MODELS[type]?.base || MODELS.mono.base;
 
-  const width   = cfg?.width  ?? getCurrentDimensions().width;
-  const length  = cfg?.length ?? getCurrentDimensions().length;
-  const height  = cfg?.height ?? getCurrentDimensions().height;
-  const bays    = cfg?.bays   ?? getBayCount(length);
-
+  const width  = cfg?.width  ?? getCurrentDimensions().width;
+  const length = cfg?.length ?? getCurrentDimensions().length;
+  const height = cfg?.height ?? getCurrentDimensions().height;
+  const bays   = cfg?.bays   ?? getBayCount(length);
   const bayLengthM = length / bays;
 
   const baseSize = new THREE.Vector3();
@@ -1145,11 +1139,10 @@ function buildStructureFromConfig(cfg) {
     const clone = baseModule.clone(true);
 
     const scaleX = (bayLengthM / baseCfg.length) * GLOBAL_SCALE;
-    const scaleY = (height     / baseCfg.height) * GLOBAL_SCALE;
+    const scaleZ = (width / baseCfg.width) * GLOBAL_SCALE;
+    const scaleY = (height / baseCfg.height) * GLOBAL_SCALE;
 
-    // ❗ On ne scale PAS en Z pour ne pas "gonfler" les poteaux :
-    // l'élargissement se fait plus bas via structureGroup.scale.z
-    clone.scale.set(scaleX, scaleY, GLOBAL_SCALE);
+    clone.scale.set(scaleX, scaleY, scaleZ);
 
     const minXScaled = baseBBox.min.x * scaleX;
     const offsetX = currentX - minXScaled;
@@ -1161,22 +1154,12 @@ function buildStructureFromConfig(cfg) {
     currentX += segLength;
   }
 
-  // Recentrage en X
   let bbox = new THREE.Box3().setFromObject(structureGroup);
-  const centerX = bbox.getCenter(new THREE.Vector3()).x;
-  structureGroup.position.x -= centerX;
+  const center = bbox.getCenter(new THREE.Vector3());
 
-  // Élargissement en Z avec un scale global
-  const baseWidth = baseCfg.width || 1;
-  const scaleZ = width / baseWidth;
-  structureGroup.scale.z = scaleZ;
+  structureGroup.position.x -= center.x;
+  structureGroup.position.z -= center.z;
 
-  // Recentrage en Z après scale
-  bbox = new THREE.Box3().setFromObject(structureGroup);
-  const centerZ = bbox.getCenter(new THREE.Vector3()).z;
-  structureGroup.position.z -= centerZ;
-
-  // Pose sur le sol
   bbox = new THREE.Box3().setFromObject(structureGroup);
   structureGroup.position.y -= bbox.min.y;
 
@@ -1238,7 +1221,7 @@ function rebuildOverlays(bbox) {
   const min = bbox.min;
   const max = bbox.max;
 
-  const lenX   = max.x - min.x;
+  const lenX = max.x - min.x;
   const widthZ = max.z - min.z;
 
   const cx = (min.x + max.x) / 2;
@@ -1247,11 +1230,15 @@ function rebuildOverlays(bbox) {
   let roofThick = ROOF_THICKNESS * GLOBAL_SCALE;
   let cladThick = CLAD_THICKNESS * GLOBAL_SCALE;
 
-  const roofType      = document.querySelector('input[name="roofType"]:checked')?.value;
-  const claddingType  = document.querySelector('input[name="claddingType"]:checked')?.value;
+  const roofType = document.querySelector('input[name="roofType"]:checked')?.value;
+  const claddingType = document.querySelector('input[name="claddingType"]:checked')?.value;
 
-  if (roofType === "sandwich40")  roofThick *= 1.8;
-  if (claddingType === "sandwich40") cladThick *= 1.5;
+  if (roofType === "sandwich40") {
+    roofThick *= 1.8;
+  }
+  if (claddingType === "sandwich40") {
+    cladThick *= 1.5;
+  }
 
   const eps = 0.004 * Math.max(lenX, widthZ);
 
@@ -1259,15 +1246,28 @@ function rebuildOverlays(bbox) {
   const eaveY = min.y + height;
 
   const slopeType = getSelectedType();
-  const baseCfg   = MODELS[slopeType]?.base || MODELS.mono.base;
-  const baseWidthRef = (baseCfg.width || 1) * GLOBAL_SCALE;
 
-  const pitchRatio = (slopeType === "mono") ? monoPitchRatio : biPitchRatio;
-  const angle      = (slopeType === "mono") ? monoRoofAngle  : biRoofAngle;
+  // 🔧 Pente dynamique lue sur la structure réellement mise à l’échelle
+  // On mesure l’écart entre la sablière (eaveY) et le faîtage (max.y)
+  // puis on en déduit la pente effective.
+  let effectivePitch = (slopeType === "mono") ? monoPitchRatio : biPitchRatio;
 
-  // ✅ deltaY = différence de hauteur égout/faîtage basée sur la largeur de référence GLTF
-  const deltaY_mono = baseWidthRef * pitchRatio;
-  const deltaY_bi   = (baseWidthRef / 2) * pitchRatio;
+  if (slopeType === "mono") {
+    const ridgeFromBBox = max.y - 0.02;
+    const deltaY = ridgeFromBBox - eaveY;
+    if (deltaY > 0.01 && widthZ > 0.001) {
+      effectivePitch = deltaY / widthZ;
+    }
+  } else {
+    const halfW = widthZ / 2;
+    const ridgeFromBBox = max.y - 0.02;
+    const deltaY = ridgeFromBBox - eaveY;
+    if (deltaY > 0.01 && halfW > 0.001) {
+      effectivePitch = deltaY / halfW;
+    }
+  }
+
+  const angle = Math.atan(effectivePitch);
 
   setStructureUpperVisibility(eaveY, bbox, slopeType);
 
@@ -1301,9 +1301,7 @@ function rebuildOverlays(bbox) {
 
     roof.rotation.x = -angle;
 
-    // 🔧 différence de hauteur égout/faîtage fixe (basée sur baseWidthRef)
-    const deltaY = deltaY_mono;
-    const lift   = deltaY / 2; // rotation autour du centre de la tôle
+    const lift = (widthZ / 2) * Math.sin(angle);
     const centerY = (eaveY + ROOF_GAP) + (roofThick / 2) + lift;
 
     roof.position.set(cx, centerY, cz);
@@ -1316,8 +1314,7 @@ function rebuildOverlays(bbox) {
     const halfW = widthZ / 2;
     const roofGeoHalf = new THREE.BoxGeometry(lenX, roofThick, halfW);
 
-    const deltaY = deltaY_bi;
-    const lift   = deltaY / 2;
+    const lift = (halfW / 2) * Math.sin(angle);
     const centerY = (eaveY + ROOF_GAP) + (roofThick / 2) + lift;
 
     const roofPlusZ = new THREE.Mesh(roofGeoHalf, roofMat.clone());
@@ -1344,13 +1341,13 @@ function rebuildOverlays(bbox) {
   ============================ */
   if (slopeType === "bi") {
     const halfW = widthZ / 2;
+    const ridgeH = halfW * effectivePitch;
 
     const r = overlayGroup.userData?.roof;
     const roofCenterY = r?.centerY ?? (eaveY + roofThick);
 
-    const deltaY = deltaY_bi;
     const underRidge = (roofCenterY - roofThick / 2) - UNDER_ROOF_CLEARANCE;
-    const underEave  = underRidge - deltaY;
+    const underEave  = underRidge - ridgeH;
 
     const frameFX = new THREE.Group();
     frameFX.name = "frameFX";
@@ -1361,8 +1358,8 @@ function rebuildOverlays(bbox) {
     addSigmaBeam(frameFX, { len: lenX, x: cx, y: underRidge, z: cz, rx: 0, ry: 0, rz: 0, mat: galva });
 
     const t = 0.55;
-    addSigmaBeam(frameFX, { len: lenX, x: cx, y: underRidge - (deltaY * t), z: cz + (halfW * t), rx: +angle, ry: 0, rz: 0, mat: galva });
-    addSigmaBeam(frameFX, { len: lenX, x: cx, y: underRidge - (deltaY * t), z: cz - (halfW * t), rx: -angle, ry: 0, rz: 0, mat: galva });
+    addSigmaBeam(frameFX, { len: lenX, x: cx, y: underRidge - (ridgeH * t), z: cz + (halfW * t), rx: +angle, ry: 0, rz: 0, mat: galva });
+    addSigmaBeam(frameFX, { len: lenX, x: cx, y: underRidge - (ridgeH * t), z: cz - (halfW * t), rx: -angle, ry: 0, rz: 0, mat: galva });
 
     addSigmaBeam(frameFX, { len: lenX, x: cx, y: underEave, z: cz + halfW - 0.03, rx: 0, ry: 0, rz: 0, mat: galva });
     addSigmaBeam(frameFX, { len: lenX, x: cx, y: underEave, z: cz - halfW + 0.03, rx: 0, ry: 0, rz: 0, mat: galva });
@@ -1372,15 +1369,15 @@ function rebuildOverlays(bbox) {
      BARDAGE
   ============================ */
 
-  const ridgeY_mono = eaveY + deltaY_mono;
-  const ridgeY_bi   = eaveY + deltaY_bi;
+  const ridgeY_mono = eaveY + (widthZ      * effectivePitch);
+  const ridgeY_bi   = eaveY + ((widthZ/2) * effectivePitch);
 
   let topA = eaveY;
   let topC = eaveY;
 
   if (slopeType === "mono") {
     topA = ridgeY_mono - UNDER_ROOF_CLEARANCE;
-    topC = eaveY      - UNDER_ROOF_CLEARANCE;
+    topC = eaveY       - UNDER_ROOF_CLEARANCE;
   } else {
     topA = eaveY - UNDER_ROOF_CLEARANCE;
     topC = eaveY - UNDER_ROOF_CLEARANCE;
@@ -1402,7 +1399,7 @@ function rebuildOverlays(bbox) {
   let gableShapeD = null;
 
   if (slopeType === "mono") {
-    const yLow  = (eaveY      - UNDER_ROOF_CLEARANCE) - CLAD_TOP_GAP;
+    const yLow  = (eaveY       - UNDER_ROOF_CLEARANCE) - CLAD_TOP_GAP;
     const yHigh = (ridgeY_mono - UNDER_ROOF_CLEARANCE) - CLAD_TOP_GAP;
 
     const shapeB = createMonoGableShape(widthZ, min.y, yLow, yHigh);
@@ -1472,14 +1469,6 @@ function rebuildOverlays(bbox) {
 
   applyCladdingVisibility();
   overlayGroup.userData.applyCladdingVisibility = applyCladdingVisibility;
-
-  /* ============================
-     HABILLAGES (inchangé)
-  ============================ */
-
-  // ... (reprends ici **la même fin de fonction** que dans ton app.js actuel :
-  // trims, rives, faîtières, sol, contactShadow, caméra, etc.)
-}
 
   /* ============================
      HABILLAGES
@@ -1882,3 +1871,4 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   calculatePriceAndRecap();
 });
+
