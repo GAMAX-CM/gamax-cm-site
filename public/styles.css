@@ -87,35 +87,27 @@ a{color:inherit}
 main{padding-top:18px;}
 
 .hero{
-  padding:34px 0 32px;
-  background:radial-gradient(circle at top left, #fff8ec 0, #fbf7f1 42%, #f5f0e8 100%);
+  padding:34px 0 26px;
+  background:radial-gradient(circle at top left,#fff8ec 0,#fbf7f1 45%,#f5f0e8 100%);
 }
 
 .hero-inner{
   display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:40px;
+  justify-content:flex-start;
 }
 
-.hero-left{
-  flex:1.6;
-  max-width:640px;
+.hero-text{
+  max-width:720px;
 }
 
-.hero-right{
-  flex:1.1;
-  display:flex;
-  justify-content:flex-end;
-}
-
-.hero-badge{
+/* Petit badge au-dessus du titre */
+.hero-badge-main{
   display:inline-flex;
   align-items:center;
-  gap:8px;
+  gap:6px;
   padding:5px 12px;
   border-radius:999px;
-  background:rgba(0,0,0,0.06);
+  background:rgba(0,0,0,.06);
   font-size:.78rem;
   letter-spacing:.08em;
   text-transform:uppercase;
@@ -123,7 +115,7 @@ main{padding-top:18px;}
   margin-bottom:10px;
 }
 
-.hero h1{
+.hero-text h1{
   margin:0 0 10px;
   font-size:2.4rem;
   letter-spacing:-.02em;
@@ -133,101 +125,55 @@ main{padding-top:18px;}
   margin:0 0 18px;
   color:var(--text-muted);
   line-height:1.55;
-  max-width:520px;
 }
 
+/* Ligne d’avantages (4 items) */
+.hero-badges{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:0 0 16px;
+}
+
+.hero-badge-item{
+  flex:1 1 220px;
+  font-size:.82rem;
+  color:#111;
+  background:#fff;
+  border-radius:999px;
+  border:1px solid #e0d5c1;
+  padding:6px 12px;
+  box-shadow:var(--shadow-light);
+}
+
+/* Boutons */
 .hero-actions{
   display:flex;
   gap:12px;
   flex-wrap:wrap;
-  margin-bottom:16px;
+  margin-bottom:14px;
 }
 
-/* Petits arguments sous les boutons */
-.hero-points{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  font-size:.86rem;
+/* Texte sur ta disponibilité / modularité */
+.hero-availability{
+  margin:0;
+  font-size:.9rem;
   color:var(--text-muted);
+  line-height:1.55;
 }
 
-.hero-point{
-  display:flex;
-  align-items:flex-start;
-  gap:8px;
+/* Ajustements responsive */
+@media (max-width:1024px){
+  .hero{padding:26px 0 18px;}
+  .hero-text h1{font-size:2.1rem;}
 }
 
-.hero-point-dot{
-  width:8px;
-  height:8px;
-  border-radius:999px;
-  margin-top:6px;
-  background:var(--accent);
-}
-
-/* Carte visuelle à droite */
-.hero-card{
-  background:#ffffff;
-  border-radius:22px;
-  box-shadow:0 18px 45px rgba(0,0,0,.10);
-  border:1px solid rgba(0,0,0,.06);
-  padding:14px 14px 16px;
-  width:100%;
-  max-width:360px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-
-.hero-card-pill{
-  align-self:flex-start;
-  padding:4px 10px;
-  border-radius:999px;
-  background:#111;
-  color:#fff;
-  font-size:.72rem;
-  letter-spacing:.08em;
-  text-transform:uppercase;
-}
-
-.hero-card-image{
-  border-radius:16px;
-  overflow:hidden;
-  background:radial-gradient(circle at top, #d3d7df 0,#bec2cb 40%,#a9aeb7 100%);
-}
-
-.hero-card-image img{
-  display:block;
-  width:100%;
-  height:auto;
-}
-
-.hero-card-footer{
-  margin-top:4px;
-  border-radius:14px;
-  background:#fbf7f1;
-  padding:8px 10px;
-  display:flex;
-  flex-direction:column;
-  gap:4px;
-}
-
-.hero-card-item{
-  display:flex;
-  flex-direction:column;
-}
-
-.hero-card-label{
-  font-size:.75rem;
-  text-transform:uppercase;
-  letter-spacing:.08em;
-  color:var(--text-muted);
-}
-
-.hero-card-value{
-  font-size:.86rem;
-  font-weight:600;
+@media (max-width:480px){
+  .hero-text h1{font-size:1.8rem;}
+  .hero-actions{
+    flex-direction:column;
+    align-items:flex-start;
+  }
 }
 
 /* =========================
