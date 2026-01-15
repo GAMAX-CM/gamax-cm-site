@@ -84,24 +84,181 @@ a{color:inherit}
 /* =========================
    HERO
 ========================= */
-main{padding-top:18px}
-.hero{padding:34px 0 8px;}
-.hero-inner{display:flex;justify-content:flex-start;}
-.hero-text{max-width:720px;}
-.hero-text h1{
+main{padding-top:18px;}
+
+.hero{
+  padding:34px 0 32px;
+  background:radial-gradient(circle at top left, #fff8ec 0, #fbf7f1 42%, #f5f0e8 100%);
+}
+
+.hero-inner{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:40px;
+}
+
+.hero-left{
+  flex:1.6;
+  max-width:640px;
+}
+
+.hero-right{
+  flex:1.1;
+  display:flex;
+  justify-content:flex-end;
+}
+
+.hero-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:5px 12px;
+  border-radius:999px;
+  background:rgba(0,0,0,0.06);
+  font-size:.78rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--text-muted);
+  margin-bottom:10px;
+}
+
+.hero h1{
   margin:0 0 10px;
-  font-size:2.25rem;
+  font-size:2.4rem;
   letter-spacing:-.02em;
 }
-.hero-text p{
-  margin:0 0 16px;
+
+.hero-subtitle{
+  margin:0 0 18px;
   color:var(--text-muted);
   line-height:1.55;
+  max-width:520px;
 }
+
 .hero-actions{
   display:flex;
   gap:12px;
   flex-wrap:wrap;
+  margin-bottom:16px;
+}
+
+/* Petits arguments sous les boutons */
+.hero-points{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  font-size:.86rem;
+  color:var(--text-muted);
+}
+
+.hero-point{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+}
+
+.hero-point-dot{
+  width:8px;
+  height:8px;
+  border-radius:999px;
+  margin-top:6px;
+  background:var(--accent);
+}
+
+/* Carte visuelle à droite */
+.hero-card{
+  background:#ffffff;
+  border-radius:22px;
+  box-shadow:0 18px 45px rgba(0,0,0,.10);
+  border:1px solid rgba(0,0,0,.06);
+  padding:14px 14px 16px;
+  width:100%;
+  max-width:360px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.hero-card-pill{
+  align-self:flex-start;
+  padding:4px 10px;
+  border-radius:999px;
+  background:#111;
+  color:#fff;
+  font-size:.72rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.hero-card-image{
+  border-radius:16px;
+  overflow:hidden;
+  background:radial-gradient(circle at top, #d3d7df 0,#bec2cb 40%,#a9aeb7 100%);
+}
+
+.hero-card-image img{
+  display:block;
+  width:100%;
+  height:auto;
+}
+
+.hero-card-footer{
+  margin-top:4px;
+  border-radius:14px;
+  background:#fbf7f1;
+  padding:8px 10px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+.hero-card-item{
+  display:flex;
+  flex-direction:column;
+}
+
+.hero-card-label{
+  font-size:.75rem;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:var(--text-muted);
+}
+
+.hero-card-value{
+  font-size:.86rem;
+  font-weight:600;
+}
+
+/* =========================
+   RESPONSIVE (complément)
+========================= */
+@media (max-width:1024px){
+  .hero{
+    padding:26px 0 16px;
+  }
+  .hero-inner{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+  .hero-right{
+    width:100%;
+    justify-content:flex-start;
+  }
+  .hero-card{
+    max-width:100%;
+  }
+  .hero h1{
+    font-size:2rem;
+  }
+}
+
+@media (max-width:480px){
+  .hero h1{font-size:1.7rem;}
+  .hero-actions{
+    flex-direction:column;
+    align-items:flex-start;
+  }
 }
 
 /* =========================
